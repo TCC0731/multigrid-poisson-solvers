@@ -1,0 +1,27 @@
+# Python bytecode caches
+__pycache__/
+python/__pycache__/
+python/solvers/__pycache__/
+*.py[cod]
+*.pyc.*
+
+# Numba caches
+*.nbc
+*.nbi
+
+# Build and compiled artifacts
+build/
+dist/
+*.o
+*.obj
+*.so
+*.a
+*.lib
+*.dll
+*.dylib
+*.exe
+*.out
+*.ptx
+*.cubin
+
+.codex
