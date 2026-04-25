@@ -1,6 +1,6 @@
 # Poisson Multigrid Solver
 
-This repository is for developing and benchmarking Poisson equation solvers, with a focus on geometric multigrid methods and parallel implementations.
+This repository is for developing and benchmarking Poisson equation solvers, with a focus on geometric multigrid methods and a Python reference implementation.
 
 The project is organized as a research and coursework repository, not as a packaged library. The goal is to keep different solver implementations easy to compare, replace, and optimize.
 
@@ -46,25 +46,28 @@ $$
 
 The initial development focuses only on the 2D Poisson equation.
 
-## Planned Solver Support
+## Current Solver Support
 
 | Backend        | Jacobi 2D | Gauss-Seidel 2D | SOR 2D | Multigrid 2D |
 | -------------- | --------: | --------------: | -----: | -----------: |
-| Python + Numba |        No |              No |     No |           No |
+| Python + Numba |       Yes |             Yes |    Yes |          Yes |
 | C++ + OpenMP   |        No |              No |     No |           No |
 | CUDA           |        No |              No |     No |           No |
 
-## Planned Repository Structure
+## Repository Structure
+
+Current files are listed first; the remaining entries are still planned.
 
 ```text
-poisson-multigrid-solvers/
+multigrid-poisson-solvers/
 │
 ├── README.md
-├── CMakeLists.txt
+├── .gitignore
 ├── requirements.txt
 │
-├── configs/
-│   └── poisson2d_sin.json
+├── note/
+│   ├── Architecture.md
+│   └── install.md
 │
 ├── python/
 │   ├── run_poisson.py
@@ -73,9 +76,13 @@ poisson-multigrid-solvers/
 │   ├── metrics.py
 │   └── solvers/
 │       ├── jacobi_2d.py
-│       ├── rbgs_2d.py
+│       ├── gs_2d.py
 │       ├── sor_2d.py
 │       └── mg_2d.py
+│
+├── CMakeLists.txt
+├── configs/
+│   └── poisson2d_sin.json
 │
 ├── cpp/
 │   ├── include/
@@ -100,6 +107,8 @@ poisson-multigrid-solvers/
 │   └── plot_results.py
 │
 ├── tests/
+│   ├── conftest.py
+│   ├── test_python.py
 │   └── reference/
 │
 └── results/
@@ -128,18 +137,18 @@ These cases provide simple tests for residual convergence, boundary-condition ha
 
 ## Development Plan
 
-1. Implement the Python + Numba 2D solvers.
-2. Use the Python version as the reference implementation.
+1. The Python + Numba 2D solvers are implemented.
+2. The Python version serves as the reference implementation.
 3. Implement the C++ + OpenMP 2D solvers.
 4. Implement the CUDA 2D SOR and multigrid solvers.
 5. Compare correctness, convergence, and performance across implementations.
 
 ## Output and Benchmarking
 
-All solvers should report the following quantities:
+The current Python runner in `python/run_poisson.py` reports the following CSV columns:
 
 ```text
-solver, backend, grid_size, iterations, residual_l2, error_l2, error_linf, time_ms
+solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms
 ```
 
-The output format should remain consistent across Python, C++ OpenMP, and CUDA implementations.
+The output format should remain consistent across the Python, C++ OpenMP, and CUDA implementations as they are added.
