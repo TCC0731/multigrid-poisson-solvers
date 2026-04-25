@@ -1,5 +1,6 @@
 #include "poisson/gs.hpp"
 #include "poisson/jacobi.hpp"
+#include "poisson/mg.hpp"
 #include "poisson/metrics.hpp"
 #include "poisson/operators.hpp"
 #include "poisson/problem.hpp"
@@ -13,6 +14,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <tuple>
 
 namespace {
 
@@ -26,6 +28,7 @@ constexpr std::array<Case2D, 5> kCases{
     Case2D::Exp,
     Case2D::Cosine,
 };
+constexpr std::array<MGCycle, 2> kCycles{MGCycle::V, MGCycle::W};
 
 bool grid_all_close_to_zero(const Grid2D& grid, Real tol = kZeroTol) {
     for (std::size_t i = 0; i < grid.size(); ++i) {
@@ -70,10 +73,8 @@ void expect_boundaries_equal(const Grid2D& lhs, const Grid2D& rhs) {
     }
 }
 
-template <typename SolveFn>
-void expect_solver_converges(
-    SolveFn&& solve, const Problem2D& problem, const SolveOptions& options
-) {
+template <typename SolveFn, typename Options>
+void expect_solver_converges(SolveFn&& solve, const Problem2D& problem, const Options& options) {
     const SolveResult result = solve(problem, options);
     const Real recomputed_residual = residual_l2(problem, result.phi);
     const ErrorMetrics metrics = error_metrics(problem, result.phi);
@@ -100,15 +101,46 @@ std::string case_name(const ::testing::TestParamInfo<Case2D>& info) {
     return std::string(poisson::to_string(info.param));
 }
 
+std::string cycle_name(const ::testing::TestParamInfo<MGCycle>& info) {
+    return info.param == MGCycle::V ? "V" : "W";
+}
+
+MGOptions make_mg_options(MGCycle cycle, std::size_t coarse_steps = 16, std::size_t max_iter = 100) {
+    return MGOptions{1e-10, max_iter, 2, cycle, coarse_steps};
+}
+
+using MgCaseParam = std::tuple<Case2D, MGCycle>;
+
+std::string mg_case_name(const ::testing::TestParamInfo<MgCaseParam>& info) {
+    const auto& [case_id, cycle] = info.param;
+    return std::string(poisson::to_string(case_id)) + "_" + (cycle == MGCycle::V ? "V" : "W");
+}
+
 class ProblemCaseTest : public ::testing::TestWithParam<Case2D> {};
 class JacobiCaseTest : public ::testing::TestWithParam<Case2D> {};
 class GsCaseTest : public ::testing::TestWithParam<Case2D> {};
 class SorCaseTest : public ::testing::TestWithParam<Case2D> {};
+class MgExactCaseTest : public ::testing::TestWithParam<MgCaseParam> {};
+class MgSorCaseTest : public ::testing::TestWithParam<MgCaseParam> {};
+class MgRegressionTest : public ::testing::TestWithParam<MGCycle> {};
 
 INSTANTIATE_TEST_SUITE_P(AllCases, ProblemCaseTest, ::testing::ValuesIn(kCases), case_name);
 INSTANTIATE_TEST_SUITE_P(AllCases, JacobiCaseTest, ::testing::ValuesIn(kCases), case_name);
 INSTANTIATE_TEST_SUITE_P(AllCases, GsCaseTest, ::testing::ValuesIn(kCases), case_name);
 INSTANTIATE_TEST_SUITE_P(AllCases, SorCaseTest, ::testing::ValuesIn(kCases), case_name);
+INSTANTIATE_TEST_SUITE_P(
+    AllCases,
+    MgExactCaseTest,
+    ::testing::Combine(::testing::ValuesIn(kCases), ::testing::ValuesIn(kCycles)),
+    mg_case_name
+);
+INSTANTIATE_TEST_SUITE_P(
+    AllCases,
+    MgSorCaseTest,
+    ::testing::Combine(::testing::ValuesIn(kCases), ::testing::ValuesIn(kCycles)),
+    mg_case_name
+);
+INSTANTIATE_TEST_SUITE_P(AllCycles, MgRegressionTest, ::testing::ValuesIn(kCycles), cycle_name);
 
 TEST(Grid2DTest, ConstructionFillAndBounds) {
     Grid2D empty;
@@ -366,6 +398,43 @@ TEST_P(SorCaseTest, ConvergesAndPreservesBoundaries) {
     expect_solver_converges(solve_sor, problem, options);
 }
 
+TEST_P(MgExactCaseTest, ConvergesAndPreservesBoundaries) {
+    const auto& [case_id, cycle] = GetParam();
+    const Problem2D problem = make_problem(case_id, 32);
+    const MGOptions options = make_mg_options(cycle);
+    expect_solver_converges(solve_mg_exact, problem, options);
+}
+
+TEST_P(MgSorCaseTest, ConvergesAndPreservesBoundaries) {
+    const auto& [case_id, cycle] = GetParam();
+    const Problem2D problem = make_problem(case_id, 32);
+    const MGOptions options = make_mg_options(cycle, 32, 150);
+    expect_solver_converges(solve_mg_sor, problem, options);
+}
+
+TEST_P(MgRegressionTest, SineCaseMatchesReferenceValues) {
+    const MGCycle cycle = GetParam();
+    const Problem2D problem = make_problem(Case2D::Sine, 64);
+    const MGOptions options = make_mg_options(cycle, 16, 100);
+
+    const SolveResult result = solve_mg_exact(problem, options);
+    const ErrorMetrics metrics = error_metrics(problem, result.phi);
+
+    if (cycle == MGCycle::V) {
+        EXPECT_EQ(result.iterations, 83u);
+        EXPECT_NEAR(result.residual_l2, 8.472344985850555e-11, 1e-12);
+        EXPECT_NEAR(metrics.error_l2, 9.734474635149315e-05, 5e-11);
+        EXPECT_NEAR(metrics.error_linf, 1.945758162948952e-04, 5e-11);
+    } else {
+        EXPECT_EQ(result.iterations, 68u);
+        EXPECT_NEAR(result.residual_l2, 9.117932594196834e-11, 1e-12);
+        EXPECT_NEAR(metrics.error_l2, 9.734474633251941e-05, 5e-11);
+        EXPECT_NEAR(metrics.error_linf, 1.945758160654121e-04, 5e-11);
+    }
+
+    EXPECT_DOUBLE_EQ(result.residual_l2, residual_l2(problem, result.phi));
+}
+
 TEST(InvalidInputTest, SolversRejectBadOptionsAndProblems) {
     const Problem2D valid_problem = make_problem(Case2D::Sine, 7);
     const SolveOptions valid_options{1e-10, 100};
@@ -397,6 +466,43 @@ TEST(InvalidInputTest, SolversRejectBadOptionsAndProblems) {
     Problem2D bad_n = valid_problem;
     bad_n.interior_n = 0;
     EXPECT_THROW(solve_sor(bad_n, valid_options), std::invalid_argument);
+}
+
+TEST(InvalidInputTest, MgRejectsBadOptionsAndProblems) {
+    const Problem2D valid_problem = make_problem(Case2D::Sine, 7);
+
+    const MGOptions exact_options = make_mg_options(MGCycle::V);
+    const MGOptions sor_options = make_mg_options(MGCycle::V, 16, 100);
+
+    EXPECT_THROW(solve_mg_exact(valid_problem, MGOptions{0.0, 100, 2, MGCycle::V, 16}), std::invalid_argument);
+    EXPECT_THROW(solve_mg_exact(valid_problem, MGOptions{-1e-10, 100, 2, MGCycle::V, 16}), std::invalid_argument);
+    EXPECT_THROW(solve_mg_exact(valid_problem, MGOptions{1e-10, 0, 2, MGCycle::V, 16}), std::invalid_argument);
+    EXPECT_THROW(solve_mg_exact(valid_problem, MGOptions{1e-10, 100, 0, MGCycle::V, 16}), std::invalid_argument);
+
+    EXPECT_THROW(solve_mg_sor(valid_problem, MGOptions{0.0, 100, 2, MGCycle::V, 16}), std::invalid_argument);
+    EXPECT_THROW(solve_mg_sor(valid_problem, MGOptions{1e-10, 0, 2, MGCycle::V, 16}), std::invalid_argument);
+    EXPECT_THROW(solve_mg_sor(valid_problem, MGOptions{1e-10, 100, 0, MGCycle::V, 16}), std::invalid_argument);
+    EXPECT_THROW(solve_mg_sor(valid_problem, MGOptions{1e-10, 100, 2, MGCycle::V, 0}), std::invalid_argument);
+
+    Problem2D bad_h = valid_problem;
+    bad_h.h = 0.0;
+    EXPECT_THROW(solve_mg_exact(bad_h, exact_options), std::invalid_argument);
+    EXPECT_THROW(solve_mg_sor(bad_h, sor_options), std::invalid_argument);
+
+    Problem2D bad_rhs = valid_problem;
+    bad_rhs.rhs = Grid2D{valid_problem.rhs.size() + 1};
+    EXPECT_THROW(solve_mg_exact(bad_rhs, exact_options), std::invalid_argument);
+    EXPECT_THROW(solve_mg_sor(bad_rhs, sor_options), std::invalid_argument);
+
+    Problem2D bad_phi0 = valid_problem;
+    bad_phi0.phi0 = Grid2D{valid_problem.phi0.size() + 1};
+    EXPECT_THROW(solve_mg_exact(bad_phi0, exact_options), std::invalid_argument);
+    EXPECT_THROW(solve_mg_sor(bad_phi0, sor_options), std::invalid_argument);
+
+    Problem2D bad_n = valid_problem;
+    bad_n.interior_n = 0;
+    EXPECT_THROW(solve_mg_exact(bad_n, exact_options), std::invalid_argument);
+    EXPECT_THROW(solve_mg_sor(bad_n, sor_options), std::invalid_argument);
 }
 
 } // namespace
