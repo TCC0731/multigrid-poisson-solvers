@@ -29,7 +29,10 @@ endfunction()
 
 add_library(poisson_core
     cpp/src/metrics.cpp
+    cpp/src/gs.cpp
     cpp/src/jacobi.cpp
+    cpp/src/red_black.cpp
+    cpp/src/sor.cpp
     cpp/src/operators.cpp
     cpp/src/problem.cpp
     cpp/src/validation.cpp

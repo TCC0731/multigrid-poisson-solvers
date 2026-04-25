@@ -1,7 +1,9 @@
+#include "poisson/gs.hpp"
 #include "poisson/jacobi.hpp"
 #include "poisson/metrics.hpp"
 #include "poisson/operators.hpp"
 #include "poisson/problem.hpp"
+#include "poisson/sor.hpp"
 #include "poisson/validation.hpp"
 
 #include <gtest/gtest.h>
@@ -68,15 +70,45 @@ void expect_boundaries_equal(const Grid2D& lhs, const Grid2D& rhs) {
     }
 }
 
+template <typename SolveFn>
+void expect_solver_converges(
+    SolveFn&& solve, const Problem2D& problem, const SolveOptions& options
+) {
+    const SolveResult result = solve(problem, options);
+    const Real recomputed_residual = residual_l2(problem, result.phi);
+    const ErrorMetrics metrics = error_metrics(problem, result.phi);
+
+    EXPECT_EQ(result.phi.size(), problem.phi0.size());
+    EXPECT_GT(result.iterations, 0u);
+    EXPECT_LE(result.iterations, options.max_iter);
+    EXPECT_TRUE(std::isfinite(result.residual_l2));
+    EXPECT_GE(result.residual_l2, 0.0);
+    EXPECT_LE(result.residual_l2, options.tol);
+    EXPECT_DOUBLE_EQ(result.residual_l2, recomputed_residual);
+
+    expect_boundaries_equal(result.phi, problem.phi0);
+
+    EXPECT_TRUE(std::isfinite(metrics.error_l2));
+    EXPECT_TRUE(std::isfinite(metrics.error_linf));
+    EXPECT_GE(metrics.error_l2, 0.0);
+    EXPECT_GE(metrics.error_linf, 0.0);
+    EXPECT_LT(metrics.error_l2, 1e-2);
+    EXPECT_LT(metrics.error_linf, 1e-2);
+}
+
 std::string case_name(const ::testing::TestParamInfo<Case2D>& info) {
     return std::string(poisson::to_string(info.param));
 }
 
 class ProblemCaseTest : public ::testing::TestWithParam<Case2D> {};
 class JacobiCaseTest : public ::testing::TestWithParam<Case2D> {};
+class GsCaseTest : public ::testing::TestWithParam<Case2D> {};
+class SorCaseTest : public ::testing::TestWithParam<Case2D> {};
 
 INSTANTIATE_TEST_SUITE_P(AllCases, ProblemCaseTest, ::testing::ValuesIn(kCases), case_name);
 INSTANTIATE_TEST_SUITE_P(AllCases, JacobiCaseTest, ::testing::ValuesIn(kCases), case_name);
+INSTANTIATE_TEST_SUITE_P(AllCases, GsCaseTest, ::testing::ValuesIn(kCases), case_name);
+INSTANTIATE_TEST_SUITE_P(AllCases, SorCaseTest, ::testing::ValuesIn(kCases), case_name);
 
 TEST(Grid2DTest, ConstructionFillAndBounds) {
     Grid2D empty;
@@ -263,35 +295,9 @@ TEST(JacobiSolverInterfaceTest, DirectFunctionAndClassWrapperAgree) {
 }
 
 TEST_P(JacobiCaseTest, ConvergesAndPreservesBoundaries) {
-    const Case2D case_id = GetParam();
-    const Problem2D problem = make_problem(case_id, 32);
+    const Problem2D problem = make_problem(GetParam(), 32);
     const SolveOptions options{1e-10, 20'000};
-
-    const SolveResult result = solve_jacobi(problem, options);
-    const Real recomputed_residual = residual_l2(problem, result.phi);
-    const ErrorMetrics metrics = error_metrics(problem, result.phi);
-
-    EXPECT_EQ(result.phi.size(), problem.phi0.size());
-    EXPECT_GT(result.iterations, 0u);
-    EXPECT_LE(result.iterations, options.max_iter);
-    EXPECT_TRUE(std::isfinite(result.residual_l2));
-    EXPECT_GE(result.residual_l2, 0.0);
-    EXPECT_LE(result.residual_l2, options.tol);
-    EXPECT_DOUBLE_EQ(result.residual_l2, recomputed_residual);
-
-    expect_boundaries_equal(result.phi, problem.phi0);
-
-    EXPECT_TRUE(std::isfinite(metrics.error_l2));
-    EXPECT_TRUE(std::isfinite(metrics.error_linf));
-    EXPECT_GE(metrics.error_l2, 0.0);
-    EXPECT_GE(metrics.error_linf, 0.0);
-    EXPECT_LT(metrics.error_l2, 1e-2);
-    EXPECT_LT(metrics.error_linf, 1e-2);
-
-    if (case_id == Case2D::Sine) {
-        EXPECT_LE(metrics.error_l2, 1e-3);
-        EXPECT_LE(metrics.error_linf, 1e-3);
-    }
+    expect_solver_converges(solve_jacobi, problem, options);
 }
 
 TEST(JacobiSolverRegressionTest, SineCaseMatchesReferenceValues) {
@@ -308,25 +314,89 @@ TEST(JacobiSolverRegressionTest, SineCaseMatchesReferenceValues) {
     EXPECT_NEAR(metrics.error_linf, 8.035777e-04, 5e-11);
 }
 
-TEST(InvalidInputTest, JacobiRejectsBadOptionsAndProblems) {
+TEST(GaussSeidelSolverInterfaceTest, DirectFunctionAndClassWrapperAgree) {
+    const Problem2D problem = make_problem(Case2D::Sine, 7);
+    const SolveOptions options{1e-8, 5'000};
+
+    const SolveResult direct = solve_gs(problem, options);
+    const GaussSeidelSolver2D solver{};
+    const SolveResult via_interface = solver.solve(problem, options);
+
+    EXPECT_EQ(solver.name(), "gs");
+    EXPECT_EQ(direct.iterations, via_interface.iterations);
+    EXPECT_DOUBLE_EQ(direct.residual_l2, via_interface.residual_l2);
+    ASSERT_EQ(direct.phi.size(), via_interface.phi.size());
+
+    for (std::size_t i = 0; i < direct.phi.size(); ++i) {
+        for (std::size_t j = 0; j < direct.phi.size(); ++j) {
+            EXPECT_DOUBLE_EQ(direct.phi(i, j), via_interface.phi(i, j));
+        }
+    }
+}
+
+TEST_P(GsCaseTest, ConvergesAndPreservesBoundaries) {
+    const Problem2D problem = make_problem(GetParam(), 32);
+    const SolveOptions options{1e-10, 20'000};
+    expect_solver_converges(solve_gs, problem, options);
+}
+
+TEST(SorSolverInterfaceTest, DirectFunctionAndClassWrapperAgree) {
+    const Problem2D problem = make_problem(Case2D::Sine, 7);
+    const SolveOptions options{1e-8, 5'000};
+
+    const SolveResult direct = solve_sor(problem, options);
+    const SorSolver2D solver{};
+    const SolveResult via_interface = solver.solve(problem, options);
+
+    EXPECT_EQ(solver.name(), "sor");
+    EXPECT_EQ(direct.iterations, via_interface.iterations);
+    EXPECT_DOUBLE_EQ(direct.residual_l2, via_interface.residual_l2);
+    ASSERT_EQ(direct.phi.size(), via_interface.phi.size());
+
+    for (std::size_t i = 0; i < direct.phi.size(); ++i) {
+        for (std::size_t j = 0; j < direct.phi.size(); ++j) {
+            EXPECT_DOUBLE_EQ(direct.phi(i, j), via_interface.phi(i, j));
+        }
+    }
+}
+
+TEST_P(SorCaseTest, ConvergesAndPreservesBoundaries) {
+    const Problem2D problem = make_problem(GetParam(), 32);
+    const SolveOptions options{1e-10, 20'000};
+    expect_solver_converges(solve_sor, problem, options);
+}
+
+TEST(InvalidInputTest, SolversRejectBadOptionsAndProblems) {
     const Problem2D valid_problem = make_problem(Case2D::Sine, 7);
     const SolveOptions valid_options{1e-10, 100};
 
     EXPECT_THROW(solve_jacobi(valid_problem, SolveOptions{0.0, 100}), std::invalid_argument);
     EXPECT_THROW(solve_jacobi(valid_problem, SolveOptions{-1e-10, 100}), std::invalid_argument);
     EXPECT_THROW(solve_jacobi(valid_problem, SolveOptions{1e-10, 0}), std::invalid_argument);
+    EXPECT_THROW(solve_gs(valid_problem, SolveOptions{0.0, 100}), std::invalid_argument);
+    EXPECT_THROW(solve_sor(valid_problem, SolveOptions{0.0, 100}), std::invalid_argument);
 
     Problem2D bad_h = valid_problem;
     bad_h.h = 0.0;
     EXPECT_THROW(solve_jacobi(bad_h, valid_options), std::invalid_argument);
+    EXPECT_THROW(solve_gs(bad_h, valid_options), std::invalid_argument);
+    EXPECT_THROW(solve_sor(bad_h, valid_options), std::invalid_argument);
 
     Problem2D bad_rhs = valid_problem;
     bad_rhs.rhs = Grid2D{valid_problem.rhs.size() + 1};
     EXPECT_THROW(solve_jacobi(bad_rhs, valid_options), std::invalid_argument);
+    EXPECT_THROW(solve_gs(bad_rhs, valid_options), std::invalid_argument);
+    EXPECT_THROW(solve_sor(bad_rhs, valid_options), std::invalid_argument);
 
     Problem2D bad_phi0 = valid_problem;
     bad_phi0.phi0 = Grid2D{valid_problem.phi0.size() + 1};
     EXPECT_THROW(solve_jacobi(bad_phi0, valid_options), std::invalid_argument);
+    EXPECT_THROW(solve_gs(bad_phi0, valid_options), std::invalid_argument);
+    EXPECT_THROW(solve_sor(bad_phi0, valid_options), std::invalid_argument);
+
+    Problem2D bad_n = valid_problem;
+    bad_n.interior_n = 0;
+    EXPECT_THROW(solve_sor(bad_n, valid_options), std::invalid_argument);
 }
 
 } // namespace
