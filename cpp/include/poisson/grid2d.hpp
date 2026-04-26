@@ -7,13 +7,14 @@
 
 namespace poisson {
 
-using Real = double;
-
+template <typename Real>
 class Grid2D {
 public:
+    using value_type = Real;
+
     Grid2D() = default;
 
-    explicit Grid2D(std::size_t size, Real value = 0.0)
+    explicit Grid2D(std::size_t size, Real value = Real{})
         : size_{size}, values_(size * size, value) {}
 
     [[nodiscard]] std::size_t size() const noexcept { return size_; }
@@ -46,5 +47,16 @@ private:
     std::size_t size_{0};
     std::vector<Real> values_{};
 };
+
+template <typename ToReal, typename FromReal>
+[[nodiscard]] Grid2D<ToReal> cast_grid(const Grid2D<FromReal>& source) {
+    Grid2D<ToReal> result{source.size()};
+    for (std::size_t i = 0; i < source.size(); ++i) {
+        for (std::size_t j = 0; j < source.size(); ++j) {
+            result(i, j) = static_cast<ToReal>(source(i, j));
+        }
+    }
+    return result;
+}
 
 } // namespace poisson

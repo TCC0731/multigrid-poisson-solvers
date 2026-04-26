@@ -11,11 +11,11 @@ struct ValidationReport {
     bool boundary_ok{false};
     bool interior_zero_ok{false};
     bool ok{false};
-    Real boundary_error{0.0};
-    Real interior_max_abs{0.0};
+    double boundary_error{0.0};
+    double interior_max_abs{0.0};
 };
 
-[[nodiscard]] ValidationReport validate_problem(const Problem2D& problem);
+template <typename Real>
+[[nodiscard]] ValidationReport validate_problem(const Problem2D<Real>& problem);
 
 } // namespace poisson
-
