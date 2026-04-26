@@ -17,17 +17,19 @@ enum class CoarseSolve {
     Sor,
 };
 
+template <typename Real>
 Real default_sor_omega(std::size_t interior_n) {
     if (interior_n < 1) {
         throw std::invalid_argument("interior_n must be positive");
     }
 
-    const Real angle = std::numbers::pi_v<Real> / (static_cast<Real>(interior_n) + 1.0);
-    return 2.0 / (1.0 + std::sin(angle));
+    const Real angle = std::numbers::pi_v<Real> / (static_cast<Real>(interior_n) + Real{1});
+    return Real{2} / (Real{1} + std::sin(angle));
 }
 
+template <typename Real>
 void smooth_red_black(
-    Grid2D& phi, const Grid2D& rhs, Real h, Real omega, std::size_t steps
+    Grid2D<Real>& phi, const Grid2D<Real>& rhs, Real h, Real omega, std::size_t steps
 ) {
     const Real h2 = h * h;
     const std::size_t array_n = phi.size();
@@ -37,28 +39,29 @@ void smooth_red_black(
             for (std::size_t i = 1; i + 1 < array_n; ++i) {
                 const std::size_t j0 = 1 + ((i + color) & 1);
                 for (std::size_t j = j0; j + 1 < array_n; j += 2) {
-                    const Real update = 0.25 * (
+                    const Real update = Real{1} / Real{4} * (
                         phi(i + 1, j) +
                         phi(i - 1, j) +
                         phi(i, j + 1) +
                         phi(i, j - 1) +
                         h2 * rhs(i, j)
                     );
-                    phi(i, j) = (1.0 - omega) * phi(i, j) + omega * update;
+                    phi(i, j) = (Real{1} - omega) * phi(i, j) + omega * update;
                 }
             }
         }
     }
 }
 
-Grid2D residual_full(const Grid2D& phi, const Grid2D& rhs, Real h) {
-    Grid2D result{phi.size()};
-    const Real inv_h2 = 1.0 / (h * h);
+template <typename Real>
+Grid2D<Real> residual_full(const Grid2D<Real>& phi, const Grid2D<Real>& rhs, Real h) {
+    Grid2D<Real> result{phi.size()};
+    const Real inv_h2 = Real{1} / (h * h);
 
     for (std::size_t i = 1; i + 1 < phi.size(); ++i) {
         for (std::size_t j = 1; j + 1 < phi.size(); ++j) {
             result(i, j) = rhs(i, j) - (
-                4.0 * phi(i, j) -
+                Real{4} * phi(i, j) -
                 phi(i + 1, j) -
                 phi(i - 1, j) -
                 phi(i, j + 1) -
@@ -70,18 +73,19 @@ Grid2D residual_full(const Grid2D& phi, const Grid2D& rhs, Real h) {
     return result;
 }
 
-Grid2D restrict_full_weighting(const Grid2D& fine) {
+template <typename Real>
+Grid2D<Real> restrict_full_weighting(const Grid2D<Real>& fine) {
     const std::size_t n = fine.size() - 2;
     const std::size_t nc = (n - 1) / 2;
-    Grid2D coarse{nc + 2};
+    Grid2D<Real> coarse{nc + 2};
 
     for (std::size_t i = 1; i <= nc; ++i) {
         const std::size_t fi = 2 * i;
         for (std::size_t j = 1; j <= nc; ++j) {
             const std::size_t fj = 2 * j;
             coarse(i, j) = (
-                4.0 * fine(fi, fj) +
-                2.0 * (
+                Real{4} * fine(fi, fj) +
+                Real{2} * (
                     fine(fi - 1, fj) +
                     fine(fi + 1, fj) +
                     fine(fi, fj - 1) +
@@ -91,14 +95,15 @@ Grid2D restrict_full_weighting(const Grid2D& fine) {
                 fine(fi - 1, fj + 1) +
                 fine(fi + 1, fj - 1) +
                 fine(fi + 1, fj + 1)
-            ) / 16.0;
+            ) / Real{16};
         }
     }
 
     return coarse;
 }
 
-void prolong_add(const Grid2D& coarse, Grid2D& fine) {
+template <typename Real>
+void prolong_add(const Grid2D<Real>& coarse, Grid2D<Real>& fine) {
     const std::size_t nc = coarse.size() - 2;
 
     for (std::size_t i = 1; i <= nc; ++i) {
@@ -112,7 +117,7 @@ void prolong_add(const Grid2D& coarse, Grid2D& fine) {
         const std::size_t fi = 2 * i + 1;
         for (std::size_t j = 1; j <= nc; ++j) {
             const std::size_t fj = 2 * j;
-            fine(fi, fj) += 0.5 * (coarse(i, j) + coarse(i + 1, j));
+            fine(fi, fj) += Real{1} / Real{2} * (coarse(i, j) + coarse(i + 1, j));
         }
     }
 
@@ -120,7 +125,7 @@ void prolong_add(const Grid2D& coarse, Grid2D& fine) {
         const std::size_t fi = 2 * i;
         for (std::size_t j = 1; j < nc; ++j) {
             const std::size_t fj = 2 * j + 1;
-            fine(fi, fj) += 0.5 * (coarse(i, j) + coarse(i, j + 1));
+            fine(fi, fj) += Real{1} / Real{2} * (coarse(i, j) + coarse(i, j + 1));
         }
     }
 
@@ -128,7 +133,7 @@ void prolong_add(const Grid2D& coarse, Grid2D& fine) {
         const std::size_t fi = 2 * i + 1;
         for (std::size_t j = 1; j < nc; ++j) {
             const std::size_t fj = 2 * j + 1;
-            fine(fi, fj) += 0.25 * (
+            fine(fi, fj) += Real{1} / Real{4} * (
                 coarse(i, j) +
                 coarse(i + 1, j) +
                 coarse(i, j + 1) +
@@ -138,14 +143,15 @@ void prolong_add(const Grid2D& coarse, Grid2D& fine) {
     }
 }
 
-void solve_coarsest_exact(Grid2D& phi, const Grid2D& rhs, Real h) {
+template <typename Real>
+void solve_coarsest_exact(Grid2D<Real>& phi, const Grid2D<Real>& rhs, Real h) {
     const std::size_t n = rhs.size() - 2;
     const std::size_t m = n * n;
-    const Real inv_h2 = 1.0 / (h * h);
+    const Real inv_h2 = Real{1} / (h * h);
 
-    std::vector<Real> a(m * m, 0.0);
-    std::vector<Real> b(m, 0.0);
-    std::vector<Real> x(m, 0.0);
+    std::vector<Real> a(m * m, Real{});
+    std::vector<Real> b(m, Real{});
+    std::vector<Real> x(m, Real{});
 
     const auto index = [n](std::size_t i, std::size_t j) {
         return i * n + j;
@@ -154,7 +160,7 @@ void solve_coarsest_exact(Grid2D& phi, const Grid2D& rhs, Real h) {
     for (std::size_t i = 0; i < n; ++i) {
         for (std::size_t j = 0; j < n; ++j) {
             const std::size_t row = index(i, j);
-            a[row * m + row] = 4.0 * inv_h2;
+            a[row * m + row] = Real{4} * inv_h2;
             if (i > 0) {
                 a[row * m + index(i - 1, j)] = -inv_h2;
             }
@@ -197,15 +203,17 @@ void solve_coarsest_exact(Grid2D& phi, const Grid2D& rhs, Real h) {
     }
 }
 
+template <typename Real>
 void solve_coarsest_sor(
-    Grid2D& phi, const Grid2D& rhs, Real h, Real omega, std::size_t steps
+    Grid2D<Real>& phi, const Grid2D<Real>& rhs, Real h, Real omega, std::size_t steps
 ) {
     smooth_red_black(phi, rhs, h, omega, steps);
 }
 
+template <typename Real>
 void mg_cycle(
-    Grid2D& phi,
-    const Grid2D& rhs,
+    Grid2D<Real>& phi,
+    const Grid2D<Real>& rhs,
     Real h,
     Real omega,
     std::size_t nu,
@@ -225,21 +233,22 @@ void mg_cycle(
 
     smooth_red_black(phi, rhs, h, omega, nu);
 
-    Grid2D coarse_rhs = restrict_full_weighting(residual_full(phi, rhs, h));
-    Grid2D coarse_err{coarse_rhs.size()};
-    mg_cycle(coarse_err, coarse_rhs, 2.0 * h, omega, nu, cycle, coarse_mode, coarse_steps);
+    Grid2D<Real> coarse_rhs = restrict_full_weighting(residual_full(phi, rhs, h));
+    Grid2D<Real> coarse_err{coarse_rhs.size()};
+    mg_cycle(coarse_err, coarse_rhs, Real{2} * h, omega, nu, cycle, coarse_mode, coarse_steps);
     if (cycle == MGCycle::W) {
-        mg_cycle(coarse_err, coarse_rhs, 2.0 * h, omega, nu, cycle, coarse_mode, coarse_steps);
+        mg_cycle(coarse_err, coarse_rhs, Real{2} * h, omega, nu, cycle, coarse_mode, coarse_steps);
     }
     prolong_add(coarse_err, phi);
 
     smooth_red_black(phi, rhs, h, omega, nu);
 }
 
+template <typename Real>
 void validate_mg_inputs(
-    const Problem2D& problem, const MGOptions& options, CoarseSolve coarse_mode
+    const Problem2D<Real>& problem, const MGOptions<Real>& options, CoarseSolve coarse_mode
 ) {
-    if (options.tol <= 0.0) {
+    if (options.tol <= Real{}) {
         throw std::invalid_argument("tol must be positive");
     }
     if (options.max_iter < 1) {
@@ -260,13 +269,14 @@ void validate_mg_inputs(
     }
 }
 
+template <typename Real>
 SolveResult solve_mg_impl(
-    const Problem2D& problem, const MGOptions& options, CoarseSolve coarse_mode
+    const Problem2D<Real>& problem, const MGOptions<Real>& options, CoarseSolve coarse_mode
 ) {
     validate_mg_inputs(problem, options, coarse_mode);
 
-    const Real omega = default_sor_omega(problem.interior_n);
-    Grid2D phi = problem.phi0;
+    const Real omega = default_sor_omega<Real>(problem.interior_n);
+    Grid2D<Real> phi = problem.phi0;
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
         mg_cycle(
@@ -282,21 +292,28 @@ SolveResult solve_mg_impl(
 
         const Real res = residual_l2(problem, phi);
         if (res <= options.tol) {
-            return {std::move(phi), iteration, res};
+            return make_solve_result(std::move(phi), iteration, res);
         }
     }
 
-    return {std::move(phi), options.max_iter, residual_l2(problem, phi)};
+    return make_solve_result(std::move(phi), options.max_iter, residual_l2(problem, phi));
 }
 
 } // namespace
 
-SolveResult solve_mg_exact(const Problem2D& problem, const MGOptions& options) {
+template <typename Real>
+SolveResult solve_mg_exact(const Problem2D<Real>& problem, const MGOptions<Real>& options) {
     return solve_mg_impl(problem, options, CoarseSolve::Exact);
 }
 
-SolveResult solve_mg_sor(const Problem2D& problem, const MGOptions& options) {
+template <typename Real>
+SolveResult solve_mg_sor(const Problem2D<Real>& problem, const MGOptions<Real>& options) {
     return solve_mg_impl(problem, options, CoarseSolve::Sor);
 }
+
+template SolveResult solve_mg_exact<float>(const Problem2D<float>&, const MGOptions<float>&);
+template SolveResult solve_mg_exact<double>(const Problem2D<double>&, const MGOptions<double>&);
+template SolveResult solve_mg_sor<float>(const Problem2D<float>&, const MGOptions<float>&);
+template SolveResult solve_mg_sor<double>(const Problem2D<double>&, const MGOptions<double>&);
 
 } // namespace poisson
