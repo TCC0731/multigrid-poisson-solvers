@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import numpy as np
 
-from operators import residual
+from solvers.utils import _relative_physical_residual_l2
 
 
 def residual_l2(problem, phi: np.ndarray) -> float:
-    return problem.h * np.linalg.norm(residual(phi, problem.rhs, problem.h))
+    return float(
+        _relative_physical_residual_l2(phi, problem.rhs, problem.h)
+    )
 
 
 def error_metrics(problem, phi: np.ndarray) -> tuple[float, float]:
