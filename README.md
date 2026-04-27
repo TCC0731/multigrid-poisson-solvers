@@ -187,6 +187,7 @@ The C++ baseline is covered by a small GTest suite built as `poisson_tests` and 
 Configure and build the C++ targets with CMake:
 
 ```bash
+cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
 

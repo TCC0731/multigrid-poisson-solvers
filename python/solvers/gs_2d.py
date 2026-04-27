@@ -1,25 +1,8 @@
 from __future__ import annotations
 
-import numpy as np
 from numba import njit
 
-
-@njit(cache=True)
-def _residual_l2(phi, rhs, h):
-    inv_h2 = 1.0 / (h * h)
-    total = 0.0
-    n = phi.shape[0] - 2
-    for i in range(1, n + 1):
-        for j in range(1, n + 1):
-            r = rhs[i, j] - (
-                4.0 * phi[i, j]
-                - phi[i + 1, j]
-                - phi[i - 1, j]
-                - phi[i, j + 1]
-                - phi[i, j - 1]
-            ) * inv_h2
-            total += r * r
-    return h * np.sqrt(total)
+from solvers.utils import _relative_physical_residual_l2
 
 
 @njit(cache=True)
@@ -38,10 +21,10 @@ def _solve_rb(phi, rhs, h, tol, max_iter, omega):
                         + phi[i, j - 1]
                         + h2 * rhs[i, j]
                     )
-        res = _residual_l2(phi, rhs, h)
+        res = _relative_physical_residual_l2(phi, rhs, h)
         if res <= tol:
             return phi, iteration, res
-    return phi, max_iter, _residual_l2(phi, rhs, h)
+    return phi, max_iter, _relative_physical_residual_l2(phi, rhs, h)
 
 
 def solve(problem, tol=1e-10, max_iter=20000):
