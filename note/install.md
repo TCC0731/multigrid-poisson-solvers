@@ -55,7 +55,7 @@ These are the common Python packages used for numerical computing, plotting, tes
 - `ipykernel`: Jupyter kernel support
 
 ```bash
-conda install -y numpy scipy numba matplotlib pandas tqdm pytest ipykernel
+conda install -y numpy scipy numba matplotlib pandas tqdm pytest ipykernel gtest
 ```
 
 Verify that Python and the packages load correctly:

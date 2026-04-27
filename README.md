@@ -51,6 +51,7 @@ The initial development focuses only on the 2D Poisson equation.
 | Backend        | Jacobi 2D | Gauss-Seidel 2D | SOR 2D | Multigrid 2D |
 | -------------- | --------: | --------------: | -----: | -----------: |
 | Python + Numba |       Yes |             Yes |    Yes |          Yes |
+| C++ (pure)     |       Yes |             Yes |    Yes |          Yes |
 | C++ + OpenMP   |        No |              No |     No |           No |
 | CUDA           |        No |              No |     No |           No |
 
@@ -67,7 +68,9 @@ multigrid-poisson-solvers/
 │
 ├── note/
 │   ├── Architecture.md
-│   └── install.md
+│   ├── cpp_code_analysis.md
+│   ├── install.md
+│   └── python_code_analysis.md
 │
 ├── python/
 │   ├── run_poisson.py
@@ -87,6 +90,28 @@ multigrid-poisson-solvers/
 ├── cpp/
 │   ├── include/
 │   │   └── poisson/
+│   │       ├── grid2d.hpp
+│   │       ├── gs.hpp
+│   │       ├── jacobi.hpp
+│   │       ├── metrics.hpp
+│   │       ├── mg.hpp
+│   │       ├── operators.hpp
+│   │       ├── problem.hpp
+│   │       ├── red_black.hpp
+│   │       ├── solver.hpp
+│   │       ├── sor.hpp
+│   │       └── validation.hpp
+│   ├── src/
+│   │   ├── gs.cpp
+│   │   ├── jacobi.cpp
+│   │   ├── main.cpp
+│   │   ├── metrics.cpp
+│   │   ├── mg.cpp
+│   │   ├── operators.cpp
+│   │   ├── problem.cpp
+│   │   ├── red_black.cpp
+│   │   ├── sor.cpp
+│   │   └── validation.cpp
 │   └── omp/
 │       ├── main_jacobi_2d.cpp
 │       ├── main_rbgs_2d.cpp
@@ -109,6 +134,8 @@ multigrid-poisson-solvers/
 ├── tests/
 │   ├── conftest.py
 │   ├── test_python.py
+│   ├── cpp/
+│   │   └── test_poisson.cpp
 │   └── reference/
 │
 └── results/
@@ -145,10 +172,27 @@ These cases provide simple tests for residual convergence, boundary-condition ha
 
 ## Output and Benchmarking
 
-The current Python runner in `python/run_poisson.py` reports the following CSV columns:
+The current Python runner in `python/run_poisson.py` and the C++ baseline in `cpp/src/main.cpp` report the following CSV columns:
 
 ```text
 solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms
 ```
 
-The output format should remain consistent across the Python, C++ OpenMP, and CUDA implementations as they are added.
+The same output format should remain consistent for the future C++ OpenMP and CUDA implementations.
+
+The C++ baseline is covered by a small GTest suite built as `poisson_tests` and executed through CTest.
+
+## C++ Build and Test
+
+Configure and build the C++ targets with CMake:
+
+```bash
+cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+```
+
+Run the C++ test suite with CTest:
+
+```bash
+ctest --test-dir build --output-on-failure
+```
