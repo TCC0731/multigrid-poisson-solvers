@@ -6,23 +6,7 @@ from functools import lru_cache
 import numpy as np
 from numba import njit
 
-
-@njit(cache=True)
-def _residual_l2(phi, rhs, h):
-    inv_h2 = 1.0 / (h * h)
-    total = 0.0
-    n = phi.shape[0] - 2
-    for i in range(1, n + 1):
-        for j in range(1, n + 1):
-            r = rhs[i, j] - (
-                4.0 * phi[i, j]
-                - phi[i + 1, j]
-                - phi[i - 1, j]
-                - phi[i, j + 1]
-                - phi[i, j - 1]
-            ) * inv_h2
-            total += r * r
-    return h * np.sqrt(total)
+from solvers.utils import _relative_physical_residual_l2
 
 
 @njit(cache=True)
@@ -178,7 +162,7 @@ def _w_cycle(phi, rhs, h, nu, omega):
     return phi
 
 
-def solve(problem, tol=1e-10, max_iter=20000, cycle="v", nu=2, omega=None):
+def solve(problem, tol=1e-10, max_iter=20000, cycle="v", nu=2, omega=1):
     if omega is None:
         omega = 2.0 / (1.0 + math.sin(math.pi / (problem.grid_size + 1)))
     cycle = cycle.lower()
@@ -190,10 +174,10 @@ def solve(problem, tol=1e-10, max_iter=20000, cycle="v", nu=2, omega=None):
         raise ValueError("cycle must be 'v' or 'w'")
 
     phi = problem.phi0.copy()
-    residual = _residual_l2(phi, problem.rhs, problem.h)
+    residual = _relative_physical_residual_l2(phi, problem.rhs, problem.h)
     iterations = 0
     while iterations < max_iter and residual > tol:
         phi = step(phi, problem.rhs, problem.h, nu, omega)
         iterations += 1
-        residual = _residual_l2(phi, problem.rhs, problem.h)
+        residual = _relative_physical_residual_l2(phi, problem.rhs, problem.h)
     return phi, iterations, float(residual)
