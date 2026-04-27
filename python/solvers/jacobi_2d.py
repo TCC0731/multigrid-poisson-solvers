@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 from numba import njit
 
-from solvers.utils import _relative_residual_l2, _residual_l2
+from solvers.utils import _relative_residual_l2, _residual_l2, _residual
 
 @njit(cache=True)
 def _solve_jacobi(phi, rhs, h, tol, max_iter):
@@ -20,11 +20,11 @@ def _solve_jacobi(phi, rhs, h, tol, max_iter):
                     + phi[i, j - 1]
                     + h2 * rhs[i, j]
                 )
-        res = _residual_l2(work, rhs, h)
+        res = _residual(work, rhs, h)
         if res <= tol:
             return work, iteration, res
         phi, work = work, phi
-    return phi, max_iter, _residual_l2(phi, rhs, h)
+    return phi, max_iter, _residual(phi, rhs, h)
 
 
 def solve(problem, tol=1e-10, max_iter=20000):

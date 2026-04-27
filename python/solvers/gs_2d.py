@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 from numba import njit
 
-from solvers.utils import _relative_residual_l2, _residual_l2
+from solvers.utils import _relative_residual_l2, _residual_l2,_residual
 
 
 @njit(cache=True)
@@ -22,10 +22,10 @@ def _solve_rb(phi, rhs, h, tol, max_iter, omega):
                         + phi[i, j - 1]
                         + h2 * rhs[i, j]
                     )
-        res = _residual_l2(phi, rhs, h)
+        res = _residual(phi, rhs, h)
         if res <= tol:
             return phi, iteration, res
-    return phi, max_iter, _residual_l2(phi, rhs, h)
+    return phi, max_iter, _residual(phi, rhs, h)
 
 
 def solve(problem, tol=1e-10, max_iter=20000):

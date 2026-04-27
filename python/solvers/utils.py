@@ -21,6 +21,47 @@ def _residual_l2(phi, rhs, h):
     return h * np.sqrt(total)
 
 @njit(cache=True)
+def _residual_l2_h(phi, rhs, h):
+    h2 = h * h
+    total = 0.0
+    n = phi.shape[0] - 2
+    for i in range(1, n + 1):
+        for j in range(1, n + 1):
+            r = h2 * rhs[i, j] - (
+                4.0 * phi[i, j]
+                - phi[i + 1, j]
+                - phi[i - 1, j]
+                - phi[i, j + 1]
+                - phi[i, j - 1]
+            )
+            total += r * r
+    return np.sqrt(total) / h
+
+@njit(cache=True)
+def _relative_residual_l2_1(phi, rhs, h):
+    inv_h2 = 1.0 / (h * h)
+
+    res_total = 0.0
+    rhs_total = 0.0
+
+    n = phi.shape[0] - 2
+
+    for i in range(1, n + 1):
+        for j in range(1, n + 1):
+            r = rhs[i, j] - (
+                4.0 * phi[i, j]
+                - phi[i + 1, j]
+                - phi[i - 1, j]
+                - phi[i, j + 1]
+                - phi[i, j - 1]
+            ) * inv_h2
+
+            res_total += r * r
+            rhs_total += rhs[i, j] * rhs[i, j]
+
+    return np.sqrt(res_total / rhs_total)
+
+@njit(cache=True)
 def _relative_residual_l2(phi: np.ndarray, rhs: np.ndarray, h: float) -> float:
     """
     Calculate the relative backward-error L2 norm for the 2D Poisson equation
@@ -60,3 +101,5 @@ def _relative_residual_l2(phi: np.ndarray, rhs: np.ndarray, h: float) -> float:
     if sum_s2 == 0:
         return 0.0
     return np.sqrt(sum_d2) / np.sqrt(sum_s2)
+
+_residual = _residual_l2_h

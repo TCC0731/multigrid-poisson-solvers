@@ -1,0 +1,4 @@
+python results/python/mg_compare/run_and_plot_mg_compare.py
+python results/python/mg_compare_float32/run_and_plot_mg_compare_float32.py
+python results/python/solver_comparison/run_and_plot.py
+python results/python/solver_comparison_float32/run_and_plot_float32.py

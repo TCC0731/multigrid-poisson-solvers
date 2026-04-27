@@ -6,7 +6,7 @@ from functools import lru_cache
 import numpy as np
 from numba import njit
 
-from solvers.utils import _relative_residual_l2, _residual_l2
+from solvers.utils import _relative_residual_l2, _residual_l2, _residual
 
 @njit(cache=True)
 def _residual_full(phi, rhs, h):
@@ -173,10 +173,10 @@ def solve(problem, tol=1e-10, max_iter=20000, cycle="v", nu=2, omega=1):
         raise ValueError("cycle must be 'v' or 'w'")
 
     phi = problem.phi0.copy()
-    residual = _residual_l2(phi, problem.rhs, problem.h)
+    residual = _residual(phi, problem.rhs, problem.h)
     iterations = 0
     while iterations < max_iter and residual > tol:
         phi = step(phi, problem.rhs, problem.h, nu, omega)
         iterations += 1
-        residual = _residual_l2(phi, problem.rhs, problem.h)
+        residual = _residual(phi, problem.rhs, problem.h)
     return phi, iterations, float(residual)
