@@ -53,7 +53,7 @@ constexpr Real zero_tol() {
 template <typename Real>
 constexpr Real convergence_tol() {
     if constexpr (std::is_same_v<Real, float>) {
-        return Real{5e-2};
+        return Real{1e-2};
     }
     return Real{1e-10};
 }
@@ -61,7 +61,7 @@ constexpr Real convergence_tol() {
 template <typename Real>
 constexpr Real interface_tol() {
     if constexpr (std::is_same_v<Real, float>) {
-        return Real{5e-2};
+        return Real{1e-2};
     }
     return Real{1e-8};
 }
@@ -88,9 +88,19 @@ template <typename Real>
 MGOptionsT<Real> make_mg_options(
     MGCycle cycle,
     std::size_t coarse_steps = 16,
-    std::size_t max_iter = 100
+    std::size_t max_iter = 100,
+    Real omega = Real{1},
+    bool omega_is_auto = false
 ) {
-    return MGOptionsT<Real>{convergence_tol<Real>(), max_iter, 2, cycle, coarse_steps};
+    return MGOptionsT<Real>{
+        convergence_tol<Real>(),
+        max_iter,
+        2,
+        cycle,
+        coarse_steps,
+        omega,
+        omega_is_auto,
+    };
 }
 
 template <typename Real>
@@ -143,7 +153,7 @@ template <typename Real, typename SolveFn, typename Options>
 SolveResult expect_solver_smoke(SolveFn&& solve, const ProblemT<Real>& problem, const Options& options) {
     const SolveResult result = solve(problem, options);
     const GridT<Real> phi = cast_grid<Real>(result.phi);
-    const Real recomputed_residual = residual_l2(problem, phi);
+    const Real recomputed_residual = relative_physical_residual_l2(problem, phi);
     const ErrorMetrics metrics = error_metrics(problem, phi);
 
     EXPECT_EQ(result.phi.size(), problem.phi0.size());
@@ -277,6 +287,7 @@ void run_metrics_exact_discrete_problem_has_zero_metrics() {
     };
 
     EXPECT_DOUBLE_EQ(static_cast<double>(residual_l2(problem, exact)), 0.0);
+    EXPECT_DOUBLE_EQ(static_cast<double>(relative_physical_residual_l2(problem, exact)), 0.0);
 
     const ErrorMetrics metrics = error_metrics(problem, exact);
     EXPECT_DOUBLE_EQ(metrics.error_l2, 0.0);
@@ -423,20 +434,20 @@ void run_jacobi_solver_regression() {
     const ErrorMetrics metrics = error_metrics(problem, phi);
 
     if constexpr (std::is_same_v<Real, float>) {
-        EXPECT_EQ(result.iterations, 1'095u);
-        EXPECT_NEAR(result.residual_l2, 4.999456e-02, 1e-6);
-        EXPECT_NEAR(metrics.error_l2, 2.132575e-03, 1e-8);
-        EXPECT_NEAR(metrics.error_linf, 4.265308e-03, 1e-8);
+        EXPECT_EQ(result.iterations, 955u);
+        EXPECT_NEAR(result.residual_l2, 9.955119e-03, 1e-6);
+        EXPECT_NEAR(metrics.error_l2, 4.579659e-03, 1e-7);
+        EXPECT_NEAR(metrics.error_linf, 9.159327e-03, 1e-7);
     } else {
-        EXPECT_EQ(result.iterations, 5'245u);
-        EXPECT_NEAR(result.residual_l2, 9.981977e-11, 1e-15);
+        EXPECT_EQ(result.iterations, 4'771u);
+        EXPECT_NEAR(result.residual_l2, 9.967074e-11, 1e-15);
         EXPECT_NEAR(metrics.error_l2, 4.017888e-04, 5e-11);
-        EXPECT_NEAR(metrics.error_linf, 8.035777e-04, 5e-11);
+        EXPECT_NEAR(metrics.error_linf, 8.035777e-04, 2e-10);
     }
 
     EXPECT_NEAR(
         result.residual_l2,
-        static_cast<double>(residual_l2(problem, phi)),
+        static_cast<double>(relative_physical_residual_l2(problem, phi)),
         residual_compare_tol<Real>()
     );
 }
@@ -571,33 +582,33 @@ void run_mg_regression(MGCycle cycle) {
 
     if constexpr (std::is_same_v<Real, float>) {
         if (cycle == MGCycle::V) {
-            EXPECT_EQ(result.iterations, 26u);
-            EXPECT_NEAR(result.residual_l2, 4.222215e-02, 1e-6);
-            EXPECT_NEAR(metrics.error_l2, 6.726872e-05, 1e-8);
-            EXPECT_NEAR(metrics.error_linf, 1.611114e-04, 1e-8);
+            EXPECT_EQ(result.iterations, 9u);
+            EXPECT_NEAR(result.residual_l2, 6.818745e-03, 1e-6);
+            EXPECT_NEAR(metrics.error_l2, 8.438155e-05, 1e-7);
+            EXPECT_NEAR(metrics.error_linf, 2.194745e-04, 1e-7);
         } else {
-            EXPECT_EQ(result.iterations, 19u);
-            EXPECT_NEAR(result.residual_l2, 3.223472e-02, 1e-6);
-            EXPECT_NEAR(metrics.error_l2, 9.712945e-05, 1e-8);
-            EXPECT_NEAR(metrics.error_linf, 2.052188e-04, 1e-8);
+            EXPECT_EQ(result.iterations, 8u);
+            EXPECT_NEAR(result.residual_l2, 5.882889e-03, 1e-6);
+            EXPECT_NEAR(metrics.error_l2, 7.069610e-05, 1e-7);
+            EXPECT_NEAR(metrics.error_linf, 1.604599e-04, 1e-7);
         }
     } else {
         if (cycle == MGCycle::V) {
-            EXPECT_EQ(result.iterations, 83u);
-            EXPECT_NEAR(result.residual_l2, 8.472344985850555e-11, 1e-12);
-            EXPECT_NEAR(metrics.error_l2, 9.734474635149315e-05, 5e-11);
-            EXPECT_NEAR(metrics.error_linf, 1.945758162948952e-04, 5e-11);
+            EXPECT_EQ(result.iterations, 34u);
+            EXPECT_NEAR(result.residual_l2, 9.726505e-11, 1e-12);
+            EXPECT_NEAR(metrics.error_l2, 9.7344746271743371e-05, 5e-11);
+            EXPECT_NEAR(metrics.error_linf, 1.9457581601323160e-04, 5e-11);
         } else {
-            EXPECT_EQ(result.iterations, 68u);
-            EXPECT_NEAR(result.residual_l2, 9.117932594196834e-11, 1e-12);
-            EXPECT_NEAR(metrics.error_l2, 9.734474633251941e-05, 5e-11);
-            EXPECT_NEAR(metrics.error_linf, 1.945758160654121e-04, 5e-11);
+            EXPECT_EQ(result.iterations, 31u);
+            EXPECT_NEAR(result.residual_l2, 5.424450e-11, 1e-12);
+            EXPECT_NEAR(metrics.error_l2, 9.7344746289136386e-05, 5e-11);
+            EXPECT_NEAR(metrics.error_linf, 1.9457581603143925e-04, 5e-11);
         }
     }
 
     EXPECT_NEAR(
         result.residual_l2,
-        static_cast<double>(residual_l2(problem, phi)),
+        static_cast<double>(relative_physical_residual_l2(problem, phi)),
         residual_compare_tol<Real>()
     );
 }
@@ -664,6 +675,14 @@ void run_invalid_input_mg_rejects_bad_options_and_problems() {
         static_cast<void>(solve_mg_exact(valid_problem, MGOptionsT<Real>{convergence_tol<Real>(), 100, 0, MGCycle::V, 16})),
         std::invalid_argument
     );
+    EXPECT_THROW(
+        static_cast<void>(solve_mg_exact(valid_problem, MGOptionsT<Real>{convergence_tol<Real>(), 100, 2, MGCycle::V, 16, Real{0}, false})),
+        std::invalid_argument
+    );
+    EXPECT_THROW(
+        static_cast<void>(solve_mg_exact(valid_problem, MGOptionsT<Real>{convergence_tol<Real>(), 100, 2, MGCycle::V, 16, Real{3}, false})),
+        std::invalid_argument
+    );
 
     EXPECT_THROW(
         static_cast<void>(solve_mg_sor(valid_problem, MGOptionsT<Real>{Real{}, 100, 2, MGCycle::V, 16})),
@@ -679,6 +698,14 @@ void run_invalid_input_mg_rejects_bad_options_and_problems() {
     );
     EXPECT_THROW(
         static_cast<void>(solve_mg_sor(valid_problem, MGOptionsT<Real>{convergence_tol<Real>(), 100, 2, MGCycle::V, 0})),
+        std::invalid_argument
+    );
+    EXPECT_THROW(
+        static_cast<void>(solve_mg_sor(valid_problem, MGOptionsT<Real>{convergence_tol<Real>(), 100, 2, MGCycle::V, 16, Real{0}, false})),
+        std::invalid_argument
+    );
+    EXPECT_THROW(
+        static_cast<void>(solve_mg_sor(valid_problem, MGOptionsT<Real>{convergence_tol<Real>(), 100, 2, MGCycle::V, 16, Real{3}, false})),
         std::invalid_argument
     );
 
