@@ -16,6 +16,8 @@ struct MGOptions {
     std::size_t nu{2};
     MGCycle cycle{MGCycle::V};
     std::size_t coarse_steps{16};
+    Real omega{Real{1}};
+    bool omega_is_auto{false};
 };
 
 template <typename Real>

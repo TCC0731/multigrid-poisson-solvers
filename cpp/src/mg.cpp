@@ -28,6 +28,14 @@ Real default_sor_omega(std::size_t interior_n) {
 }
 
 template <typename Real>
+Real effective_mg_omega(const Problem2D<Real>& problem, const MGOptions<Real>& options) {
+    if (options.omega_is_auto) {
+        return default_sor_omega<Real>(problem.interior_n);
+    }
+    return options.omega;
+}
+
+template <typename Real>
 void smooth_red_black(
     Grid2D<Real>& phi, const Grid2D<Real>& rhs, Real h, Real omega, std::size_t steps
 ) {
@@ -260,6 +268,9 @@ void validate_mg_inputs(
     if (coarse_mode == CoarseSolve::Sor && options.coarse_steps < 1) {
         throw std::invalid_argument("coarse_steps must be positive");
     }
+    if (!options.omega_is_auto && (options.omega <= Real{} || options.omega > Real{2})) {
+        throw std::invalid_argument("omega must be in (0, 2]");
+    }
     if (problem.array_n() < 3) {
         throw std::invalid_argument("problem must include at least one interior cell");
     }
@@ -275,7 +286,7 @@ SolveResult solve_mg_impl(
 ) {
     validate_mg_inputs(problem, options, coarse_mode);
 
-    const Real omega = default_sor_omega<Real>(problem.interior_n);
+    const Real omega = effective_mg_omega(problem, options);
     Grid2D<Real> phi = problem.phi0;
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
@@ -290,13 +301,17 @@ SolveResult solve_mg_impl(
             options.coarse_steps
         );
 
-        const Real res = residual_l2(problem, phi);
+        const Real res = relative_physical_residual_l2(problem, phi);
         if (res <= options.tol) {
             return make_solve_result(std::move(phi), iteration, res);
         }
     }
 
-    return make_solve_result(std::move(phi), options.max_iter, residual_l2(problem, phi));
+    return make_solve_result(
+        std::move(phi),
+        options.max_iter,
+        relative_physical_residual_l2(problem, phi)
+    );
 }
 
 } // namespace
