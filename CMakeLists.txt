@@ -60,6 +60,14 @@ add_executable(poisson_cpp
 target_link_libraries(poisson_cpp PRIVATE poisson_core)
 enable_release_perf_flags(poisson_cpp)
 
+add_executable(poisson_benchmark_cpp
+    benchmark/main.cpp
+)
+
+target_link_libraries(poisson_benchmark_cpp PRIVATE poisson_core)
+target_compile_definitions(poisson_benchmark_cpp PRIVATE POISSON_BENCHMARK_BACKEND_LABEL=cpp20)
+enable_release_perf_flags(poisson_benchmark_cpp)
+
 find_package(OpenMP)
 
 if (OpenMP_CXX_FOUND)
@@ -96,8 +104,16 @@ if (OpenMP_CXX_FOUND)
 
     target_link_libraries(poisson_cpp_omp PRIVATE poisson_omp_core)
     enable_release_perf_flags(poisson_cpp_omp)
+
+    add_executable(poisson_benchmark_omp
+        benchmark/main.cpp
+    )
+
+    target_link_libraries(poisson_benchmark_omp PRIVATE poisson_omp_core)
+    target_compile_definitions(poisson_benchmark_omp PRIVATE POISSON_BENCHMARK_BACKEND_LABEL=cpp20_omp)
+    enable_release_perf_flags(poisson_benchmark_omp)
 else()
-    message(WARNING "OpenMP not found: skipping poisson_cpp_omp target")
+    message(WARNING "OpenMP not found: skipping poisson_cpp_omp and poisson_benchmark_omp targets")
 endif()
 
 if (BUILD_TESTING)
