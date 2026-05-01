@@ -12,6 +12,11 @@ DEFAULT_MARKERS = ("o", "s", "^", "D", "v", "p", "*", "h", "H", "<", ">", "P", "
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_EXECUTABLE = REPO_ROOT / "build" / "poisson_cpp_omp"
+OMP_DEFAULTS = {
+    "OMP_NUM_THREADS": "8",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "cores",
+}
 
 
 def build_markers(names: Sequence[str]) -> dict[str, str]:
@@ -24,6 +29,14 @@ def resolve_executable() -> Path:
     if override:
         return Path(override).expanduser()
     return DEFAULT_EXECUTABLE
+
+
+def resolve_omp_environment() -> dict[str, str]:
+    # Mirror the shell defaults used by results/benchmark/benchmark_omp.sh.
+    for key, value in OMP_DEFAULTS.items():
+        if not os.environ.get(key):
+            os.environ[key] = value
+    return os.environ.copy()
 
 
 def run_solver(
@@ -62,7 +75,13 @@ def run_solver(
     ]
 
     try:
-        completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        completed = subprocess.run(
+            cmd,
+            check=True,
+            capture_output=True,
+            text=True,
+            env=resolve_omp_environment(),
+        )
     except subprocess.CalledProcessError as exc:
         raise RuntimeError(
             "OpenMP benchmark executable failed.\n"
