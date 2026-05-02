@@ -1,0 +1,67 @@
+#include "poisson/jacobi.hpp"
+
+#include "poisson/cuda_utils.hpp"
+#include "poisson/validation.hpp"
+
+#include <stdexcept>
+#include <utility>
+
+namespace poisson {
+namespace {
+
+template <typename Real>
+void validate_jacobi_inputs(const Problem2D<Real>& problem, const SolveOptions<Real>& options) {
+    if (options.tol <= Real{}) {
+        throw std::invalid_argument("tol must be positive");
+    }
+    if (options.max_iter < 1) {
+        throw std::invalid_argument("max_iter must be positive");
+    }
+    if (problem.h <= Real{}) {
+        throw std::invalid_argument("grid spacing h must be positive");
+    }
+    if (
+        problem.exact.size() != problem.rhs.size() ||
+        problem.phi0.size() != problem.rhs.size()
+    ) {
+        throw std::invalid_argument("problem grids must have the same size");
+    }
+    if (problem.array_n() < 3) {
+        throw std::invalid_argument("problem must include at least one interior cell");
+    }
+    const ValidationReport report = validate_problem(problem);
+    if (!report.ok) {
+        throw std::invalid_argument("problem is invalid");
+    }
+}
+
+} // namespace
+
+template <typename Real>
+SolveResult solve_jacobi(const Problem2D<Real>& problem, const SolveOptions<Real>& options) {
+    validate_jacobi_inputs(problem, options);
+    cuda::ensure_device_available();
+
+    cuda::DeviceGrid2D<Real> phi{problem.phi0};
+    const cuda::DeviceGrid2D<Real> rhs{problem.rhs};
+    cuda::DeviceGrid2D<Real> work{problem.phi0};
+
+    for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
+        cuda::run_jacobi_step(phi, rhs, problem.h, work);
+
+        const double residual = cuda::compute_relative_residual(work, rhs, problem.h);
+        if (residual <= static_cast<double>(options.tol)) {
+            return make_solve_result(work.download(), iteration, static_cast<Real>(residual));
+        }
+
+        std::swap(phi, work);
+    }
+
+    const double residual = cuda::compute_relative_residual(phi, rhs, problem.h);
+    return make_solve_result(phi.download(), options.max_iter, static_cast<Real>(residual));
+}
+
+template SolveResult solve_jacobi<float>(const Problem2D<float>&, const SolveOptions<float>&);
+template SolveResult solve_jacobi<double>(const Problem2D<double>&, const SolveOptions<double>&);
+
+} // namespace poisson
