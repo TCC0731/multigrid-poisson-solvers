@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 project(multigrid_poisson_solvers LANGUAGES CXX)
 
 include(CTest)
+include(CheckLanguage)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -114,6 +115,60 @@ if (OpenMP_CXX_FOUND)
     enable_release_perf_flags(poisson_benchmark_omp)
 else()
     message(WARNING "OpenMP not found: skipping poisson_cpp_omp and poisson_benchmark_omp targets")
+endif()
+
+check_language(CUDA)
+
+if (CMAKE_CUDA_COMPILER)
+    if (NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+        set(CMAKE_CUDA_ARCHITECTURES 89 CACHE STRING "CUDA architectures to build for")
+    endif()
+
+    enable_language(CUDA)
+
+    add_library(poisson_cuda_core
+        cuda/src/gs.cu
+        cuda/src/jacobi.cu
+        cuda/src/metrics.cu
+        cuda/src/mg.cu
+        cuda/src/operators.cu
+        cuda/src/problem.cu
+        cuda/src/sor.cu
+        cuda/src/validation.cu
+    )
+
+    target_include_directories(poisson_cuda_core
+        PUBLIC
+            ${CMAKE_CURRENT_SOURCE_DIR}/cuda/include
+    )
+
+    target_compile_features(poisson_cuda_core PUBLIC cxx_std_17)
+    set_target_properties(poisson_cuda_core PROPERTIES
+        CUDA_STANDARD 17
+        CUDA_STANDARD_REQUIRED ON
+        CUDA_SEPARABLE_COMPILATION ON
+    )
+
+    add_executable(poisson_cuda
+        cuda/src/main.cu
+    )
+
+    target_link_libraries(poisson_cuda PRIVATE poisson_cuda_core)
+    target_compile_features(poisson_cuda PRIVATE cxx_std_17)
+    set_target_properties(poisson_cuda PROPERTIES
+        CUDA_STANDARD 17
+        CUDA_STANDARD_REQUIRED ON
+    )
+
+    add_executable(poisson_benchmark_cuda
+        benchmark/main.cpp
+    )
+
+    target_link_libraries(poisson_benchmark_cuda PRIVATE poisson_cuda_core)
+    target_compile_definitions(poisson_benchmark_cuda PRIVATE POISSON_BENCHMARK_BACKEND_LABEL=cuda)
+    target_compile_features(poisson_benchmark_cuda PRIVATE cxx_std_20)
+else()
+    message(WARNING "CUDA compiler not found: skipping poisson_cuda and poisson_benchmark_cuda targets")
 endif()
 
 if (BUILD_TESTING)
