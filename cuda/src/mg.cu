@@ -58,31 +58,25 @@ void solve_coarsest_exact(
         return i * n + j;
     };
 
+    // The coarsest MG solve is applied to the error equation, so the coarse
+    // correction uses homogeneous Dirichlet boundary conditions.
     for (std::size_t i = 0; i < n; ++i) {
         for (std::size_t j = 0; j < n; ++j) {
             const std::size_t row = index(i, j);
             a[row * m + row] = Real{4} * inv_h2;
             if (i > 0) {
                 a[row * m + index(i - 1, j)] = -inv_h2;
-            } else {
-                b[row] += inv_h2 * host_phi.unchecked(0, j + 1);
             }
             if (i + 1 < n) {
                 a[row * m + index(i + 1, j)] = -inv_h2;
-            } else {
-                b[row] += inv_h2 * host_phi.unchecked(n + 1, j + 1);
             }
             if (j > 0) {
                 a[row * m + index(i, j - 1)] = -inv_h2;
-            } else {
-                b[row] += inv_h2 * host_phi.unchecked(i + 1, 0);
             }
             if (j + 1 < n) {
                 a[row * m + index(i, j + 1)] = -inv_h2;
-            } else {
-                b[row] += inv_h2 * host_phi.unchecked(i + 1, n + 1);
             }
-            b[row] += host_rhs.unchecked(i + 1, j + 1);
+            b[row] = host_rhs.unchecked(i + 1, j + 1);
         }
     }
 
