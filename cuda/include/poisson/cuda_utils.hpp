@@ -245,8 +245,10 @@ void run_rb_sor_steps(
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
     }
 
+    const std::size_t interior_n = phi.size() - 2;
     const dim3 block = cuda_kernels::make_block_2d();
-    const dim3 grid = cuda_kernels::make_grid_2d(phi.size() - 2, phi.size() - 2, block);
+    const std::size_t active_columns = (interior_n + 1) / 2;
+    const dim3 grid = cuda_kernels::make_grid_2d(active_columns, interior_n, block);
     const Real h2 = h * h;
 
     for (std::size_t step = 0; step < steps; ++step) {
