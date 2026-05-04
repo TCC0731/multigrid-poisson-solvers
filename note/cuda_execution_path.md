@@ -347,6 +347,7 @@ MG 的執行順序是目前最複雜的部分。
 4. 再 upload 回 device
 
 所以 MG 的最深層會「回到 CPU 做 exact solve」。
+因為這裡解的是 error equation，所以 coarse correction 的邊界條件要視為 homogeneous Dirichlet，也就是邊界固定為 0。
 
 ### 12.2 V-cycle
 
@@ -452,4 +453,3 @@ benchmark 的順序是：
 3. 每個 solver 都透過 `cuda_utils.hpp` 觸發 kernel
 4. MG 會在 V/W-cycle、exact/sor coarse solve、pre/post smoothing 之間再做第二層分支
 5. 最後把結果下載回 host，算 error metrics，輸出 CSV
-
