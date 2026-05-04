@@ -33,8 +33,10 @@ inline void check(cudaError_t status, const char* expr, const char* file, int li
 }
 
 inline void check_kernel(const char* kernel_name) {
-    check(cudaGetLastError(), kernel_name, __FILE__, __LINE__);
+    check(cudaPeekAtLastError(), kernel_name, __FILE__, __LINE__);
+#ifndef NDEBUG
     check(cudaDeviceSynchronize(), kernel_name, __FILE__, __LINE__);
+#endif
 }
 
 inline void ensure_device_available() {
