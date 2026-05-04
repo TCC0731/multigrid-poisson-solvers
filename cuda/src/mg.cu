@@ -211,6 +211,7 @@ SolveResult solve_mg_impl(
     const Real omega = effective_mg_omega(problem, options);
     cuda::DeviceGrid2D<Real> phi{problem.phi0};
     const cuda::DeviceGrid2D<Real> rhs{problem.rhs};
+    cuda::RelativeResidualWorkspace residual_workspace{problem.array_n()};
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
         mg_cycle(
@@ -224,13 +225,14 @@ SolveResult solve_mg_impl(
             options.coarse_steps
         );
 
-        const double residual = cuda::compute_relative_residual(phi, rhs, problem.h);
+        const double residual =
+            cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
         if (residual <= static_cast<double>(options.tol)) {
             return make_solve_result(phi.download(), iteration, static_cast<Real>(residual));
         }
     }
 
-    const double residual = cuda::compute_relative_residual(phi, rhs, problem.h);
+    const double residual = cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
     return make_solve_result(phi.download(), options.max_iter, static_cast<Real>(residual));
 }
 

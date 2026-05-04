@@ -1,8 +1,15 @@
 #pragma once
 
+#include <cmath>
+
 #include "common.cuh"
 
 namespace poisson::cuda_kernels {
+
+struct ResidualPair {
+    double residual{0.0};
+    double rhs{0.0};
+};
 
 template <typename Real>
 __global__ void relative_residual_partial_kernel(
@@ -10,12 +17,10 @@ __global__ void relative_residual_partial_kernel(
     const Real* rhs,
     std::size_t array_n,
     Real h2,
-    double* partial_residuals,
-    double* partial_rhs
+    ResidualPair* partial_sums
 ) {
-    extern __shared__ double shared[];
-    double* shared_residuals = shared;
-    double* shared_rhs = shared + blockDim.x;
+    extern __shared__ unsigned char shared_bytes[];
+    auto* shared = reinterpret_cast<ResidualPair*>(shared_bytes);
 
     const std::size_t interior_n = array_n - 2;
     const std::size_t total_points = interior_n * interior_n;
@@ -44,21 +49,68 @@ __global__ void relative_residual_partial_kernel(
         rhs_sum += static_cast<double>(b) * static_cast<double>(b);
     }
 
-    shared_residuals[threadIdx.x] = residual_sum;
-    shared_rhs[threadIdx.x] = rhs_sum;
+    shared[threadIdx.x] = ResidualPair{residual_sum, rhs_sum};
     __syncthreads();
 
     for (unsigned int offset_value = blockDim.x / 2; offset_value > 0; offset_value >>= 1U) {
         if (threadIdx.x < offset_value) {
-            shared_residuals[threadIdx.x] += shared_residuals[threadIdx.x + offset_value];
-            shared_rhs[threadIdx.x] += shared_rhs[threadIdx.x + offset_value];
+            shared[threadIdx.x].residual += shared[threadIdx.x + offset_value].residual;
+            shared[threadIdx.x].rhs += shared[threadIdx.x + offset_value].rhs;
         }
         __syncthreads();
     }
 
     if (threadIdx.x == 0) {
-        partial_residuals[blockIdx.x] = shared_residuals[0];
-        partial_rhs[blockIdx.x] = shared_rhs[0];
+        partial_sums[blockIdx.x] = shared[0];
+    }
+}
+
+template <int Dummy = 0>
+__global__ void reduce_residual_pairs_kernel(
+    const ResidualPair* input, ResidualPair* output, std::size_t count
+) {
+    extern __shared__ unsigned char shared_bytes[];
+    auto* shared = reinterpret_cast<ResidualPair*>(shared_bytes);
+
+    const std::size_t first = static_cast<std::size_t>(blockIdx.x) * blockDim.x * 2 + threadIdx.x;
+    ResidualPair sum{};
+
+    if (first < count) {
+        sum = input[first];
+    }
+
+    const std::size_t second = first + blockDim.x;
+    if (second < count) {
+        sum.residual += input[second].residual;
+        sum.rhs += input[second].rhs;
+    }
+
+    shared[threadIdx.x] = sum;
+    __syncthreads();
+
+    for (unsigned int offset_value = blockDim.x / 2; offset_value > 0; offset_value >>= 1U) {
+        if (threadIdx.x < offset_value) {
+            shared[threadIdx.x].residual += shared[threadIdx.x + offset_value].residual;
+            shared[threadIdx.x].rhs += shared[threadIdx.x + offset_value].rhs;
+        }
+        __syncthreads();
+    }
+
+    if (threadIdx.x == 0) {
+        output[blockIdx.x] = shared[0];
+    }
+}
+
+template <int Dummy = 0>
+__global__ void finalize_relative_residual_kernel(
+    const ResidualPair* totals, double* relative_residual
+) {
+    if (blockIdx.x == 0 && threadIdx.x == 0) {
+        const double residual_total = totals[0].residual;
+        const double rhs_total = totals[0].rhs;
+        relative_residual[0] = (rhs_total == 0.0)
+            ? std::sqrt(residual_total)
+            : std::sqrt(residual_total / rhs_total);
     }
 }
 

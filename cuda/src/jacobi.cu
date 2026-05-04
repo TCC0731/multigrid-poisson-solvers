@@ -45,11 +45,13 @@ SolveResult solve_jacobi(const Problem2D<Real>& problem, const SolveOptions<Real
     cuda::DeviceGrid2D<Real> phi{problem.phi0};
     const cuda::DeviceGrid2D<Real> rhs{problem.rhs};
     cuda::DeviceGrid2D<Real> work{problem.phi0};
+    cuda::RelativeResidualWorkspace residual_workspace{problem.array_n()};
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
         cuda::run_jacobi_step(phi, rhs, problem.h, work);
 
-        const double residual = cuda::compute_relative_residual(work, rhs, problem.h);
+        const double residual =
+            cuda::compute_relative_residual(work, rhs, problem.h, residual_workspace);
         if (residual <= static_cast<double>(options.tol)) {
             return make_solve_result(work.download(), iteration, static_cast<Real>(residual));
         }
@@ -57,7 +59,7 @@ SolveResult solve_jacobi(const Problem2D<Real>& problem, const SolveOptions<Real
         std::swap(phi, work);
     }
 
-    const double residual = cuda::compute_relative_residual(phi, rhs, problem.h);
+    const double residual = cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
     return make_solve_result(phi.download(), options.max_iter, static_cast<Real>(residual));
 }
 

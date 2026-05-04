@@ -3,6 +3,7 @@
 #include <cuda_runtime.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <sstream>
@@ -176,6 +177,62 @@ private:
     DeviceBuffer<Real> buffer_{};
 };
 
+class RelativeResidualWorkspace {
+public:
+    RelativeResidualWorkspace() = default;
+
+    explicit RelativeResidualWorkspace(std::size_t array_n) {
+        reserve_for(array_n);
+    }
+
+    void reserve_for(std::size_t array_n) {
+        const std::size_t total_points = (array_n > 2) ? (array_n - 2) * (array_n - 2) : 0;
+        const int blocks = total_points == 0
+            ? 0
+            : static_cast<int>(
+                  std::min<std::size_t>(
+                      static_cast<std::size_t>(65'535),
+                      (total_points + static_cast<std::size_t>(cuda_kernels::kReductionThreads) - 1) /
+                          static_cast<std::size_t>(cuda_kernels::kReductionThreads)
+                  )
+              );
+
+        blocks_ = blocks;
+        if (static_cast<std::size_t>(blocks_) <= capacity_) {
+            return;
+        }
+
+        partial_sums_ =
+            DeviceBuffer<cuda_kernels::ResidualPair>{static_cast<std::size_t>(blocks_)};
+        scratch_sums_ =
+            DeviceBuffer<cuda_kernels::ResidualPair>{static_cast<std::size_t>(blocks_)};
+        capacity_ = static_cast<std::size_t>(blocks_);
+    }
+
+    [[nodiscard]] int blocks() const noexcept { return blocks_; }
+    [[nodiscard]] cuda_kernels::ResidualPair* partial_sums() noexcept {
+        return partial_sums_.data();
+    }
+    [[nodiscard]] cuda_kernels::ResidualPair* scratch_sums() noexcept {
+        return scratch_sums_.data();
+    }
+    [[nodiscard]] double* final_residual() noexcept {
+        return final_residual_.data();
+    }
+
+private:
+    std::size_t capacity_{0};
+    int blocks_{0};
+    DeviceBuffer<cuda_kernels::ResidualPair> partial_sums_{};
+    DeviceBuffer<cuda_kernels::ResidualPair> scratch_sums_{};
+    DeviceBuffer<double> final_residual_{1};
+};
+
+[[nodiscard]] inline std::size_t reduction_output_count(std::size_t input_count) {
+    const std::size_t elements_per_block = static_cast<std::size_t>(cuda_kernels::kReductionThreads) * 2;
+    return (input_count + elements_per_block - 1) / elements_per_block;
+}
+
 template <typename Real>
 void run_rb_sor_steps(
     DeviceGrid2D<Real>& phi,
@@ -223,7 +280,10 @@ void run_jacobi_step(
 
 template <typename Real>
 [[nodiscard]] double compute_relative_residual(
-    const DeviceGrid2D<Real>& phi, const DeviceGrid2D<Real>& rhs, Real h
+    const DeviceGrid2D<Real>& phi,
+    const DeviceGrid2D<Real>& rhs,
+    Real h,
+    RelativeResidualWorkspace& workspace
 ) {
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
@@ -235,45 +295,57 @@ template <typename Real>
         return 0.0;
     }
 
-    const int threads = cuda_kernels::kReductionThreads;
-    const int blocks = static_cast<int>(
-        std::min<std::size_t>(
-            static_cast<std::size_t>(65'535),
-            (total_points + static_cast<std::size_t>(threads) - 1) /
-                static_cast<std::size_t>(threads)
-        )
-    );
+    workspace.reserve_for(phi.size());
 
-    DeviceBuffer<double> partial_residuals{static_cast<std::size_t>(blocks)};
-    DeviceBuffer<double> partial_rhs{static_cast<std::size_t>(blocks)};
+    const int threads = cuda_kernels::kReductionThreads;
+    const int blocks = workspace.blocks();
+    const std::size_t shared_bytes =
+        static_cast<std::size_t>(threads) * sizeof(cuda_kernels::ResidualPair);
 
     cuda_kernels::relative_residual_partial_kernel<Real>
-        <<<blocks, threads, static_cast<std::size_t>(threads) * 2 * sizeof(double)>>>(
-            phi.data(),
-            rhs.data(),
-            phi.size(),
-            h * h,
-            partial_residuals.data(),
-            partial_rhs.data()
+        <<<blocks, threads, shared_bytes>>>(
+            phi.data(), rhs.data(), phi.size(), h * h, workspace.partial_sums()
         );
     check_kernel("relative_residual_partial_kernel");
 
-    std::vector<double> host_residuals(static_cast<std::size_t>(blocks));
-    std::vector<double> host_rhs(static_cast<std::size_t>(blocks));
-    partial_residuals.download(host_residuals.data(), host_residuals.size());
-    partial_rhs.download(host_rhs.data(), host_rhs.size());
+    std::size_t active_count = static_cast<std::size_t>(blocks);
+    auto* input = workspace.partial_sums();
+    auto* output = workspace.scratch_sums();
 
-    double residual_total = 0.0;
-    double rhs_total = 0.0;
-    for (int block = 0; block < blocks; ++block) {
-        residual_total += host_residuals[static_cast<std::size_t>(block)];
-        rhs_total += host_rhs[static_cast<std::size_t>(block)];
+    while (active_count > 1) {
+        const std::size_t next_count = reduction_output_count(active_count);
+        cuda_kernels::reduce_residual_pairs_kernel<>
+            <<<static_cast<int>(next_count), threads, shared_bytes>>>(input, output, active_count);
+        check_kernel("reduce_residual_pairs_kernel");
+        active_count = next_count;
+        std::swap(input, output);
     }
 
-    if (rhs_total == 0.0) {
-        return std::sqrt(residual_total);
-    }
-    return std::sqrt(residual_total / rhs_total);
+    cuda_kernels::finalize_relative_residual_kernel<>
+        <<<1, 1>>>(input, workspace.final_residual());
+    check_kernel("finalize_relative_residual_kernel");
+
+    std::array<double, 1> host_residual{};
+    check(
+        cudaMemcpy(
+            host_residual.data(),
+            workspace.final_residual(),
+            sizeof(double),
+            cudaMemcpyDeviceToHost
+        ),
+        "cudaMemcpyDeviceToHost",
+        __FILE__,
+        __LINE__
+    );
+    return host_residual[0];
+}
+
+template <typename Real>
+[[nodiscard]] double compute_relative_residual(
+    const DeviceGrid2D<Real>& phi, const DeviceGrid2D<Real>& rhs, Real h
+) {
+    RelativeResidualWorkspace workspace{phi.size()};
+    return compute_relative_residual(phi, rhs, h, workspace);
 }
 
 template <typename Real>
