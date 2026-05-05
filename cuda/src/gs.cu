@@ -48,15 +48,16 @@ SolveResult solve_gs(const Problem2D<Real>& problem, const SolveOptions<Real>& o
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
         cuda::run_rb_sor_steps(phi, rhs, problem.h, Real{1}, 1);
 
-        const double residual =
-            cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
-        if (residual <= static_cast<double>(options.tol)) {
-            return make_solve_result(phi.download(), iteration, static_cast<Real>(residual));
+        if (cuda::should_check_non_mg_residual(iteration, options.max_iter)) {
+            const double residual =
+                cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
+            if (residual <= static_cast<double>(options.tol) || iteration == options.max_iter) {
+                return make_solve_result(phi.download(), iteration, static_cast<Real>(residual));
+            }
         }
     }
 
-    const double residual = cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
-    return make_solve_result(phi.download(), options.max_iter, static_cast<Real>(residual));
+    throw std::logic_error("gauss-seidel iteration loop exited unexpectedly");
 }
 
 template SolveResult solve_gs<float>(const Problem2D<float>&, const SolveOptions<float>&);
