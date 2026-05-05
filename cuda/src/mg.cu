@@ -220,13 +220,14 @@ SolveResult solve_mg_impl(
         );
 
         const double residual =
-            cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
+            cuda::compute_relative_residual_uncached(phi, rhs, problem.h, residual_workspace);
         if (residual <= static_cast<double>(options.tol)) {
             return make_solve_result(phi.download(), iteration, static_cast<Real>(residual));
         }
     }
 
-    const double residual = cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
+    const double residual =
+        cuda::compute_relative_residual_uncached(phi, rhs, problem.h, residual_workspace);
     return make_solve_result(phi.download(), options.max_iter, static_cast<Real>(residual));
 }
 

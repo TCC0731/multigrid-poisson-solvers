@@ -50,17 +50,18 @@ SolveResult solve_jacobi(const Problem2D<Real>& problem, const SolveOptions<Real
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
         cuda::run_jacobi_step(phi, rhs, problem.h, work);
 
-        const double residual =
-            cuda::compute_relative_residual(work, rhs, problem.h, residual_workspace);
-        if (residual <= static_cast<double>(options.tol)) {
-            return make_solve_result(work.download(), iteration, static_cast<Real>(residual));
+        if (cuda::should_check_non_mg_residual(iteration, options.max_iter)) {
+            const double residual =
+                cuda::compute_relative_residual(work, rhs, problem.h, residual_workspace);
+            if (residual <= static_cast<double>(options.tol) || iteration == options.max_iter) {
+                return make_solve_result(work.download(), iteration, static_cast<Real>(residual));
+            }
         }
 
         std::swap(phi, work);
     }
 
-    const double residual = cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
-    return make_solve_result(phi.download(), options.max_iter, static_cast<Real>(residual));
+    throw std::logic_error("jacobi iteration loop exited unexpectedly");
 }
 
 template SolveResult solve_jacobi<float>(const Problem2D<float>&, const SolveOptions<float>&);
