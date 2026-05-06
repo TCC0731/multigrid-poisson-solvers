@@ -3,6 +3,7 @@
 #include "poisson/cuda_utils.hpp"
 #include "poisson/validation.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <utility>
@@ -39,30 +40,52 @@ Real effective_mg_omega(const Problem2D<Real>& problem, const MGOptions<Real>& o
 
 template <typename Real>
 struct MGLevelWorkspace {
-    cuda::DeviceGrid2D<Real> fine_residual;
-    cuda::DeviceGrid2D<Real> coarse_rhs;
-    cuda::DeviceGrid2D<Real> coarse_error;
+    cuda::DeviceGridView2D<Real> fine_residual;
+    cuda::DeviceGridView2D<Real> coarse_rhs;
+    cuda::DeviceGridView2D<Real> coarse_error;
 };
 
 template <typename Real>
 class MGWorkspace {
 public:
-    explicit MGWorkspace(std::size_t fine_array_n) {
-        std::size_t array_n = fine_array_n;
-        while (array_n > 2) {
-            const std::size_t interior_n = array_n - 2;
-            if (interior_n <= 4) {
-                break;
-            }
+    MGWorkspace() = default;
 
-            const std::size_t coarse_interior_n = (interior_n - 1) / 2;
-            const std::size_t coarse_array_n = coarse_interior_n + 2;
+    explicit MGWorkspace(std::size_t fine_array_n) {
+        reserve_for(fine_array_n);
+    }
+
+    void reserve_for(std::size_t fine_array_n) {
+        if (fine_array_n == configured_array_n_ && !levels_.empty()) {
+            return;
+        }
+
+        configured_array_n_ = fine_array_n;
+        levels_.clear();
+        layouts_.clear();
+
+        const std::size_t required_elements = append_layout(fine_array_n, 0);
+        if (required_elements > pool_capacity_elements_) {
+            pool_ = cuda::DeviceBuffer<Real>{required_elements};
+            pool_capacity_elements_ = required_elements;
+        }
+
+        levels_.reserve(layouts_.size());
+        Real* const pool_data = pool_.data();
+        for (const auto& layout : layouts_) {
             levels_.push_back(MGLevelWorkspace<Real>{
-                cuda::DeviceGrid2D<Real>{array_n},
-                cuda::DeviceGrid2D<Real>{coarse_array_n},
-                cuda::DeviceGrid2D<Real>{coarse_array_n},
+                cuda::DeviceGridView2D<Real>{
+                    pool_data + layout.fine_residual_offset,
+                    layout.fine_array_n,
+                },
+                cuda::DeviceGridView2D<Real>{
+                    pool_data + layout.coarse_rhs_offset,
+                    layout.coarse_array_n,
+                },
+                cuda::DeviceGridView2D<Real>{
+                    pool_data + layout.coarse_error_offset,
+                    layout.coarse_array_n,
+                },
             });
-            array_n = coarse_array_n;
         }
     }
 
@@ -74,16 +97,84 @@ public:
     }
 
 private:
+    struct MGLevelLayout {
+        std::size_t fine_array_n{};
+        std::size_t coarse_array_n{};
+        std::size_t fine_residual_offset{};
+        std::size_t coarse_rhs_offset{};
+        std::size_t coarse_error_offset{};
+    };
+
+    [[nodiscard]] std::size_t append_layout(std::size_t fine_array_n, std::size_t base_offset) {
+        const std::size_t interior_n = fine_array_n - 2;
+        if (interior_n <= 4) {
+            return 0;
+        }
+
+        const std::size_t coarse_interior_n = (interior_n - 1) / 2;
+        const std::size_t coarse_array_n = coarse_interior_n + 2;
+        const std::size_t fine_elements = fine_array_n * fine_array_n;
+        const std::size_t coarse_elements = coarse_array_n * coarse_array_n;
+
+        const std::size_t level_index = layouts_.size();
+        layouts_.push_back(MGLevelLayout{
+            fine_array_n,
+            coarse_array_n,
+            base_offset,
+            0,
+            base_offset,
+        });
+
+        const std::size_t child_elements =
+            append_layout(coarse_array_n, base_offset + coarse_elements);
+        // Reuse the fine-residual slot for coarse_error plus the entire child
+        // subtree once restriction has finished.
+        const std::size_t transient_or_child_elements =
+            std::max(fine_elements, coarse_elements + child_elements);
+
+        layouts_[level_index].coarse_rhs_offset = base_offset + transient_or_child_elements;
+        return transient_or_child_elements + coarse_elements;
+    }
+
+    std::size_t configured_array_n_{0};
+    std::size_t pool_capacity_elements_{0};
+    cuda::DeviceBuffer<Real> pool_{};
+    std::vector<MGLevelLayout> layouts_{};
     std::vector<MGLevelWorkspace<Real>> levels_{};
 };
 
 template <typename Real>
+void copy_boundary_values(const Grid2D<Real>& source, Grid2D<Real>& target) {
+    if (source.size() != target.size()) {
+        throw std::invalid_argument("boundary template size mismatch");
+    }
+
+    if (source.size() == 0) {
+        return;
+    }
+
+    const std::size_t last = source.size() - 1;
+    for (std::size_t i = 0; i <= last; ++i) {
+        target.unchecked(i, 0) = source.unchecked(i, 0);
+        target.unchecked(i, last) = source.unchecked(i, last);
+    }
+    for (std::size_t j = 0; j <= last; ++j) {
+        target.unchecked(0, j) = source.unchecked(0, j);
+        target.unchecked(last, j) = source.unchecked(last, j);
+    }
+}
+
+template <typename Real, typename PhiGrid, typename RhsGrid>
 void solve_coarsest_exact(
-    cuda::DeviceGrid2D<Real>& phi,
-    const cuda::DeviceGrid2D<Real>& rhs,
-    Real h
+    PhiGrid& phi,
+    const RhsGrid& rhs,
+    Real h,
+    const Grid2D<Real>* boundary_template
 ) {
-    Grid2D<Real> host_phi = phi.download();
+    Grid2D<Real> host_phi{phi.size()};
+    if (boundary_template != nullptr) {
+        copy_boundary_values(*boundary_template, host_phi);
+    }
     const Grid2D<Real> host_rhs = rhs.download();
 
     const std::size_t n = host_rhs.size() - 2;
@@ -98,8 +189,9 @@ void solve_coarsest_exact(
         return i * n + j;
     };
 
-    // The coarsest MG solve is applied to the error equation, so the coarse
-    // correction uses homogeneous Dirichlet boundary conditions.
+    // Recursive coarse solves operate on the error equation and therefore use
+    // zero boundaries. A top-level tiny problem passes its physical boundary
+    // values in through boundary_template instead.
     for (std::size_t i = 0; i < n; ++i) {
         for (std::size_t j = 0; j < n; ++j) {
             const std::size_t row = index(i, j);
@@ -148,10 +240,10 @@ void solve_coarsest_exact(
     phi.upload(host_phi);
 }
 
-template <typename Real>
+template <typename Real, typename PhiGrid, typename RhsGrid>
 void mg_cycle(
-    cuda::DeviceGrid2D<Real>& phi,
-    const cuda::DeviceGrid2D<Real>& rhs,
+    PhiGrid& phi,
+    const RhsGrid& rhs,
     Real h,
     Real omega,
     std::size_t nu,
@@ -159,12 +251,13 @@ void mg_cycle(
     CoarseSolve coarse_mode,
     std::size_t coarse_steps,
     MGWorkspace<Real>& workspace,
-    std::size_t level_index
+    std::size_t level_index,
+    const Grid2D<Real>* boundary_template
 ) {
     const std::size_t n = phi.size() - 2;
     if (n <= 4) {
         if (coarse_mode == CoarseSolve::Exact) {
-            solve_coarsest_exact(phi, rhs, h);
+            solve_coarsest_exact(phi, rhs, h, boundary_template);
         } else {
             cuda::run_rb_sor_steps(phi, rhs, h, omega, coarse_steps);
         }
@@ -178,11 +271,11 @@ void mg_cycle(
     cuda::compute_residual_full(phi, rhs, h, fine_residual);
 
     auto& coarse_rhs = level.coarse_rhs;
-    cuda::restrict_full_weighting(fine_residual, coarse_rhs);
+    cuda::restrict_full_weighting<Real>(fine_residual, coarse_rhs);
 
     auto& coarse_error = level.coarse_error;
     coarse_error.zero();
-    mg_cycle(
+    mg_cycle<Real>(
         coarse_error,
         coarse_rhs,
         Real{2} * h,
@@ -192,10 +285,11 @@ void mg_cycle(
         coarse_mode,
         coarse_steps,
         workspace,
-        level_index + 1
+        level_index + 1,
+        static_cast<const Grid2D<Real>*>(nullptr)
     );
     if (cycle == MGCycle::W) {
-        mg_cycle(
+        mg_cycle<Real>(
             coarse_error,
             coarse_rhs,
             Real{2} * h,
@@ -205,11 +299,12 @@ void mg_cycle(
             coarse_mode,
             coarse_steps,
             workspace,
-            level_index + 1
+            level_index + 1,
+            static_cast<const Grid2D<Real>*>(nullptr)
         );
     }
 
-    cuda::prolong_add(coarse_error, phi);
+    cuda::prolong_add<Real>(coarse_error, phi);
     cuda::run_rb_sor_steps(phi, rhs, h, omega, nu);
 }
 
@@ -251,11 +346,12 @@ SolveResult solve_mg_impl(
     const Real omega = effective_mg_omega(problem, options);
     cuda::DeviceGrid2D<Real> phi{problem.phi0};
     const cuda::DeviceGrid2D<Real> rhs{problem.rhs};
-    MGWorkspace<Real> workspace{problem.array_n()};
+    thread_local MGWorkspace<Real> workspace{};
+    workspace.reserve_for(problem.array_n());
     cuda::RelativeResidualWorkspace residual_workspace{problem.array_n()};
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
-        mg_cycle(
+        mg_cycle<Real>(
             phi,
             rhs,
             problem.h,
@@ -265,7 +361,8 @@ SolveResult solve_mg_impl(
             coarse_mode,
             options.coarse_steps,
             workspace,
-            0
+            0,
+            &problem.phi0
         );
 
         const double residual =
