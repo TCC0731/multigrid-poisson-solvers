@@ -337,7 +337,7 @@ MG 的執行順序是目前最複雜的部分。
 當 `n <= 4` 時，會直接走 coarse solve：
 
 1. `coarse_mode == Exact` -> `solve_coarsest_exact()`
-2. `coarse_mode == Sor` -> `run_rb_sor_steps(..., coarse_steps)`
+2. `coarse_mode == Sor` -> `run_fused_rb_sor_steps(..., coarse_steps)`
 
 這裡的 `solve_coarsest_exact()` 不是 kernel，而是：
 
@@ -345,6 +345,8 @@ MG 的執行順序是目前最複雜的部分。
 2. 在 host 上組 dense linear system
 3. Gaussian elimination
 4. 再 upload 回 device
+
+這裡的 `run_fused_rb_sor_steps()` 會把整個 coarse grid 載入 shared memory，然後在單一 kernel 內完成 `coarse_steps` 次 red / black SOR 迭代。
 
 所以 MG 的最深層會「回到 CPU 做 exact solve」。
 因為這裡解的是 error equation，所以 coarse correction 的邊界條件要視為 homogeneous Dirichlet，也就是邊界固定為 0。
