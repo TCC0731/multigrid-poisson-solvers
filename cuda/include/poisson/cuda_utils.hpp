@@ -177,6 +177,71 @@ private:
     DeviceBuffer<Real> buffer_{};
 };
 
+template <typename Real>
+class DeviceGridView2D {
+public:
+    DeviceGridView2D() = default;
+
+    DeviceGridView2D(Real* data, std::size_t size)
+        : size_{size}, data_{data} {
+        if (size_ > 0 && data_ == nullptr) {
+            throw std::invalid_argument("device grid view cannot own a null data pointer");
+        }
+    }
+
+    [[nodiscard]] std::size_t size() const noexcept { return size_; }
+    [[nodiscard]] std::size_t elements() const noexcept { return size_ * size_; }
+    [[nodiscard]] Real* data() noexcept { return data_; }
+    [[nodiscard]] const Real* data() const noexcept { return data_; }
+
+    void zero() {
+        if (elements() > 0) {
+            check(cudaMemset(data_, 0, elements() * sizeof(Real)), "cudaMemset", __FILE__, __LINE__);
+        }
+    }
+
+    void upload(const Grid2D<Real>& host_grid) {
+        if (host_grid.size() != size_) {
+            throw std::invalid_argument("device grid view upload size mismatch");
+        }
+        if (elements() > 0) {
+            check(
+                cudaMemcpy(
+                    data_,
+                    host_grid.data().data(),
+                    elements() * sizeof(Real),
+                    cudaMemcpyHostToDevice
+                ),
+                "cudaMemcpyHostToDevice",
+                __FILE__,
+                __LINE__
+            );
+        }
+    }
+
+    [[nodiscard]] Grid2D<Real> download() const {
+        Grid2D<Real> host_grid{size_};
+        if (elements() > 0) {
+            check(
+                cudaMemcpy(
+                    host_grid.data().data(),
+                    data_,
+                    elements() * sizeof(Real),
+                    cudaMemcpyDeviceToHost
+                ),
+                "cudaMemcpyDeviceToHost",
+                __FILE__,
+                __LINE__
+            );
+        }
+        return host_grid;
+    }
+
+private:
+    std::size_t size_{0};
+    Real* data_{nullptr};
+};
+
 class RelativeResidualWorkspace {
 public:
     RelativeResidualWorkspace() = default;
@@ -311,10 +376,10 @@ void ensure_rhs_norm_cached(
     workspace.mark_rhs_norm_cached(rhs.size(), static_cast<double>(h2));
 }
 
-template <typename Real>
+template <typename Real, typename PhiGrid, typename RhsGrid>
 void run_rb_sor_steps(
-    DeviceGrid2D<Real>& phi,
-    const DeviceGrid2D<Real>& rhs,
+    PhiGrid& phi,
+    const RhsGrid& rhs,
     Real h,
     Real omega,
     std::size_t steps
@@ -481,12 +546,12 @@ template <typename Real>
     return compute_relative_residual(phi, rhs, h, workspace);
 }
 
-template <typename Real>
+template <typename Real, typename PhiGrid, typename RhsGrid, typename ResidualGrid>
 void compute_residual_full(
-    const DeviceGrid2D<Real>& phi,
-    const DeviceGrid2D<Real>& rhs,
+    const PhiGrid& phi,
+    const RhsGrid& rhs,
     Real h,
-    DeviceGrid2D<Real>& residual_out
+    ResidualGrid& residual_out
 ) {
     if (phi.size() != rhs.size() || phi.size() != residual_out.size()) {
         throw std::invalid_argument("residual_full device grid sizes do not match");
@@ -501,8 +566,8 @@ void compute_residual_full(
     check_kernel("residual_full_kernel");
 }
 
-template <typename Real>
-void restrict_full_weighting(const DeviceGrid2D<Real>& fine, DeviceGrid2D<Real>& coarse) {
+template <typename Real, typename FineGrid, typename CoarseGrid>
+void restrict_full_weighting(const FineGrid& fine, CoarseGrid& coarse) {
     const std::size_t coarse_interior_n = coarse.size() - 2;
     coarse.zero();
 
@@ -518,8 +583,8 @@ void restrict_full_weighting(const DeviceGrid2D<Real>& fine, DeviceGrid2D<Real>&
     check_kernel("restrict_full_weighting_kernel");
 }
 
-template <typename Real>
-void prolong_add(const DeviceGrid2D<Real>& coarse, DeviceGrid2D<Real>& fine) {
+template <typename Real, typename CoarseGrid, typename FineGrid>
+void prolong_add(const CoarseGrid& coarse, FineGrid& fine) {
     const std::size_t fine_interior_n = fine.size() - 2;
     const dim3 block = cuda_kernels::make_block_2d();
     const dim3 grid = cuda_kernels::make_grid_2d(

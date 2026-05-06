@@ -440,7 +440,7 @@ benchmark 的順序是：
 2. 只是被 benchmark 包裝起來
 3. 多了 warmup / timed runs / CSV 檔輸出
 
-補充一下：目前 benchmark 的 MG compare 走的是 `solve_mg_exact()`，不是 `solve_mg_sor()`。
+補充一下：目前 benchmark 的 MG compare 會同時跑 `solve_mg_exact()` 和 `solve_mg_sor()`，所以 MG compare 會有 exact / sor 兩種 coarse solve 的 row。
 
 ---
 
