@@ -38,6 +38,46 @@ Real effective_mg_omega(const Problem2D<Real>& problem, const MGOptions<Real>& o
 }
 
 template <typename Real>
+struct MGLevelWorkspace {
+    cuda::DeviceGrid2D<Real> fine_residual;
+    cuda::DeviceGrid2D<Real> coarse_rhs;
+    cuda::DeviceGrid2D<Real> coarse_error;
+};
+
+template <typename Real>
+class MGWorkspace {
+public:
+    explicit MGWorkspace(std::size_t fine_array_n) {
+        std::size_t array_n = fine_array_n;
+        while (array_n > 2) {
+            const std::size_t interior_n = array_n - 2;
+            if (interior_n <= 4) {
+                break;
+            }
+
+            const std::size_t coarse_interior_n = (interior_n - 1) / 2;
+            const std::size_t coarse_array_n = coarse_interior_n + 2;
+            levels_.push_back(MGLevelWorkspace<Real>{
+                cuda::DeviceGrid2D<Real>{array_n},
+                cuda::DeviceGrid2D<Real>{coarse_array_n},
+                cuda::DeviceGrid2D<Real>{coarse_array_n},
+            });
+            array_n = coarse_array_n;
+        }
+    }
+
+    [[nodiscard]] MGLevelWorkspace<Real>& level(std::size_t index) {
+        if (index >= levels_.size()) {
+            throw std::logic_error("MG workspace level index out of range");
+        }
+        return levels_[index];
+    }
+
+private:
+    std::vector<MGLevelWorkspace<Real>> levels_{};
+};
+
+template <typename Real>
 void solve_coarsest_exact(
     cuda::DeviceGrid2D<Real>& phi,
     const cuda::DeviceGrid2D<Real>& rhs,
@@ -117,7 +157,9 @@ void mg_cycle(
     std::size_t nu,
     MGCycle cycle,
     CoarseSolve coarse_mode,
-    std::size_t coarse_steps
+    std::size_t coarse_steps,
+    MGWorkspace<Real>& workspace,
+    std::size_t level_index
 ) {
     const std::size_t n = phi.size() - 2;
     if (n <= 4) {
@@ -131,14 +173,14 @@ void mg_cycle(
 
     cuda::run_rb_sor_steps(phi, rhs, h, omega, nu);
 
-    cuda::DeviceGrid2D<Real> fine_residual{phi.size()};
+    auto& level = workspace.level(level_index);
+    auto& fine_residual = level.fine_residual;
     cuda::compute_residual_full(phi, rhs, h, fine_residual);
 
-    const std::size_t coarse_interior_n = (n - 1) / 2;
-    cuda::DeviceGrid2D<Real> coarse_rhs{coarse_interior_n + 2};
+    auto& coarse_rhs = level.coarse_rhs;
     cuda::restrict_full_weighting(fine_residual, coarse_rhs);
 
-    cuda::DeviceGrid2D<Real> coarse_error{coarse_rhs.size()};
+    auto& coarse_error = level.coarse_error;
     coarse_error.zero();
     mg_cycle(
         coarse_error,
@@ -148,7 +190,9 @@ void mg_cycle(
         nu,
         cycle,
         coarse_mode,
-        coarse_steps
+        coarse_steps,
+        workspace,
+        level_index + 1
     );
     if (cycle == MGCycle::W) {
         mg_cycle(
@@ -159,7 +203,9 @@ void mg_cycle(
             nu,
             cycle,
             coarse_mode,
-            coarse_steps
+            coarse_steps,
+            workspace,
+            level_index + 1
         );
     }
 
@@ -205,6 +251,7 @@ SolveResult solve_mg_impl(
     const Real omega = effective_mg_omega(problem, options);
     cuda::DeviceGrid2D<Real> phi{problem.phi0};
     const cuda::DeviceGrid2D<Real> rhs{problem.rhs};
+    MGWorkspace<Real> workspace{problem.array_n()};
     cuda::RelativeResidualWorkspace residual_workspace{problem.array_n()};
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
@@ -216,7 +263,9 @@ SolveResult solve_mg_impl(
             options.nu,
             options.cycle,
             coarse_mode,
-            options.coarse_steps
+            options.coarse_steps,
+            workspace,
+            0
         );
 
         const double residual =
