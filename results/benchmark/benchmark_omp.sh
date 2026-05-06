@@ -17,7 +17,7 @@ printf 'OMP_NUM_THREADS=%s OMP_PROC_BIND=%s OMP_PLACES=%s\n' \
   "$OMP_NUM_THREADS" "$OMP_PROC_BIND" "$OMP_PLACES" >&2
 
 exec "$REPO_ROOT/build/poisson_benchmark_omp" \
-  --output "$REPO_ROOT/results/benchmark/benchmark_omp_v2/benchmark_omp_v2_$OMP_NUM_THREADS" \
+  --output "$REPO_ROOT/results/benchmark/benchmark/omp_v2/benchmark_omp_v2_$OMP_NUM_THREADS" \
   "$@"
 
 
