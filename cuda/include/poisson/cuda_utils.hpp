@@ -403,6 +403,33 @@ void run_rb_sor_steps(
     }
 }
 
+template <typename Real, typename PhiGrid, typename RhsGrid>
+void run_fused_rb_sor_steps(
+    PhiGrid& phi,
+    const RhsGrid& rhs,
+    Real h,
+    Real omega,
+    std::size_t steps
+) {
+    if (phi.size() != rhs.size()) {
+        throw std::invalid_argument("phi and rhs device grid sizes do not match");
+    }
+    if (phi.size() < 3 || phi.size() > cuda_kernels::kFusedCoarseSorMaxArrayN) {
+        throw std::invalid_argument("fused coarse SOR only supports 3x3 through 6x6 grids");
+    }
+
+    const Real h2 = h * h;
+    const dim3 block{
+        static_cast<unsigned int>(phi.size()),
+        static_cast<unsigned int>(phi.size()),
+        1U,
+    };
+
+    cuda_kernels::rb_sor_fused_coarse_kernel<Real>
+        <<<1, block>>>(phi.data(), rhs.data(), phi.size(), h2, omega, steps);
+    check_kernel("rb_sor_fused_coarse_kernel");
+}
+
 template <typename Real>
 void run_jacobi_step(
     const DeviceGrid2D<Real>& phi,

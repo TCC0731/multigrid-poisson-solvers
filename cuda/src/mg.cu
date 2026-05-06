@@ -259,7 +259,7 @@ void mg_cycle(
         if (coarse_mode == CoarseSolve::Exact) {
             solve_coarsest_exact(phi, rhs, h, boundary_template);
         } else {
-            cuda::run_rb_sor_steps(phi, rhs, h, omega, coarse_steps);
+            cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, coarse_steps);
         }
         return;
     }
