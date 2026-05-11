@@ -182,6 +182,42 @@ The same output format should remain consistent for the future C++ OpenMP and CU
 
 The C++ baseline is covered by a small GTest suite built as `poisson_tests` and executed through CTest.
 
+### C++ Benchmark Executables
+
+Two standalone benchmark executables are available after building:
+
+- `poisson_benchmark_cpp`
+- `poisson_benchmark_omp`
+
+Both benchmarks run the sine manufactured-solution case with one warmup run and five timed runs per measurement, then report the mean and standard deviation of the measured solver time.
+The warmup pass uses the same solver setup but caps `max_iter` at `10` to keep the warmup cheap.
+Running either executable with no `--suite` argument is equivalent to `--suite all`, so one invocation covers both benchmark groups.
+When `--output BASE` is provided, the benchmark writes two files:
+
+- `BASE.csv` for the simplified view
+- `BASE_all.csv` for the full output
+
+The simplified CSV keeps only `solver,grid_size,iterations,mean_time_ms,std_time_ms`.
+
+The benchmark suites mirror the repository's existing comparison groups:
+
+- `solver_comparison`: Jacobi, RB GS, and RB SOR with the requested `max_iter` and grid sizes.
+- `mg_compare`: MG(V, `omega=1.25`) and MG(W, `omega=1.25`).
+
+The multigrid benchmark keeps the current comparison defaults of `nu=3` and exact coarse-grid solve.
+
+Example usage:
+
+```bash
+cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target poisson_benchmark_cpp poisson_benchmark_omp
+
+./build/poisson_benchmark_cpp --output results/cpp/benchmark
+./build/poisson_benchmark_omp --output results/omp/benchmark
+```
+
+If you only want one group, you can still pass `--suite solver_comparison` or `--suite mg_compare`.
+
 ## C++ Build and Test
 
 Configure and build the C++ targets with CMake:
