@@ -35,6 +35,7 @@ inline constexpr double kTol{1e-9};
 inline constexpr double kMgOmega{1.25};
 inline constexpr std::size_t kMgNu{3};
 inline constexpr std::size_t kMgCoarseSteps{16};
+inline constexpr std::size_t kMgMaxIter{150};
 inline constexpr std::array<std::size_t, 4> kSolverSizes{15, 31, 63, 127};
 inline constexpr std::array<std::size_t, 6> kRbSorSizes{15, 31, 63, 127, 256, 512};
 inline constexpr std::array<std::size_t, 9> kMgSizes{15, 31, 63, 127, 255, 511, 1023, 2047, 4095};
@@ -259,6 +260,41 @@ template <typename Real, typename WarmupSolverFn, typename TimedSolverFn>
     };
 }
 
+template <typename Real, typename SolverFn>
+void append_mg_rows(
+    std::vector<BenchmarkRow>& rows,
+    std::string_view backend,
+    std::string_view solver_name,
+    std::string_view cycle,
+    std::string_view omega,
+    std::string_view nu,
+    std::size_t max_iter,
+    Real tol,
+    const poisson::MGOptions<Real>& warmup_opts,
+    const poisson::MGOptions<Real>& timed_opts,
+    SolverFn&& solve_fn
+) {
+    for (const std::size_t grid_size : detail::kMgSizes) {
+        rows.push_back(make_row<Real>(
+            detail::kMgCompareSuite,
+            backend,
+            solver_name,
+            grid_size,
+            max_iter,
+            tol,
+            cycle,
+            omega,
+            nu,
+            [&](const auto& problem) {
+                return solve_fn(problem, warmup_opts);
+            },
+            [&](const auto& problem) {
+                return solve_fn(problem, timed_opts);
+            }
+        ));
+    }
+}
+
 template <typename Real>
 [[nodiscard]] std::vector<BenchmarkRow> make_solver_comparison_rows(std::string_view backend) {
     std::vector<BenchmarkRow> rows;
@@ -338,18 +374,9 @@ template <typename Real>
 template <typename Real>
 [[nodiscard]] std::vector<BenchmarkRow> make_mg_compare_rows(std::string_view backend) {
     std::vector<BenchmarkRow> rows;
-    rows.reserve(16);
+    rows.reserve(36);
 
     const Real tol = static_cast<Real>(detail::kTol);
-    const poisson::MGOptions<Real> mg_v_opts{
-        tol,
-        50,
-        detail::kMgNu,
-        poisson::MGCycle::V,
-        detail::kMgCoarseSteps,
-        static_cast<Real>(detail::kMgOmega),
-        false,
-    };
     const poisson::MGOptions<Real> mg_v_warmup_opts{
         tol,
         detail::kWarmupMaxIter,
@@ -359,11 +386,11 @@ template <typename Real>
         static_cast<Real>(detail::kMgOmega),
         false,
     };
-    const poisson::MGOptions<Real> mg_w_opts{
+    const poisson::MGOptions<Real> mg_v_opts{
         tol,
-        50,
+        detail::kMgMaxIter,
         detail::kMgNu,
-        poisson::MGCycle::W,
+        poisson::MGCycle::V,
         detail::kMgCoarseSteps,
         static_cast<Real>(detail::kMgOmega),
         false,
@@ -377,46 +404,76 @@ template <typename Real>
         static_cast<Real>(detail::kMgOmega),
         false,
     };
+    const poisson::MGOptions<Real> mg_w_opts{
+        tol,
+        detail::kMgMaxIter,
+        detail::kMgNu,
+        poisson::MGCycle::W,
+        detail::kMgCoarseSteps,
+        static_cast<Real>(detail::kMgOmega),
+        false,
+    };
 
-    for (const std::size_t grid_size : detail::kMgSizes) {
-        rows.push_back(make_row<Real>(
-            detail::kMgCompareSuite,
-            backend,
-            "MG(v,w=1.25)",
-            grid_size,
-            50,
-            tol,
-            "v",
-            "1.25",
-            "3",
-            [&](const auto& problem) {
-                return poisson::solve_mg_exact<Real>(problem, mg_v_warmup_opts);
-            },
-            [&](const auto& problem) {
-                return poisson::solve_mg_exact<Real>(problem, mg_v_opts);
-            }
-        ));
-    }
-
-    for (const std::size_t grid_size : detail::kMgSizes) {
-        rows.push_back(make_row<Real>(
-            detail::kMgCompareSuite,
-            backend,
-            "MG(w,w=1.25)",
-            grid_size,
-            50,
-            tol,
-            "w",
-            "1.25",
-            "3",
-            [&](const auto& problem) {
-                return poisson::solve_mg_exact<Real>(problem, mg_w_warmup_opts);
-            },
-            [&](const auto& problem) {
-                return poisson::solve_mg_exact<Real>(problem, mg_w_opts);
-            }
-        ));
-    }
+    append_mg_rows(
+        rows,
+        backend,
+        "MG(v,w=1.25,coarse=exact)",
+        "v",
+        "1.25",
+        "3",
+        detail::kMgMaxIter,
+        tol,
+        mg_v_warmup_opts,
+        mg_v_opts,
+        [&](const auto& problem, const auto& options) {
+            return poisson::solve_mg_exact<Real>(problem, options);
+        }
+    );
+    append_mg_rows(
+        rows,
+        backend,
+        "MG(v,w=1.25,coarse=sor)",
+        "v",
+        "1.25",
+        "3",
+        detail::kMgMaxIter,
+        tol,
+        mg_v_warmup_opts,
+        mg_v_opts,
+        [&](const auto& problem, const auto& options) {
+            return poisson::solve_mg_sor<Real>(problem, options);
+        }
+    );
+    append_mg_rows(
+        rows,
+        backend,
+        "MG(w,w=1.25,coarse=exact)",
+        "w",
+        "1.25",
+        "3",
+        detail::kMgMaxIter,
+        tol,
+        mg_w_warmup_opts,
+        mg_w_opts,
+        [&](const auto& problem, const auto& options) {
+            return poisson::solve_mg_exact<Real>(problem, options);
+        }
+    );
+    append_mg_rows(
+        rows,
+        backend,
+        "MG(w,w=1.25,coarse=sor)",
+        "w",
+        "1.25",
+        "3",
+        detail::kMgMaxIter,
+        tol,
+        mg_w_warmup_opts,
+        mg_w_opts,
+        [&](const auto& problem, const auto& options) {
+            return poisson::solve_mg_sor<Real>(problem, options);
+        }
+    );
 
     return rows;
 }
