@@ -30,8 +30,62 @@ CASE_FUNCS = {
 CASES = tuple(CASE_FUNCS)
 
 
+CASE_FUNCS_3D = {
+    "sine": (
+        lambda x, y, z: np.sin(np.pi * x) * np.sin(np.pi * y) * np.sin(np.pi * z),
+        lambda x, y, z: 3.0
+        * np.pi**2
+        * np.sin(np.pi * x)
+        * np.sin(np.pi * y)
+        * np.sin(np.pi * z),
+    ),
+    "mixed_sine": (
+        lambda x, y, z: np.sin(2.0 * np.pi * x)
+        * np.sin(3.0 * np.pi * y)
+        * np.sin(4.0 * np.pi * z),
+        lambda x, y, z: 29.0
+        * np.pi**2
+        * np.sin(2.0 * np.pi * x)
+        * np.sin(3.0 * np.pi * y)
+        * np.sin(4.0 * np.pi * z),
+    ),
+    "bubble": (
+        lambda x, y, z: x * (1.0 - x) * y * (1.0 - y) * z * (1.0 - z),
+        lambda x, y, z: 2.0
+        * (
+            y * (1.0 - y) * z * (1.0 - z)
+            + x * (1.0 - x) * z * (1.0 - z)
+            + x * (1.0 - x) * y * (1.0 - y)
+        ),
+    ),
+    "exp": (
+        lambda x, y, z: np.exp(x + y + z),
+        lambda x, y, z: -3.0 * np.exp(x + y + z),
+    ),
+    "cosine": (
+        lambda x, y, z: np.cos(np.pi * x) * np.cos(np.pi * y) * np.cos(np.pi * z),
+        lambda x, y, z: 3.0
+        * np.pi**2
+        * np.cos(np.pi * x)
+        * np.cos(np.pi * y)
+        * np.cos(np.pi * z),
+    ),
+}
+CASES_3D = tuple(CASE_FUNCS_3D)
+
+
 @dataclass(frozen=True)
 class Problem2D:
+    case: str
+    grid_size: int
+    h: float
+    exact: np.ndarray
+    rhs: np.ndarray
+    phi0: np.ndarray
+
+
+@dataclass(frozen=True)
+class Problem3D:
     case: str
     grid_size: int
     h: float
@@ -67,8 +121,40 @@ def _problem(exact_fn, rhs_fn, case: str, grid_size: int, dtype=np.float64) -> P
     return Problem2D(case, grid_size, h, exact, rhs, phi0)
 
 
+def _problem_3d(
+    exact_fn,
+    rhs_fn,
+    case: str,
+    grid_size: int,
+    dtype=np.float64,
+) -> Problem3D:
+    if grid_size < 1:
+        raise ValueError("grid_size must be positive")
+    dtype_type = _coerce_dtype(dtype)
+    x = np.linspace(0.0, 1.0, grid_size + 2, dtype=dtype_type)
+    xx, yy, zz = np.meshgrid(x, x, x, indexing="ij")
+    exact = np.asarray(exact_fn(xx, yy, zz), dtype=dtype_type)
+    rhs = np.asarray(rhs_fn(xx, yy, zz), dtype=dtype_type)
+    phi0 = np.zeros_like(exact)
+    phi0[0, :, :] = exact[0, :, :]
+    phi0[-1, :, :] = exact[-1, :, :]
+    phi0[:, 0, :] = exact[:, 0, :]
+    phi0[:, -1, :] = exact[:, -1, :]
+    phi0[:, :, 0] = exact[:, :, 0]
+    phi0[:, :, -1] = exact[:, :, -1]
+    h = dtype_type(1.0 / (grid_size + 1))
+    return Problem3D(case, grid_size, h, exact, rhs, phi0)
+
+
 def make_problem(case: str, grid_size: int, dtype=np.float64) -> Problem2D:
     if case not in CASE_FUNCS:
         raise ValueError(f"unknown case {case!r}; expected one of {CASES}")
     exact_fn, rhs_fn = CASE_FUNCS[case]
     return _problem(exact_fn, rhs_fn, case, grid_size, dtype=dtype)
+
+
+def make_problem_3d(case: str, grid_size: int, dtype=np.float64) -> Problem3D:
+    if case not in CASE_FUNCS_3D:
+        raise ValueError(f"unknown case {case!r}; expected one of {CASES_3D}")
+    exact_fn, rhs_fn = CASE_FUNCS_3D[case]
+    return _problem_3d(exact_fn, rhs_fn, case, grid_size, dtype=dtype)

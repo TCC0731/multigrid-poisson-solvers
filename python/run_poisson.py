@@ -1,11 +1,12 @@
-"""CLI runner for the 2D Poisson examples.
+"""CLI runner for the Python Poisson examples.
 
 This file stays thin on purpose. It only wires together the future modular
 pieces that match the README structure:
 
-* ``problems.make_problem(case, grid_size)``
-* ``solvers.<name>_2d.solve(problem, *, tol, max_iter)``
-* ``metrics.error_metrics(problem, phi)``
+* ``problems.make_problem(case, grid_size)`` for 2D
+* ``problems.make_problem_3d(case, grid_size)`` for 3D
+* ``solvers.<name>_<dim>d.solve(problem, *, tol, max_iter)``
+* ``metrics.error_metrics(problem, phi)`` or ``metrics.error_metrics_3d``
 
 The runner prints the CSV row described in ``README.md``.
 """
@@ -29,6 +30,12 @@ SOLVER_MODULES = {
     "sor": "solvers.sor_2d",
     "mg": "solvers.mg_2d",
 }
+SOLVER_MODULES_3D = {
+    "jacobi": "solvers.jacobi_3d",
+    "gs": "solvers.gs_3d",
+    "sor": "solvers.sor_3d",
+    "mg": "solvers.mg_3d",
+}
 
 
 def _require_attr(module_name: str, attr_name: str):
@@ -48,18 +55,21 @@ def _require_attr(module_name: str, attr_name: str):
         ) from exc
 
 
-def load_problem(case: str, grid_size: int, dtype):
-    make_problem = _require_attr("problems", "make_problem")
+def load_problem(case: str, grid_size: int, dtype, dim: int = 2):
+    attr_name = "make_problem_3d" if dim == 3 else "make_problem"
+    make_problem = _require_attr("problems", attr_name)
     return make_problem(case=case, grid_size=grid_size, dtype=dtype)
 
 
-def load_solver(name: str):
-    solve = _require_attr(SOLVER_MODULES[name], "solve")
+def load_solver(name: str, dim: int = 2):
+    modules = SOLVER_MODULES_3D if dim == 3 else SOLVER_MODULES
+    solve = _require_attr(modules[name], "solve")
     return solve
 
 
-def load_error_metrics():
-    return _require_attr("metrics", "error_metrics")
+def load_error_metrics(dim: int = 2):
+    attr_name = "error_metrics_3d" if dim == 3 else "error_metrics"
+    return _require_attr("metrics", attr_name)
 
 
 def warmup_solver(solve, problem):
@@ -69,8 +79,9 @@ def warmup_solver(solve, problem):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Run a small 2D Poisson benchmark from the command line."
+        description="Run a small Python Poisson benchmark from the command line."
     )
+    parser.add_argument("--dim", type=int, choices=(2, 3), default=2)
     parser.add_argument("--solver", choices=tuple(SOLVER_MODULES), default="jacobi")
     parser.add_argument("--case", choices=CASES, default="sine")
     parser.add_argument("--dtype", choices=DTYPES, default="float64")
@@ -85,10 +96,16 @@ def parse_args():
 
 def main():
     args = parse_args()
+    dim = getattr(args, "dim", 2)
     dtype = np.dtype(args.dtype).type
-    problem = load_problem(args.case, args.grid_size, dtype)
-    solve = load_solver(args.solver)
-    error_metrics = load_error_metrics()
+    if dim == 3:
+        problem = load_problem(args.case, args.grid_size, dtype, dim=3)
+        solve = load_solver(args.solver, dim=3)
+        error_metrics = load_error_metrics(dim=3)
+    else:
+        problem = load_problem(args.case, args.grid_size, dtype)
+        solve = load_solver(args.solver)
+        error_metrics = load_error_metrics()
 
     warmup_solver(solve, problem)
 

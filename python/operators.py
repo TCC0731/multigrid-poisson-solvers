@@ -15,3 +15,19 @@ def apply_A(phi: np.ndarray, h: float) -> np.ndarray:
 
 def residual(phi: np.ndarray, rhs: np.ndarray, h: float) -> np.ndarray:
     return rhs[1:-1, 1:-1] - apply_A(phi, h)
+
+
+def apply_A_3d(phi: np.ndarray, h: float) -> np.ndarray:
+    return (
+        6.0 * phi[1:-1, 1:-1, 1:-1]
+        - phi[2:, 1:-1, 1:-1]
+        - phi[:-2, 1:-1, 1:-1]
+        - phi[1:-1, 2:, 1:-1]
+        - phi[1:-1, :-2, 1:-1]
+        - phi[1:-1, 1:-1, 2:]
+        - phi[1:-1, 1:-1, :-2]
+    ) / (h * h)
+
+
+def residual_3d(phi: np.ndarray, rhs: np.ndarray, h: float) -> np.ndarray:
+    return rhs[1:-1, 1:-1, 1:-1] - apply_A_3d(phi, h)
