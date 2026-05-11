@@ -18,6 +18,15 @@ $$
 \frac{4\phi_{i,j}-\phi_{i+1,j}-\phi_{i-1,j}-\phi_{i,j+1}-\phi_{i,j-1}}{h^2}=f_{i,j}
 $$
 
+For the 3D case on a uniform grid, the finite-difference discretization is
+
+$$
+\frac{6\phi_{i,j,k}
+-\phi_{i+1,j,k}-\phi_{i-1,j,k}
+-\phi_{i,j+1,k}-\phi_{i,j-1,k}
+-\phi_{i,j,k+1}-\phi_{i,j,k-1}}{h^2}=f_{i,j,k}
+$$
+
 The residual is defined as
 
 $$
@@ -44,16 +53,17 @@ $$
 
 ## Current Scope
 
-The initial development focuses only on the 2D Poisson equation.
+The Python reference implementation supports both the 2D and 3D Poisson
+equation. The C++, OpenMP, and CUDA implementations currently focus on 2D.
 
 ## Current Solver Support
 
-| Backend        | Jacobi 2D | Gauss-Seidel 2D | SOR 2D | Multigrid 2D |
-| -------------- | --------: | --------------: | -----: | -----------: |
-| Python + Numba |       Yes |             Yes |    Yes |          Yes |
-| C++ (pure)     |       Yes |             Yes |    Yes |          Yes |
-| C++ + OpenMP   |        No |              No |     No |           No |
-| CUDA           |        No |              No |     No |           No |
+| Backend        | Jacobi 2D | Gauss-Seidel 2D | SOR 2D | Multigrid 2D | Jacobi 3D | Gauss-Seidel 3D | SOR 3D | Multigrid 3D |
+| -------------- | --------: | --------------: | -----: | -----------: | --------: | --------------: | -----: | -----------: |
+| Python + Numba |       Yes |             Yes |    Yes |          Yes |       Yes |             Yes |    Yes |          Yes |
+| C++ (pure)     |       Yes |             Yes |    Yes |          Yes |        No |              No |     No |           No |
+| C++ + OpenMP   |        No |              No |     No |           No |        No |              No |     No |           No |
+| CUDA           |        No |              No |     No |           No |        No |              No |     No |           No |
 
 ## Repository Structure
 
@@ -79,9 +89,13 @@ multigrid-poisson-solvers/
 │   ├── metrics.py
 │   └── solvers/
 │       ├── jacobi_2d.py
+│       ├── jacobi_3d.py
 │       ├── gs_2d.py
+│       ├── gs_3d.py
 │       ├── sor_2d.py
-│       └── mg_2d.py
+│       ├── sor_3d.py
+│       ├── mg_2d.py
+│       └── mg_3d.py
 │
 ├── CMakeLists.txt
 ├── configs/
@@ -134,6 +148,7 @@ multigrid-poisson-solvers/
 ├── tests/
 │   ├── conftest.py
 │   ├── test_python.py
+│   ├── test_python_3d.py
 │   ├── cpp/
 │   │   └── test_poisson.cpp
 │   └── reference/
@@ -162,9 +177,19 @@ $$
 
 These cases provide simple tests for residual convergence, boundary-condition handling, and second-order accuracy.
 
+The Python 3D implementation uses matching manufactured solutions:
+
+| Case               | Exact Solution $$\phi(x,y,z)$$                         | Right-Hand Side $$f(x,y,z)$$                              | Boundary          |
+| ------------------ | ------------------------------------------------------ | --------------------------------------------------------- | ----------------- |
+| Sine mode          | $$\sin(\pi x)\sin(\pi y)\sin(\pi z)$$                  | $$3\pi^2\sin(\pi x)\sin(\pi y)\sin(\pi z)$$               | Zero Dirichlet    |
+| Mixed sine mode    | $$\sin(2\pi x)\sin(3\pi y)\sin(4\pi z)$$               | $$29\pi^2\sin(2\pi x)\sin(3\pi y)\sin(4\pi z)$$           | Zero Dirichlet    |
+| Polynomial bubble  | $$x(1-x)y(1-y)z(1-z)$$                                 | $$2[y(1-y)z(1-z)+x(1-x)z(1-z)+x(1-x)y(1-y)]$$             | Zero Dirichlet    |
+| Smooth exponential | $$e^{x+y+z}$$                                          | $$-3e^{x+y+z}$$                                           | Nonzero Dirichlet |
+| Cosine mode        | $$\cos(\pi x)\cos(\pi y)\cos(\pi z)$$                  | $$3\pi^2\cos(\pi x)\cos(\pi y)\cos(\pi z)$$               | Nonzero Dirichlet |
+
 ## Development Plan
 
-1. The Python + Numba 2D solvers are implemented.
+1. The Python + Numba 2D and 3D solvers are implemented.
 2. The Python version serves as the reference implementation.
 3. Implement the C++ + OpenMP 2D solvers.
 4. Implement the CUDA 2D SOR and multigrid solvers.
@@ -192,6 +217,7 @@ Two standalone C++ benchmark executables are available after building:
 The Python reference implementation exposes a matching benchmark runner:
 
 - `python/run_benchmark.py`
+- `python/run_benchmark_3d.py`
 
 Both benchmarks run the sine manufactured-solution case with one warmup run and five timed runs per measurement, then report the mean and standard deviation of the measured solver time.
 The warmup pass uses the same solver setup but caps `max_iter` at `10` to keep the warmup cheap.
@@ -210,6 +236,15 @@ The benchmark suites mirror the repository's existing comparison groups:
 
 The multigrid benchmark keeps the current comparison defaults of `nu=3`, `omega=1.25`, `coarse_steps=16`, and reports both `coarse=exact` and `coarse=sor`.
 
+The 3D Python benchmark is calibrated for the `mg` conda environment so each
+timed solve stays below 10 seconds on the development workstation. It records
+`max_time_ms` in both CSV files to make that limit explicit. The default 3D
+grid sizes are:
+
+- Jacobi 3D and RB GS 3D: `15, 31, 47, 63`
+- RB SOR 3D: `31, 63, 95, 127, 159`
+- MG 3D: `15, 31, 63, 127, 255, 383`
+
 Example usage:
 
 ```bash
@@ -219,9 +254,16 @@ cmake --build build --target poisson_benchmark_cpp poisson_benchmark_omp
 ./build/poisson_benchmark_cpp --output results/cpp/benchmark
 ./build/poisson_benchmark_omp --output results/omp/benchmark
 python python/run_benchmark.py --output results/benchmark/python/benchmark_python_v1
+python python/run_benchmark_3d.py --output results/benchmark/python/benchmark_python_3d_v1
 ```
 
 If you only want one group, you can still pass `--suite solver_comparison` or `--suite mg_compare`.
+
+Run the Python CLI in 3D with `--dim 3`:
+
+```bash
+python python/run_poisson.py --dim 3 --solver mg --case sine -n 15 --tol 1e-8 --max-iter 100
+```
 
 ## C++ Build and Test
 
