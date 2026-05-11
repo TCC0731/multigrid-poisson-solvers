@@ -181,6 +181,7 @@ Options parse_args(int argc, char** argv) {
 
 template <typename Real>
 int run(const Options& options) {
+    const poisson::cuda::detail::ScopedNvtxRange run_range{"cuda::run"};
     using Problem = poisson::Problem2D<Real>;
     using SolveOpts = poisson::SolveOptions<Real>;
     using MgOpts = poisson::MGOptions<Real>;

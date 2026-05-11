@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -38,6 +39,21 @@ Real effective_mg_omega(const Problem2D<Real>& problem, const MGOptions<Real>& o
     return options.omega;
 }
 
+[[nodiscard]] std::string make_mg_cycle_label(
+    std::size_t level_index, std::size_t interior_n, MGCycle cycle, CoarseSolve coarse_mode
+) {
+    std::string label{"mg::cycle[level="};
+    label += std::to_string(level_index);
+    label += ",n=";
+    label += std::to_string(interior_n);
+    label += ",cycle=";
+    label += ((cycle == MGCycle::V) ? "V" : "W");
+    label += ",coarse=";
+    label += ((coarse_mode == CoarseSolve::Exact) ? "exact" : "sor");
+    label += "]";
+    return label;
+}
+
 template <typename Real>
 struct MGLevelWorkspace {
     cuda::DeviceGridView2D<Real> fine_residual;
@@ -55,6 +71,7 @@ public:
     }
 
     void reserve_for(std::size_t fine_array_n) {
+        const cuda::detail::ScopedNvtxRange range{"mg::workspace_reserve"};
         if (fine_array_n == configured_array_n_ && !levels_.empty()) {
             return;
         }
@@ -65,6 +82,7 @@ public:
 
         const std::size_t required_elements = append_layout(fine_array_n, 0);
         if (required_elements > pool_capacity_elements_) {
+            const cuda::detail::ScopedNvtxRange grow_range{"mg::workspace_grow_pool"};
             pool_ = cuda::DeviceBuffer<Real>{required_elements};
             pool_capacity_elements_ = required_elements;
         }
@@ -171,6 +189,7 @@ void solve_coarsest_exact(
     Real h,
     const Grid2D<Real>* boundary_template
 ) {
+    const cuda::detail::ScopedNvtxRange range{"mg::solve_coarsest_exact"};
     Grid2D<Real> host_phi{phi.size()};
     if (boundary_template != nullptr) {
         copy_boundary_values(*boundary_template, host_phi);
@@ -255,6 +274,9 @@ void mg_cycle(
     const Grid2D<Real>* boundary_template
 ) {
     const std::size_t n = phi.size() - 2;
+    const std::string cycle_label = make_mg_cycle_label(level_index, n, cycle, coarse_mode);
+    const cuda::detail::ScopedNvtxRange cycle_range{cycle_label};
+
     if (n <= 4) {
         if (coarse_mode == CoarseSolve::Exact) {
             solve_coarsest_exact(phi, rhs, h, boundary_template);
@@ -264,31 +286,28 @@ void mg_cycle(
         return;
     }
 
-    cuda::run_rb_sor_steps(phi, rhs, h, omega, nu);
+    {
+        const cuda::detail::ScopedNvtxRange pre_smooth_range{"mg::pre_smooth"};
+        cuda::run_rb_sor_steps(phi, rhs, h, omega, nu);
+    }
 
     auto& level = workspace.level(level_index);
     auto& fine_residual = level.fine_residual;
-    cuda::compute_residual_full(phi, rhs, h, fine_residual);
+    {
+        const cuda::detail::ScopedNvtxRange residual_range{"mg::compute_fine_residual"};
+        cuda::compute_residual_full(phi, rhs, h, fine_residual);
+    }
 
     auto& coarse_rhs = level.coarse_rhs;
-    cuda::restrict_full_weighting<Real>(fine_residual, coarse_rhs);
+    {
+        const cuda::detail::ScopedNvtxRange restriction_range{"mg::restrict_to_coarse"};
+        cuda::restrict_full_weighting<Real>(fine_residual, coarse_rhs);
+    }
 
     auto& coarse_error = level.coarse_error;
-    coarse_error.zero();
-    mg_cycle<Real>(
-        coarse_error,
-        coarse_rhs,
-        Real{2} * h,
-        omega,
-        nu,
-        cycle,
-        coarse_mode,
-        coarse_steps,
-        workspace,
-        level_index + 1,
-        static_cast<const Grid2D<Real>*>(nullptr)
-    );
-    if (cycle == MGCycle::W) {
+    {
+        const cuda::detail::ScopedNvtxRange coarse_correction_range{"mg::coarse_correction"};
+        coarse_error.zero();
         mg_cycle<Real>(
             coarse_error,
             coarse_rhs,
@@ -302,10 +321,31 @@ void mg_cycle(
             level_index + 1,
             static_cast<const Grid2D<Real>*>(nullptr)
         );
+        if (cycle == MGCycle::W) {
+            mg_cycle<Real>(
+                coarse_error,
+                coarse_rhs,
+                Real{2} * h,
+                omega,
+                nu,
+                cycle,
+                coarse_mode,
+                coarse_steps,
+                workspace,
+                level_index + 1,
+                static_cast<const Grid2D<Real>*>(nullptr)
+            );
+        }
     }
 
-    cuda::prolong_add<Real>(coarse_error, phi);
-    cuda::run_rb_sor_steps(phi, rhs, h, omega, nu);
+    {
+        const cuda::detail::ScopedNvtxRange prolong_range{"mg::prolongate"};
+        cuda::prolong_add<Real>(coarse_error, phi);
+    }
+    {
+        const cuda::detail::ScopedNvtxRange post_smooth_range{"mg::post_smooth"};
+        cuda::run_rb_sor_steps(phi, rhs, h, omega, nu);
+    }
 }
 
 template <typename Real>
@@ -340,6 +380,7 @@ template <typename Real>
 SolveResult solve_mg_impl(
     const Problem2D<Real>& problem, const MGOptions<Real>& options, CoarseSolve coarse_mode
 ) {
+    const cuda::detail::ScopedNvtxRange solve_range{"mg::solve"};
     validate_mg_inputs(problem, options, coarse_mode);
     cuda::ensure_device_available();
 
@@ -347,10 +388,14 @@ SolveResult solve_mg_impl(
     cuda::DeviceGrid2D<Real> phi{problem.phi0};
     const cuda::DeviceGrid2D<Real> rhs{problem.rhs};
     thread_local MGWorkspace<Real> workspace{};
-    workspace.reserve_for(problem.array_n());
+    {
+        const cuda::detail::ScopedNvtxRange workspace_range{"mg::workspace_setup"};
+        workspace.reserve_for(problem.array_n());
+    }
     cuda::RelativeResidualWorkspace residual_workspace{problem.array_n()};
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
+        const cuda::detail::ScopedNvtxRange iteration_range{"mg::iteration"};
         mg_cycle<Real>(
             phi,
             rhs,
