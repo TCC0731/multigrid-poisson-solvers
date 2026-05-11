@@ -79,26 +79,28 @@ def _prolong_add(coarse, fine):
         for j in range(1, nc + 1):
             fj = 2 * j
             fine[fi, fj] += coarse[i, j]
-    for i in range(1, nc):
+    # Include boundary-adjacent odd fine points. Those interpolate against the
+    # coarse-grid zero boundary and must not be skipped.
+    for i in range(0, nc + 1):
         fi = 2 * i + 1
         for j in range(1, nc + 1):
             fj = 2 * j
             fine[fi, fj] += 0.5 * (coarse[i, j] + coarse[i + 1, j])
     for i in range(1, nc + 1):
         fi = 2 * i
-        for j in range(1, nc):
+        for j in range(0, nc + 1):
             fj = 2 * j + 1
             fine[fi, fj] += 0.5 * (coarse[i, j] + coarse[i, j + 1])
-    for i in range(1, nc):
+    for i in range(0, nc + 1):
         fi = 2 * i + 1
-        for j in range(1, nc):
+        for j in range(0, nc + 1):
             fj = 2 * j + 1
             fine[fi, fj] += 0.25 * (
                 coarse[i, j]
                 + coarse[i + 1, j]
                 + coarse[i, j + 1]
                 + coarse[i + 1, j + 1]
-    )
+            )
     return fine
 
 
