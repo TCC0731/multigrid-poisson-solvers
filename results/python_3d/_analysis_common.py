@@ -104,6 +104,8 @@ def run_case(
     dtype,
     tol: float,
     max_iter: int,
+    sor_max_iter: int = 1000,
+    mg_max_iter: int = 100,
 ):
     results = make_empty_results(solver_modules)
 
@@ -119,7 +121,12 @@ def run_case(
             solve(problem, tol=1e-2, max_iter=2, **kwargs)
 
             start = perf_counter()
-            current_max_iter = 100 if "MG" in name else max_iter
+            if "MG" in name:
+                current_max_iter = mg_max_iter
+            elif "SOR" in name:
+                current_max_iter = sor_max_iter
+            else:
+                current_max_iter = max_iter
             phi, iterations, _res_l2 = solve(
                 problem,
                 tol=tol,
@@ -265,6 +272,8 @@ def run_analysis(
     plot_suffix: str,
     csv_suffix: str,
     reference_solver: str,
+    sor_max_iter: int = 1000,
+    mg_max_iter: int = 100,
 ) -> None:
     markers = build_markers(solver_modules)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -281,6 +290,8 @@ def run_analysis(
             dtype=dtype,
             tol=tol,
             max_iter=max_iter,
+            sor_max_iter=sor_max_iter,
+            mg_max_iter=mg_max_iter,
         )
 
         plot_path = output_dir / f"plots_{case}{plot_suffix}.png"

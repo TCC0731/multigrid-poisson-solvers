@@ -8,10 +8,17 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from _analysis_common import (
-    MG_COMPARE_GRID_SIZES,
     MG_COMPARE_MODULES,
+    MG_GRID_SIZES,
+    RB_SOR_GRID_SIZES,
     run_analysis,
 )
+
+
+MG_COMPARE_GRID_SIZES = {
+    name: MG_GRID_SIZES[:8].copy() for name in MG_COMPARE_MODULES
+}
+MG_COMPARE_GRID_SIZES["RB SOR 3D"] = np.insert(RB_SOR_GRID_SIZES, 0, 15)
 
 
 def main() -> None:
@@ -22,6 +29,8 @@ def main() -> None:
         dtype=np.float64,
         tol=1e-10,
         max_iter=50000,
+        mg_max_iter=20,
+        sor_max_iter=1000,
         plot_suffix="_mg_compare",
         csv_suffix="_mg_compare",
         reference_solver="RB SOR 3D",
