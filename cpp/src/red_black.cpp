@@ -54,13 +54,17 @@ SolveResult solve_red_black_impl(
             }
         }
 
-        const Real res = residual_l2(problem, phi);
+        const Real res = relative_physical_residual_l2(problem, phi);
         if (res <= options.tol) {
             return make_solve_result(std::move(phi), iteration, res);
         }
     }
 
-    return make_solve_result(std::move(phi), options.max_iter, residual_l2(problem, phi));
+    return make_solve_result(
+        std::move(phi),
+        options.max_iter,
+        relative_physical_residual_l2(problem, phi)
+    );
 }
 
 } // namespace

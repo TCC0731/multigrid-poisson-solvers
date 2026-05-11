@@ -48,7 +48,7 @@ SolveResult solve_jacobi_impl(const Problem2D<Real>& problem, const SolveOptions
             }
         }
 
-        const Real res = residual_l2(problem, work);
+        const Real res = relative_physical_residual_l2(problem, work);
         if (res <= options.tol) {
             return make_solve_result(std::move(work), iteration, res);
         }
@@ -56,7 +56,11 @@ SolveResult solve_jacobi_impl(const Problem2D<Real>& problem, const SolveOptions
         std::swap(phi, work);
     }
 
-    return make_solve_result(std::move(phi), options.max_iter, residual_l2(problem, phi));
+    return make_solve_result(
+        std::move(phi),
+        options.max_iter,
+        relative_physical_residual_l2(problem, phi)
+    );
 }
 
 } // namespace

@@ -26,6 +26,9 @@ struct Options {
     std::size_t grid_size{31};
     std::optional<double> tol{};
     std::size_t max_iter{20'000};
+    std::size_t nu{2};
+    std::optional<double> omega{};
+    bool omega_is_auto{false};
 };
 
 template <typename Real>
@@ -39,7 +42,8 @@ Real default_tol() {
 void print_usage(const char* argv0) {
     std::cerr << "Usage: " << argv0
               << " [--dtype float|double] [--solver NAME] [--case NAME] [--grid-size N]"
-                 " [--tol T] [--max-iter N] [--cycle v|w] [--mg-coarse exact|sor]\n";
+                 " [--tol T] [--max-iter N] [--cycle v|w] [--nu N]"
+                 " [--omega auto|VALUE] [--mg-coarse exact|sor]\n";
     std::cerr << "Dtypes: float, double\n";
     std::cerr << "Solvers: jacobi, gs, sor, mg\n";
     std::cerr << "Cases: sine, mixed_sine, bubble, exp, cosine\n";
@@ -85,6 +89,33 @@ Options parse_args(int argc, char** argv) {
                 throw std::invalid_argument("--cycle requires a value");
             }
             options.cycle_name = argv[++i];
+            continue;
+        }
+
+        if (arg == "--nu") {
+            if (i + 1 >= argc) {
+                throw std::invalid_argument("--nu requires a value");
+            }
+            const long long parsed = std::stoll(argv[++i]);
+            if (parsed < 1) {
+                throw std::invalid_argument("nu must be positive");
+            }
+            options.nu = static_cast<std::size_t>(parsed);
+            continue;
+        }
+
+        if (arg == "--omega") {
+            if (i + 1 >= argc) {
+                throw std::invalid_argument("--omega requires a value");
+            }
+            const std::string_view omega_value{argv[++i]};
+            if (omega_value == "auto" || omega_value == "default" || omega_value == "none") {
+                options.omega.reset();
+                options.omega_is_auto = true;
+                continue;
+            }
+            options.omega = std::stod(std::string(omega_value));
+            options.omega_is_auto = false;
             continue;
         }
 
@@ -167,13 +198,12 @@ int run(const Options& options) {
     const SolveOpts solve_options{tol, options.max_iter};
     const poisson::MGCycle mg_cycle =
         options.cycle_name == "w" ? poisson::MGCycle::W : poisson::MGCycle::V;
-    const MgOpts mg_options{
-        tol,
-        options.max_iter,
-        2,
-        mg_cycle,
-        16,
-    };
+    MgOpts mg_options{tol, options.max_iter, options.nu, mg_cycle, 16};
+    if (options.omega_is_auto) {
+        mg_options.omega_is_auto = true;
+    } else if (options.omega.has_value()) {
+        mg_options.omega = static_cast<Real>(*options.omega);
+    }
 
     std::string solver_name = options.solver_name;
     poisson::SolveResult result{};
@@ -202,8 +232,8 @@ int run(const Options& options) {
     const double time_ms =
         std::chrono::duration<double, std::milli>(end - start).count();
 
-    const auto phi = poisson::cast_grid<Real>(result.phi);
-    const poisson::ErrorMetrics metrics = poisson::metrics(problem, phi);
+    const auto metrics_problem = poisson::make_problem<double>(options.case_name, options.grid_size);
+    const poisson::ErrorMetrics metrics = poisson::metrics(metrics_problem, result.phi);
 
     std::cout << "solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms\n";
     std::cout << std::scientific;
