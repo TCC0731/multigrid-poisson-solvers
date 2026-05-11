@@ -38,6 +38,7 @@ void validate_gs_inputs(const Problem2D<Real>& problem, const SolveOptions<Real>
 
 template <typename Real>
 SolveResult solve_gs(const Problem2D<Real>& problem, const SolveOptions<Real>& options) {
+    const cuda::detail::ScopedNvtxRange solve_range{"cuda::solve_gs"};
     validate_gs_inputs(problem, options);
     cuda::ensure_device_available();
 
@@ -46,6 +47,7 @@ SolveResult solve_gs(const Problem2D<Real>& problem, const SolveOptions<Real>& o
     cuda::RelativeResidualWorkspace residual_workspace{problem.array_n()};
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
+        const cuda::detail::ScopedNvtxRange iteration_range{"cuda::gs_iteration"};
         cuda::run_rb_sor_steps(phi, rhs, problem.h, Real{1}, 1);
 
         if (cuda::should_check_non_mg_residual(iteration, options.max_iter)) {

@@ -52,6 +52,7 @@ void validate_sor_inputs(const Problem2D<Real>& problem, const SolveOptions<Real
 
 template <typename Real>
 SolveResult solve_sor(const Problem2D<Real>& problem, const SolveOptions<Real>& options) {
+    const cuda::detail::ScopedNvtxRange solve_range{"cuda::solve_sor"};
     validate_sor_inputs(problem, options);
     cuda::ensure_device_available();
 
@@ -61,6 +62,7 @@ SolveResult solve_sor(const Problem2D<Real>& problem, const SolveOptions<Real>& 
     cuda::RelativeResidualWorkspace residual_workspace{problem.array_n()};
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
+        const cuda::detail::ScopedNvtxRange iteration_range{"cuda::sor_iteration"};
         cuda::run_rb_sor_steps(phi, rhs, problem.h, omega, 1);
 
         if (cuda::should_check_non_mg_residual(iteration, options.max_iter)) {

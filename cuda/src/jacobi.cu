@@ -39,6 +39,7 @@ void validate_jacobi_inputs(const Problem2D<Real>& problem, const SolveOptions<R
 
 template <typename Real>
 SolveResult solve_jacobi(const Problem2D<Real>& problem, const SolveOptions<Real>& options) {
+    const cuda::detail::ScopedNvtxRange solve_range{"cuda::solve_jacobi"};
     validate_jacobi_inputs(problem, options);
     cuda::ensure_device_available();
 
@@ -48,6 +49,7 @@ SolveResult solve_jacobi(const Problem2D<Real>& problem, const SolveOptions<Real
     cuda::RelativeResidualWorkspace residual_workspace{problem.array_n()};
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
+        const cuda::detail::ScopedNvtxRange iteration_range{"cuda::jacobi_iteration"};
         cuda::run_jacobi_step(phi, rhs, problem.h, work);
 
         if (cuda::should_check_non_mg_residual(iteration, options.max_iter)) {

@@ -14,6 +14,17 @@
 
 #include "poisson/grid2d.hpp"
 
+#if defined(__has_include)
+#  if __has_include(<nvtx3/nvtx3.hpp>)
+#    include <nvtx3/nvtx3.hpp>
+#    define POISSON_CUDA_HAS_NVTX3 1
+#  else
+#    define POISSON_CUDA_HAS_NVTX3 0
+#  endif
+#else
+#  define POISSON_CUDA_HAS_NVTX3 0
+#endif
+
 #include "../../kernels/common.cuh"
 #include "../../kernels/jacobi_kernels.cuh"
 #include "../../kernels/mg_kernels.cuh"
@@ -21,6 +32,34 @@
 #include "../../kernels/sor_kernels.cuh"
 
 namespace poisson::cuda {
+
+// Keep NVTX instrumentation optional so the CUDA build still works when the
+// profiler headers are not installed in the current environment.
+namespace detail {
+
+#if POISSON_CUDA_HAS_NVTX3
+class ScopedNvtxRange {
+public:
+    explicit ScopedNvtxRange(const char* message)
+        : range_{message} {}
+
+    explicit ScopedNvtxRange(const std::string& message)
+        : range_{message.c_str()} {}
+
+private:
+    nvtx3::scoped_range range_;
+};
+#else
+class ScopedNvtxRange {
+public:
+    explicit ScopedNvtxRange(const char*) {}
+    explicit ScopedNvtxRange(const std::string&) {}
+};
+#endif
+
+} // namespace detail
+
+#undef POISSON_CUDA_HAS_NVTX3
 
 inline void check(cudaError_t status, const char* expr, const char* file, int line) {
     if (status == cudaSuccess) {
@@ -329,6 +368,7 @@ inline cuda_kernels::ResidualPair* reduce_residual_pairs(
     int threads,
     std::size_t shared_bytes
 ) {
+    const detail::ScopedNvtxRange range{"cuda::reduce_residual_pairs"};
     while (active_count > 1) {
         const std::size_t next_count = reduction_output_count(active_count);
         cuda_kernels::reduce_residual_pairs_kernel<>
@@ -346,6 +386,7 @@ void ensure_rhs_norm_cached(
     Real h,
     RelativeResidualWorkspace& workspace
 ) {
+    const detail::ScopedNvtxRange range{"cuda::ensure_rhs_norm_cached"};
     const Real h2 = h * h;
     if (workspace.rhs_norm_cached(rhs.size(), static_cast<double>(h2))) {
         return;
@@ -388,6 +429,7 @@ void run_rb_sor_steps(
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
     }
 
+    const detail::ScopedNvtxRange range{"cuda::run_rb_sor_steps"};
     const std::size_t interior_n = phi.size() - 2;
     const dim3 block = cuda_kernels::make_block_2d();
     const std::size_t active_columns = (interior_n + 1) / 2;
@@ -418,6 +460,7 @@ void run_fused_rb_sor_steps(
         throw std::invalid_argument("fused coarse SOR only supports 3x3 through 6x6 grids");
     }
 
+    const detail::ScopedNvtxRange range{"cuda::run_fused_rb_sor_steps"};
     const Real h2 = h * h;
     const dim3 block{
         static_cast<unsigned int>(phi.size()),
@@ -441,6 +484,7 @@ void run_jacobi_step(
         throw std::invalid_argument("jacobi device grid sizes do not match");
     }
 
+    const detail::ScopedNvtxRange range{"cuda::run_jacobi_step"};
     const dim3 block = cuda_kernels::make_block_2d();
     const dim3 grid = cuda_kernels::make_grid_2d(phi.size() - 2, phi.size() - 2, block);
     const Real h2 = h * h;
@@ -461,6 +505,7 @@ template <typename Real>
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
     }
 
+    const detail::ScopedNvtxRange range{"cuda::compute_relative_residual"};
     const std::size_t interior_n = phi.size() - 2;
     const std::size_t total_points = interior_n * interior_n;
     if (total_points == 0) {
@@ -519,6 +564,7 @@ template <typename Real>
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
     }
 
+    const detail::ScopedNvtxRange range{"cuda::compute_relative_residual_uncached"};
     const std::size_t interior_n = phi.size() - 2;
     const std::size_t total_points = interior_n * interior_n;
     if (total_points == 0) {
@@ -584,6 +630,7 @@ void compute_residual_full(
         throw std::invalid_argument("residual_full device grid sizes do not match");
     }
 
+    const detail::ScopedNvtxRange range{"cuda::compute_residual_full"};
     residual_out.zero();
     const dim3 block = cuda_kernels::make_block_2d();
     const dim3 grid = cuda_kernels::make_grid_2d(phi.size() - 2, phi.size() - 2, block);
@@ -595,6 +642,7 @@ void compute_residual_full(
 
 template <typename Real, typename FineGrid, typename CoarseGrid>
 void restrict_full_weighting(const FineGrid& fine, CoarseGrid& coarse) {
+    const detail::ScopedNvtxRange range{"cuda::restrict_full_weighting"};
     const std::size_t coarse_interior_n = coarse.size() - 2;
     coarse.zero();
 
@@ -612,6 +660,7 @@ void restrict_full_weighting(const FineGrid& fine, CoarseGrid& coarse) {
 
 template <typename Real, typename CoarseGrid, typename FineGrid>
 void prolong_add(const CoarseGrid& coarse, FineGrid& fine) {
+    const detail::ScopedNvtxRange range{"cuda::prolong_add"};
     const std::size_t fine_interior_n = fine.size() - 2;
     const dim3 block = cuda_kernels::make_block_2d();
     const dim3 grid = cuda_kernels::make_grid_2d(
