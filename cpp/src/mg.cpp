@@ -121,7 +121,9 @@ void prolong_add(const Grid2D<Real>& coarse, Grid2D<Real>& fine) {
         }
     }
 
-    for (std::size_t i = 1; i < nc; ++i) {
+    // Include boundary-adjacent odd fine points. Those interpolate against the
+    // coarse-grid zero boundary and must not be skipped.
+    for (std::size_t i = 0; i <= nc; ++i) {
         const std::size_t fi = 2 * i + 1;
         for (std::size_t j = 1; j <= nc; ++j) {
             const std::size_t fj = 2 * j;
@@ -131,15 +133,15 @@ void prolong_add(const Grid2D<Real>& coarse, Grid2D<Real>& fine) {
 
     for (std::size_t i = 1; i <= nc; ++i) {
         const std::size_t fi = 2 * i;
-        for (std::size_t j = 1; j < nc; ++j) {
+        for (std::size_t j = 0; j <= nc; ++j) {
             const std::size_t fj = 2 * j + 1;
             fine(fi, fj) += Real{1} / Real{2} * (coarse(i, j) + coarse(i, j + 1));
         }
     }
 
-    for (std::size_t i = 1; i < nc; ++i) {
+    for (std::size_t i = 0; i <= nc; ++i) {
         const std::size_t fi = 2 * i + 1;
-        for (std::size_t j = 1; j < nc; ++j) {
+        for (std::size_t j = 0; j <= nc; ++j) {
             const std::size_t fj = 2 * j + 1;
             fine(fi, fj) += Real{1} / Real{4} * (
                 coarse(i, j) +

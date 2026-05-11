@@ -153,10 +153,12 @@ void prolong_add(const Grid2D<Real>& coarse, Grid2D<Real>& fine) {
         }
     }
 
+    // Include boundary-adjacent odd fine points. Those interpolate against the
+    // coarse-grid zero boundary and must not be skipped.
 #ifdef _OPENMP
-#pragma omp parallel for if(omp_config::should_parallel_2d(nc - 1, nc)) schedule(static)
+#pragma omp parallel for if(omp_config::should_parallel_2d(nc + 1, nc)) schedule(static)
 #endif
-    for (std::size_t i = 1; i < nc; ++i) {
+    for (std::size_t i = 0; i <= nc; ++i) {
         const std::size_t fi = 2 * i + 1;
 #ifdef _OPENMP
 #pragma omp simd
@@ -169,14 +171,14 @@ void prolong_add(const Grid2D<Real>& coarse, Grid2D<Real>& fine) {
     }
 
 #ifdef _OPENMP
-#pragma omp parallel for if(omp_config::should_parallel_2d(nc, nc - 1)) schedule(static)
+#pragma omp parallel for if(omp_config::should_parallel_2d(nc, nc + 1)) schedule(static)
 #endif
     for (std::size_t i = 1; i <= nc; ++i) {
         const std::size_t fi = 2 * i;
 #ifdef _OPENMP
 #pragma omp simd
 #endif
-        for (std::size_t j = 1; j < nc; ++j) {
+        for (std::size_t j = 0; j <= nc; ++j) {
             const std::size_t fj = 2 * j + 1;
             fine.unchecked(fi, fj) +=
                 Real{1} / Real{2} * (coarse.unchecked(i, j) + coarse.unchecked(i, j + 1));
@@ -184,14 +186,14 @@ void prolong_add(const Grid2D<Real>& coarse, Grid2D<Real>& fine) {
     }
 
 #ifdef _OPENMP
-#pragma omp parallel for if(omp_config::should_parallel_2d(nc - 1, nc - 1)) schedule(static)
+#pragma omp parallel for if(omp_config::should_parallel_2d(nc + 1, nc + 1)) schedule(static)
 #endif
-    for (std::size_t i = 1; i < nc; ++i) {
+    for (std::size_t i = 0; i <= nc; ++i) {
         const std::size_t fi = 2 * i + 1;
 #ifdef _OPENMP
 #pragma omp simd
 #endif
-        for (std::size_t j = 1; j < nc; ++j) {
+        for (std::size_t j = 0; j <= nc; ++j) {
             const std::size_t fj = 2 * j + 1;
             fine.unchecked(fi, fj) += Real{1} / Real{4} * (
                 coarse.unchecked(i, j) +
