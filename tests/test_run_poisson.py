@@ -18,6 +18,7 @@ def test_parse_args_defaults(monkeypatch):
     assert args.solver == "jacobi"
     assert args.case == "sine"
     assert args.dtype == "float64"
+    assert args.dim == 2
     assert args.grid_size == 31
     assert args.tol == 1e-10
     assert args.max_iter == 20000
@@ -66,8 +67,48 @@ def test_load_helpers_use_expected_modules(monkeypatch):
         case="cosine", grid_size=13, dtype=np.float32
     )
     assert import_module.call_args_list == [
-        (( "problems",), {}),
+        (("problems",), {}),
         (("solvers.sor_2d",), {}),
+        (("metrics",), {}),
+    ]
+
+
+def test_load_helpers_use_expected_3d_modules(monkeypatch):
+    problem_result = object()
+    solver_result = object()
+    error_metrics_result = object()
+
+    problem_module = SimpleNamespace(
+        make_problem_3d=Mock(return_value=problem_result),
+    )
+    solver_module = SimpleNamespace(
+        solve=Mock(return_value=solver_result),
+    )
+    metrics_module = SimpleNamespace(
+        error_metrics_3d=Mock(return_value=error_metrics_result),
+    )
+    import_module = Mock(
+        side_effect=lambda name: {
+            "problems": problem_module,
+            "solvers.mg_3d": solver_module,
+            "metrics": metrics_module,
+        }[name]
+    )
+    monkeypatch.setattr(run_poisson, "import_module", import_module)
+
+    problem = run_poisson.load_problem("sine", 9, np.float64, dim=3)
+    solve = run_poisson.load_solver("mg", dim=3)
+    error_metrics = run_poisson.load_error_metrics(dim=3)
+
+    assert problem is problem_result
+    assert solve is solver_module.solve
+    assert error_metrics is metrics_module.error_metrics_3d
+    problem_module.make_problem_3d.assert_called_once_with(
+        case="sine", grid_size=9, dtype=np.float64
+    )
+    assert import_module.call_args_list == [
+        (("problems",), {}),
+        (("solvers.mg_3d",), {}),
         (("metrics",), {}),
     ]
 
@@ -141,5 +182,55 @@ def test_main_prints_expected_csv_row(monkeypatch, capsys):
     load_error_metrics.assert_called_once_with()
     warmup_solver.assert_called_once_with(solve, problem)
     solve.assert_called_once_with(problem, tol=1e-6, max_iter=99)
+    error_metrics.assert_called_once_with(problem, phi)
+    assert perf_counter.call_count == 2
+
+
+def test_main_prints_expected_3d_csv_row(monkeypatch, capsys):
+    problem = SimpleNamespace(
+        phi0=np.zeros((5, 5, 5), dtype=np.float64),
+        rhs=np.zeros((5, 5, 5), dtype=np.float64),
+        h=np.float64(0.25),
+        exact=np.zeros((5, 5, 5), dtype=np.float64),
+    )
+    phi = np.full_like(problem.phi0, 2.0)
+    solve = Mock(return_value=(phi, 3, 0.03125))
+    error_metrics = Mock(return_value=(0.125, 0.25))
+
+    parse_args_result = SimpleNamespace(
+        dim=3,
+        solver="mg",
+        case="sine",
+        dtype="float64",
+        grid_size=3,
+        tol=1e-7,
+        max_iter=11,
+    )
+    load_problem = Mock(return_value=problem)
+    load_solver = Mock(return_value=solve)
+    load_error_metrics = Mock(return_value=error_metrics)
+    warmup_solver = Mock()
+    perf_counter = Mock(side_effect=[200.0, 200.5])
+
+    monkeypatch.setattr(run_poisson, "parse_args", Mock(return_value=parse_args_result))
+    monkeypatch.setattr(run_poisson, "load_problem", load_problem)
+    monkeypatch.setattr(run_poisson, "load_solver", load_solver)
+    monkeypatch.setattr(run_poisson, "load_error_metrics", load_error_metrics)
+    monkeypatch.setattr(run_poisson, "warmup_solver", warmup_solver)
+    monkeypatch.setattr(run_poisson, "perf_counter", perf_counter)
+
+    run_poisson.main()
+
+    out = capsys.readouterr().out.strip().splitlines()
+
+    assert out == [
+        "solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms",
+        "mg,python,float64,3,3,3.125000e-02,1.250000e-01,2.500000e-01,500.000",
+    ]
+    load_problem.assert_called_once_with("sine", 3, np.float64, dim=3)
+    load_solver.assert_called_once_with("mg", dim=3)
+    load_error_metrics.assert_called_once_with(dim=3)
+    warmup_solver.assert_called_once_with(solve, problem)
+    solve.assert_called_once_with(problem, tol=1e-7, max_iter=11)
     error_metrics.assert_called_once_with(problem, phi)
     assert perf_counter.call_count == 2

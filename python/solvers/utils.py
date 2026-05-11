@@ -90,3 +90,37 @@ def _relative_backward_error_l2(phi: np.ndarray, rhs: np.ndarray, h: float) -> f
     if sum_s2 == 0:
         return 0.0
     return np.sqrt(sum_d2) / np.sqrt(sum_s2)
+
+
+@njit(cache=True)
+def _relative_physical_residual_l2_3d(phi, rhs, h):
+    h2 = h * h
+
+    res_total = 0.0
+    rhs_total = 0.0
+
+    n = phi.shape[0] - 2
+
+    for i in range(1, n + 1):
+        for j in range(1, n + 1):
+            for k in range(1, n + 1):
+                Lphi = (
+                    6.0 * phi[i, j, k]
+                    - phi[i + 1, j, k]
+                    - phi[i - 1, j, k]
+                    - phi[i, j + 1, k]
+                    - phi[i, j - 1, k]
+                    - phi[i, j, k + 1]
+                    - phi[i, j, k - 1]
+                )
+
+                b = h2 * rhs[i, j, k]
+                d = b - Lphi
+
+                res_total += d * d
+                rhs_total += b * b
+
+    if rhs_total > 0.0:
+        return np.sqrt(res_total / rhs_total)
+    else:
+        return np.sqrt(res_total)
