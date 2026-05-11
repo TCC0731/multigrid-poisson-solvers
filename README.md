@@ -182,12 +182,16 @@ The same output format should remain consistent for the future C++ OpenMP and CU
 
 The C++ baseline is covered by a small GTest suite built as `poisson_tests` and executed through CTest.
 
-### C++ Benchmark Executables
+### Benchmark Entry Points
 
-Two standalone benchmark executables are available after building:
+Two standalone C++ benchmark executables are available after building:
 
 - `poisson_benchmark_cpp`
 - `poisson_benchmark_omp`
+
+The Python reference implementation exposes a matching benchmark runner:
+
+- `python/run_benchmark.py`
 
 Both benchmarks run the sine manufactured-solution case with one warmup run and five timed runs per measurement, then report the mean and standard deviation of the measured solver time.
 The warmup pass uses the same solver setup but caps `max_iter` at `10` to keep the warmup cheap.
@@ -202,9 +206,9 @@ The simplified CSV keeps only `solver,grid_size,iterations,mean_time_ms,std_time
 The benchmark suites mirror the repository's existing comparison groups:
 
 - `solver_comparison`: Jacobi, RB GS, and RB SOR with the requested `max_iter` and grid sizes.
-- `mg_compare`: MG(V, `omega=1.25`) and MG(W, `omega=1.25`).
+- `mg_compare`: MG(V, `omega=1.25`) and MG(W, `omega=1.25`), each with both exact and SOR coarse-grid solves.
 
-The multigrid benchmark keeps the current comparison defaults of `nu=3` and exact coarse-grid solve.
+The multigrid benchmark keeps the current comparison defaults of `nu=3`, `omega=1.25`, `coarse_steps=16`, and reports both `coarse=exact` and `coarse=sor`.
 
 Example usage:
 
@@ -214,6 +218,7 @@ cmake --build build --target poisson_benchmark_cpp poisson_benchmark_omp
 
 ./build/poisson_benchmark_cpp --output results/cpp/benchmark
 ./build/poisson_benchmark_omp --output results/omp/benchmark
+python python/run_benchmark.py --output results/benchmark/python/benchmark_python_v1
 ```
 
 If you only want one group, you can still pass `--suite solver_comparison` or `--suite mg_compare`.
