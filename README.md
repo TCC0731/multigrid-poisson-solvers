@@ -217,6 +217,7 @@ Two standalone C++ benchmark executables are available after building:
 The Python reference implementation exposes a matching benchmark runner:
 
 - `python/run_benchmark.py`
+- `python/run_benchmark_3d.py`
 
 Both benchmarks run the sine manufactured-solution case with one warmup run and five timed runs per measurement, then report the mean and standard deviation of the measured solver time.
 The warmup pass uses the same solver setup but caps `max_iter` at `10` to keep the warmup cheap.
@@ -235,6 +236,15 @@ The benchmark suites mirror the repository's existing comparison groups:
 
 The multigrid benchmark keeps the current comparison defaults of `nu=3`, `omega=1.25`, `coarse_steps=16`, and reports both `coarse=exact` and `coarse=sor`.
 
+The 3D Python benchmark is calibrated for the `mg` conda environment so each
+timed solve stays below 10 seconds on the development workstation. It records
+`max_time_ms` in both CSV files to make that limit explicit. The default 3D
+grid sizes are:
+
+- Jacobi 3D and RB GS 3D: `15, 31, 47, 63`
+- RB SOR 3D: `31, 63, 95, 127, 159`
+- MG 3D: `15, 31, 63, 127, 255, 383`
+
 Example usage:
 
 ```bash
@@ -244,6 +254,7 @@ cmake --build build --target poisson_benchmark_cpp poisson_benchmark_omp
 ./build/poisson_benchmark_cpp --output results/cpp/benchmark
 ./build/poisson_benchmark_omp --output results/omp/benchmark
 python python/run_benchmark.py --output results/benchmark/python/benchmark_python_v1
+python python/run_benchmark_3d.py --output results/benchmark/python/benchmark_python_3d_v1
 ```
 
 If you only want one group, you can still pass `--suite solver_comparison` or `--suite mg_compare`.
