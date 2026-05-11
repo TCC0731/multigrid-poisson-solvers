@@ -158,7 +158,8 @@ def test_all_solvers_run(case, dtype, solver_name):
 @pytest.mark.parametrize("dtype", DTYPES, ids=[d.__name__ for d in DTYPES])
 @pytest.mark.parametrize("case", CASES)
 @pytest.mark.parametrize("cycle", ("v", "w"))
-def test_multigrid_v_and_w_cycles(case, dtype, cycle):
+@pytest.mark.parametrize("coarse_mode", ("exact", "sor"))
+def test_multigrid_v_and_w_cycles(case, dtype, cycle, coarse_mode):
     problem = make_problem(case, MG_TEST_GRID_SIZE, dtype=dtype)
     tol = _benchmark_tol(dtype)
 
@@ -168,7 +169,11 @@ def test_multigrid_v_and_w_cycles(case, dtype, cycle):
     solve_sor(problem, tol=tol, max_iter=1)
 
     phi, iterations, res = solve_mg(
-        problem, tol=tol, max_iter=MG_CYCLES_MAX_ITER, cycle=cycle
+        problem,
+        tol=tol,
+        max_iter=MG_CYCLES_MAX_ITER,
+        cycle=cycle,
+        coarse_mode=coarse_mode,
     )
 
     _assert_solution(
@@ -195,3 +200,7 @@ def test_invalid_inputs_raise():
     problem = make_problem("sine", 7)
     with pytest.raises(ValueError):
         solve_mg(problem, cycle="bad")
+    with pytest.raises(ValueError):
+        solve_mg(problem, coarse_mode="bad")
+    with pytest.raises(ValueError):
+        solve_mg(problem, coarse_steps=0)

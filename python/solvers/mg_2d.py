@@ -136,50 +136,72 @@ def _solve_coarsest(phi, rhs, h):
     return phi
 
 
-def _cycle(phi, rhs, h, nu, omega, is_w):
+def _solve_coarsest_sor(phi, rhs, h, omega, steps):
+    _smooth_rb(phi, rhs, h, omega, steps)
+    return phi
+
+
+def _cycle(phi, rhs, h, nu, omega, is_w, coarse_mode, coarse_steps):
     n = phi.shape[0] - 2
     if n <= 4:
-        _solve_coarsest(phi, rhs, h)
+        if coarse_mode == "exact":
+            _solve_coarsest(phi, rhs, h)
+        else:
+            _solve_coarsest_sor(phi, rhs, h, omega, coarse_steps)
         return
 
     _smooth_rb(phi, rhs, h, omega, nu)
     coarse_rhs = _restrict_full_weighting(_residual_full(phi, rhs, h))
     coarse_err = np.zeros_like(coarse_rhs)
-    _cycle(coarse_err, coarse_rhs, 2.0 * h, nu, omega, is_w)
+    _cycle(coarse_err, coarse_rhs, 2.0 * h, nu, omega, is_w, coarse_mode, coarse_steps)
     if is_w:
         # W-cycle: run the same coarse problem a second time, using the first
         # correction as the initial guess for the second pass.
-        _cycle(coarse_err, coarse_rhs, 2.0 * h, nu, omega, is_w)
+        _cycle(coarse_err, coarse_rhs, 2.0 * h, nu, omega, is_w, coarse_mode, coarse_steps)
     _prolong_add(coarse_err, phi)
     _smooth_rb(phi, rhs, h, omega, nu)
 
 
-def _v_cycle(phi, rhs, h, nu, omega):
-    _cycle(phi, rhs, h, nu, omega, False)
+def _v_cycle(phi, rhs, h, nu, omega, coarse_mode, coarse_steps):
+    _cycle(phi, rhs, h, nu, omega, False, coarse_mode, coarse_steps)
     return phi
 
 
-def _w_cycle(phi, rhs, h, nu, omega):
-    _cycle(phi, rhs, h, nu, omega, True)
+def _w_cycle(phi, rhs, h, nu, omega, coarse_mode, coarse_steps):
+    _cycle(phi, rhs, h, nu, omega, True, coarse_mode, coarse_steps)
     return phi
 
 
-def solve(problem, tol=1e-10, max_iter=20000, cycle="v", nu=2, omega=1):
+def solve(
+    problem,
+    tol=1e-10,
+    max_iter=20000,
+    cycle="v",
+    nu=2,
+    omega=1,
+    coarse_mode="exact",
+    coarse_steps=16,
+):
     if omega is None:
         omega = 2.0 / (1.0 + math.sin(math.pi / (problem.grid_size + 1)))
     cycle = cycle.lower()
+    coarse_mode = coarse_mode.lower()
     if cycle == "v":
         step = _v_cycle
     elif cycle == "w":
         step = _w_cycle
     else:
         raise ValueError("cycle must be 'v' or 'w'")
+    if coarse_mode not in {"exact", "sor"}:
+        raise ValueError("coarse_mode must be 'exact' or 'sor'")
+    if coarse_steps < 1:
+        raise ValueError("coarse_steps must be positive")
 
     phi = problem.phi0.copy()
     residual = _relative_physical_residual_l2(phi, problem.rhs, problem.h)
     iterations = 0
     while iterations < max_iter and residual > tol:
-        phi = step(phi, problem.rhs, problem.h, nu, omega)
+        phi = step(phi, problem.rhs, problem.h, nu, omega, coarse_mode, coarse_steps)
         iterations += 1
         residual = _relative_physical_residual_l2(phi, problem.rhs, problem.h)
     return phi, iterations, float(residual)
