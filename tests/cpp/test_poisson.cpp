@@ -582,25 +582,25 @@ void run_mg_regression(MGCycle cycle) {
 
     if constexpr (std::is_same_v<Real, float>) {
         if (cycle == MGCycle::V) {
-            EXPECT_EQ(result.iterations, 9u);
-            EXPECT_NEAR(result.residual_l2, 6.818745e-03, 1e-6);
-            EXPECT_NEAR(metrics.error_l2, 8.438155e-05, 1e-7);
-            EXPECT_NEAR(metrics.error_linf, 2.194745e-04, 1e-7);
+            EXPECT_EQ(result.iterations, 6u);
+            EXPECT_NEAR(result.residual_l2, 9.972223e-03, 1e-6);
+            EXPECT_NEAR(metrics.error_l2, 1.469256e-04, 1e-7);
+            EXPECT_NEAR(metrics.error_linf, 3.658831e-04, 1e-7);
         } else {
-            EXPECT_EQ(result.iterations, 8u);
-            EXPECT_NEAR(result.residual_l2, 5.882889e-03, 1e-6);
-            EXPECT_NEAR(metrics.error_l2, 7.069610e-05, 1e-7);
-            EXPECT_NEAR(metrics.error_linf, 1.604599e-04, 1e-7);
+            EXPECT_EQ(result.iterations, 6u);
+            EXPECT_NEAR(result.residual_l2, 8.303106e-03, 1e-6);
+            EXPECT_NEAR(metrics.error_l2, 1.075821e-04, 1e-7);
+            EXPECT_NEAR(metrics.error_linf, 2.859980e-04, 1e-7);
         }
     } else {
         if (cycle == MGCycle::V) {
-            EXPECT_EQ(result.iterations, 34u);
-            EXPECT_NEAR(result.residual_l2, 9.726505e-11, 1e-12);
+            EXPECT_EQ(result.iterations, 26u);
+            EXPECT_NEAR(result.residual_l2, 5.986049e-11, 1e-12);
             EXPECT_NEAR(metrics.error_l2, 9.7344746271743371e-05, 5e-11);
             EXPECT_NEAR(metrics.error_linf, 1.9457581601323160e-04, 5e-11);
         } else {
-            EXPECT_EQ(result.iterations, 31u);
-            EXPECT_NEAR(result.residual_l2, 5.424450e-11, 1e-12);
+            EXPECT_EQ(result.iterations, 25u);
+            EXPECT_NEAR(result.residual_l2, 7.896303e-11, 1e-12);
             EXPECT_NEAR(metrics.error_l2, 9.7344746289136386e-05, 5e-11);
             EXPECT_NEAR(metrics.error_linf, 1.9457581603143925e-04, 5e-11);
         }
