@@ -17,8 +17,15 @@ from _analysis_common import (
 SOLVER_COMPARISON_GRID_SIZES = {
     name: grid.copy() for name, grid in BASE_SOLVER_COMPARISON_GRID_SIZES.items()
 }
-SOLVER_COMPARISON_GRID_SIZES["MG V-cycle 3D"] = np.array([7, 15, 31, 63])
-SOLVER_COMPARISON_GRID_SIZES["MG W-cycle 3D"] = np.array([7, 15, 31, 63])
+SOLVER_COMPARISON_GRID_SIZES["RB SOR 3D"] = np.array(
+    [15, 23, 31, 47, 63, 79, 95, 111, 127, 143, 159]
+)
+SOLVER_COMPARISON_GRID_SIZES["MG V-cycle 3D"] = np.array(
+    [15, 31, 47, 63, 95, 127, 191, 255]
+)
+SOLVER_COMPARISON_GRID_SIZES["MG W-cycle 3D"] = np.array(
+    [15, 31, 47, 63, 95, 127, 191, 255]
+)
 
 
 def main() -> None:
