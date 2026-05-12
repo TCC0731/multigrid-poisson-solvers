@@ -24,9 +24,11 @@ from _cpp_benchmark import CASES, build_markers, resolve_executable, run_solver
 
 DEFAULT_MARKERS = ("o", "s", "^", "D", "v", "p", "*", "h", "H", "<", ">", "P", "X", "d")
 
-JACOBI_GS_GRID_SIZES = np.array([7, 15, 23, 31])
-RB_SOR_GRID_SIZES = np.array([15, 31, 47, 63])
-MG_GRID_SIZES = np.array([7, 15, 31, 63, 127])
+# Keep these aligned with results/python_3d/_analysis_common.py so the C++ 3D
+# analysis workflow uses the same sampling points as the Python 3D reference.
+JACOBI_GS_GRID_SIZES = np.array([15, 23, 31, 39, 47, 55, 63])
+RB_SOR_GRID_SIZES = np.array([31, 47, 63, 79, 95, 111, 127, 143, 159])
+MG_GRID_SIZES = np.array([15, 31, 47, 63, 95, 127, 191, 255, 319, 383])
 
 SOLVER_COMPARISON_MODULES = {
     "Jacobi 3D": ("jacobi", ()),
