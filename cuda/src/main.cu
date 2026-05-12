@@ -25,6 +25,7 @@ struct Options {
     std::string mg_coarse_name{"exact"};
     std::string cycle_name{"v"};
     std::size_t grid_size{31};
+    std::size_t dimension{2};
     std::optional<double> tol{};
     std::size_t max_iter{20'000};
     std::size_t nu{2};
@@ -43,7 +44,7 @@ Real default_tol() {
 void print_usage(const char* argv0) {
     std::cerr << "Usage: " << argv0
               << " [--dtype float|double] [--solver jacobi|gs|sor|mg] [--case NAME] [--grid-size N]"
-                 " [--tol T] [--max-iter N] [--cycle v|w] [--nu N]"
+                 " [--dim 2|3] [--tol T] [--max-iter N] [--cycle v|w] [--nu N]"
                  " [--omega auto|VALUE] [--mg-coarse exact|sor]\n";
     std::cerr << "Dtypes: float, double\n";
     std::cerr << "Solvers: jacobi, gs, sor, mg\n";
@@ -140,6 +141,18 @@ Options parse_args(int argc, char** argv) {
             continue;
         }
 
+        if (arg == "--dim" || arg == "--dimension") {
+            if (i + 1 >= argc) {
+                throw std::invalid_argument("--dim requires a value");
+            }
+            const long long parsed = std::stoll(argv[++i]);
+            if (parsed != 2 && parsed != 3) {
+                throw std::invalid_argument("dim must be 2 or 3");
+            }
+            options.dimension = static_cast<std::size_t>(parsed);
+            continue;
+        }
+
         if (arg == "--tol") {
             if (i + 1 >= argc) {
                 throw std::invalid_argument("--tol requires a value");
@@ -180,7 +193,7 @@ Options parse_args(int argc, char** argv) {
 }
 
 template <typename Real>
-int run(const Options& options) {
+int run_2d(const Options& options) {
     const poisson::cuda::detail::ScopedNvtxRange run_range{"cuda::run"};
     using Problem = poisson::Problem2D<Real>;
     using SolveOpts = poisson::SolveOptions<Real>;
@@ -250,6 +263,89 @@ int run(const Options& options) {
     std::cout << time_ms << '\n';
 
     return 0;
+}
+
+template <typename Real>
+int run_3d(const Options& options) {
+    const poisson::cuda::detail::ScopedNvtxRange run_range{"cuda::run_3d"};
+    using Problem = poisson::Problem3D<Real>;
+    using SolveOpts = poisson::SolveOptions<Real>;
+    using MgOpts = poisson::MGOptions<Real>;
+
+    poisson::cuda::ensure_device_available();
+
+    const Problem problem = poisson::make_problem_3d<Real>(options.case_name, options.grid_size);
+    const poisson::ValidationReport report = poisson::validate_problem(problem);
+    if (!report.ok) {
+        std::cerr << "error: generated 3D problem failed validation\n";
+        return 1;
+    }
+
+    const Real tol = options.tol.has_value()
+        ? static_cast<Real>(*options.tol)
+        : default_tol<Real>();
+
+    const SolveOpts solve_options{tol, options.max_iter};
+    const poisson::MGCycle mg_cycle =
+        options.cycle_name == "w" ? poisson::MGCycle::W : poisson::MGCycle::V;
+    MgOpts mg_options{tol, options.max_iter, options.nu, mg_cycle, 16};
+    if (options.omega_is_auto) {
+        mg_options.omega_is_auto = true;
+    } else if (options.omega.has_value()) {
+        mg_options.omega = static_cast<Real>(*options.omega);
+    }
+
+    std::string solver_name = options.solver_name;
+    poisson::SolveResult3D result{};
+
+    const auto start = std::chrono::steady_clock::now();
+    if (options.solver_name == "jacobi") {
+        result = poisson::solve_jacobi<Real>(problem, solve_options);
+    } else if (options.solver_name == "gs") {
+        result = poisson::solve_gs<Real>(problem, solve_options);
+    } else if (options.solver_name == "sor") {
+        result = poisson::solve_sor<Real>(problem, solve_options);
+    } else if (options.solver_name == "mg") {
+        if (options.mg_coarse_name == "exact") {
+            result = poisson::solve_mg_exact<Real>(problem, mg_options);
+            solver_name = "mg_exact";
+        } else if (options.mg_coarse_name == "sor") {
+            result = poisson::solve_mg_sor<Real>(problem, mg_options);
+            solver_name = "mg_sor";
+        } else {
+            throw std::invalid_argument("mg-coarse must be exact or sor");
+        }
+    } else {
+        throw std::invalid_argument("unknown solver: " + options.solver_name);
+    }
+    poisson::cuda::check(cudaDeviceSynchronize(), "cudaDeviceSynchronize", __FILE__, __LINE__);
+    const auto end = std::chrono::steady_clock::now();
+    const double time_ms =
+        std::chrono::duration<double, std::milli>(end - start).count();
+
+    const auto metrics_problem =
+        poisson::make_problem_3d<double>(options.case_name, options.grid_size);
+    const poisson::ErrorMetrics metrics = poisson::metrics(metrics_problem, result.phi);
+
+    std::cout << "solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms\n";
+    std::cout << std::scientific;
+    std::cout.precision(6);
+    std::cout << solver_name << ",cuda," << options.dtype << "," << problem.interior_n << ','
+              << result.iterations << ',' << result.residual_l2 << ','
+              << metrics.error_l2 << ',' << metrics.error_linf << ',';
+    std::cout << std::fixed;
+    std::cout.precision(3);
+    std::cout << time_ms << '\n';
+
+    return 0;
+}
+
+template <typename Real>
+int run(const Options& options) {
+    if (options.dimension == 3) {
+        return run_3d<Real>(options);
+    }
+    return run_2d<Real>(options);
 }
 
 } // namespace
