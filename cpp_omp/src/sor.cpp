@@ -29,12 +29,29 @@ SolveResult SorSolver2D::solve(
     return solve_sor<double>(problem, options);
 }
 
+std::string_view SorSolver3D::name() const noexcept {
+    return "sor";
+}
+
+SolveResult3D SorSolver3D::solve(
+    const Problem3D<double>& problem, const SolveOptions<double>& options
+) const {
+    return solve_sor<double>(problem, options);
+}
+
 template <typename Real>
 SolveResult solve_sor(const Problem2D<Real>& problem, const SolveOptions<Real>& options) {
     return solve_red_black_relaxation<Real>(problem, options, default_sor_omega<Real>(problem.interior_n));
 }
 
+template <typename Real>
+SolveResult3D solve_sor(const Problem3D<Real>& problem, const SolveOptions<Real>& options) {
+    return solve_red_black_relaxation<Real>(problem, options, default_sor_omega<Real>(problem.interior_n));
+}
+
 template SolveResult solve_sor<float>(const Problem2D<float>&, const SolveOptions<float>&);
 template SolveResult solve_sor<double>(const Problem2D<double>&, const SolveOptions<double>&);
+template SolveResult3D solve_sor<float>(const Problem3D<float>&, const SolveOptions<float>&);
+template SolveResult3D solve_sor<double>(const Problem3D<double>&, const SolveOptions<double>&);
 
 } // namespace poisson

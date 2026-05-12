@@ -66,7 +66,10 @@ add_executable(poisson_benchmark_cpp
 )
 
 target_link_libraries(poisson_benchmark_cpp PRIVATE poisson_core)
-target_compile_definitions(poisson_benchmark_cpp PRIVATE POISSON_BENCHMARK_BACKEND_LABEL=cpp20)
+target_compile_definitions(poisson_benchmark_cpp PRIVATE
+    POISSON_BENCHMARK_BACKEND_LABEL=cpp20
+    POISSON_ENABLE_3D=1
+)
 enable_release_perf_flags(poisson_benchmark_cpp)
 
 find_package(OpenMP)
@@ -111,7 +114,10 @@ if (OpenMP_CXX_FOUND)
     )
 
     target_link_libraries(poisson_benchmark_omp PRIVATE poisson_omp_core)
-    target_compile_definitions(poisson_benchmark_omp PRIVATE POISSON_BENCHMARK_BACKEND_LABEL=cpp20_omp)
+    target_compile_definitions(poisson_benchmark_omp PRIVATE
+        POISSON_BENCHMARK_BACKEND_LABEL=cpp20_omp
+        POISSON_ENABLE_3D=1
+    )
     enable_release_perf_flags(poisson_benchmark_omp)
 else()
     message(WARNING "OpenMP not found: skipping poisson_cpp_omp and poisson_benchmark_omp targets")
@@ -191,6 +197,22 @@ if (BUILD_TESTING)
 
     gtest_discover_tests(poisson_tests)
 
+    add_executable(poisson_tests_3d
+        tests/cpp/test_poisson_3d.cpp
+    )
+
+    target_link_libraries(poisson_tests_3d PRIVATE poisson_core GTest::gtest_main)
+    target_compile_features(poisson_tests_3d PRIVATE cxx_std_20)
+    enable_release_perf_flags(poisson_tests_3d)
+
+    if (MSVC)
+        target_compile_options(poisson_tests_3d PRIVATE /W4)
+    else()
+        target_compile_options(poisson_tests_3d PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+
+    gtest_discover_tests(poisson_tests_3d TEST_PREFIX 3d.)
+
     if (OpenMP_CXX_FOUND)
         add_executable(poisson_tests_omp
             tests/cpp/test_poisson_omp.cpp
@@ -207,5 +229,21 @@ if (BUILD_TESTING)
         endif()
 
         gtest_discover_tests(poisson_tests_omp TEST_PREFIX omp.)
+
+        add_executable(poisson_tests_omp_3d
+            tests/cpp/test_poisson_omp_3d.cpp
+        )
+
+        target_link_libraries(poisson_tests_omp_3d PRIVATE poisson_omp_core GTest::gtest_main)
+        target_compile_features(poisson_tests_omp_3d PRIVATE cxx_std_20)
+        enable_release_perf_flags(poisson_tests_omp_3d)
+
+        if (MSVC)
+            target_compile_options(poisson_tests_omp_3d PRIVATE /W4)
+        else()
+            target_compile_options(poisson_tests_omp_3d PRIVATE -Wall -Wextra -Wpedantic)
+        endif()
+
+        gtest_discover_tests(poisson_tests_omp_3d TEST_PREFIX omp.3d.)
     endif()
 endif()
