@@ -12,7 +12,7 @@ set -euo pipefail
 
 cd /home/u3518384/multigrid-poisson-solvers
 
-mkdir -p results/benchmark/omp_v4
+mkdir -p results/benchmark/omp_3d_v2
 
 module load tools/miniconda3
 conda activate RL
