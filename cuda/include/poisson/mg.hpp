@@ -30,4 +30,14 @@ template <typename Real>
     const Problem2D<Real>& problem, const MGOptions<Real>& options = MGOptions<Real>{}
 );
 
+template <typename Real>
+[[nodiscard]] SolveResult3D solve_mg_exact(
+    const Problem3D<Real>& problem, const MGOptions<Real>& options = MGOptions<Real>{}
+);
+
+template <typename Real>
+[[nodiscard]] SolveResult3D solve_mg_sor(
+    const Problem3D<Real>& problem, const MGOptions<Real>& options = MGOptions<Real>{}
+);
+
 } // namespace poisson

@@ -171,7 +171,10 @@ if (CMAKE_CUDA_COMPILER)
     )
 
     target_link_libraries(poisson_benchmark_cuda PRIVATE poisson_cuda_core)
-    target_compile_definitions(poisson_benchmark_cuda PRIVATE POISSON_BENCHMARK_BACKEND_LABEL=cuda)
+    target_compile_definitions(poisson_benchmark_cuda PRIVATE
+        POISSON_BENCHMARK_BACKEND_LABEL=cuda
+        POISSON_ENABLE_3D=1
+    )
     target_compile_features(poisson_benchmark_cuda PRIVATE cxx_std_20)
 else()
     message(WARNING "CUDA compiler not found: skipping poisson_cuda and poisson_benchmark_cuda targets")
@@ -245,5 +248,20 @@ if (BUILD_TESTING)
         endif()
 
         gtest_discover_tests(poisson_tests_omp_3d TEST_PREFIX omp.3d.)
+    endif()
+
+    if (CMAKE_CUDA_COMPILER)
+        add_executable(poisson_tests_cuda_3d
+            tests/cpp/test_poisson_cuda_3d.cpp
+        )
+
+        target_link_libraries(poisson_tests_cuda_3d PRIVATE poisson_cuda_core GTest::gtest_main)
+        target_compile_features(poisson_tests_cuda_3d PRIVATE cxx_std_20)
+        set_target_properties(poisson_tests_cuda_3d PROPERTIES
+            CUDA_STANDARD 17
+            CUDA_STANDARD_REQUIRED ON
+        )
+
+        gtest_discover_tests(poisson_tests_cuda_3d TEST_PREFIX cuda.3d.)
     endif()
 endif()
