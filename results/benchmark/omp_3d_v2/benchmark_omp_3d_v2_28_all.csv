@@ -1,0 +1,38 @@
+suite,backend,dtype,case,solver,grid_size,max_iter,tol,warmup_runs,timed_runs,cycle,omega,nu,iterations,residual_l2,error_l2,error_linf,mean_time_ms,std_time_ms
+solver_comparison,cpp20_omp,double,sine,Jacobi 3D,15,100000,1.000000e-09,1,5,,,,1069,9.829746e-10,1.138075e-03,3.218963e-03,26.807214,0.121565
+solver_comparison,cpp20_omp,double,sine,Jacobi 3D,31,100000,1.000000e-09,1,5,,,,4294,9.965532e-10,2.841073e-04,8.035767e-04,131.284934,0.296853
+solver_comparison,cpp20_omp,double,sine,Jacobi 3D,47,100000,1.000000e-09,1,5,,,,9669,9.990195e-10,1.262359e-04,3.570490e-04,443.123872,1.559502
+solver_comparison,cpp20_omp,double,sine,Jacobi 3D,63,100000,1.000000e-09,1,5,,,,17194,9.998861e-10,7.100088e-05,2.008208e-04,1074.732041,2.786479
+solver_comparison,cpp20_omp,double,sine,RB GS 3D,15,100000,1.000000e-09,1,5,,,,544,9.709472e-10,1.138076e-03,3.218964e-03,19.791580,0.098856
+solver_comparison,cpp20_omp,double,sine,RB GS 3D,31,100000,1.000000e-09,1,5,,,,2183,9.979977e-10,2.841074e-04,8.035770e-04,148.034480,0.144820
+solver_comparison,cpp20_omp,double,sine,RB GS 3D,47,100000,1.000000e-09,1,5,,,,4916,9.972927e-10,1.262360e-04,3.570493e-04,316.913490,1.334946
+solver_comparison,cpp20_omp,double,sine,RB GS 3D,63,100000,1.000000e-09,1,5,,,,8741,9.999365e-10,7.100098e-05,2.008211e-04,901.787217,3.296183
+solver_comparison,cpp20_omp,double,sine,RB SOR 3D,31,10000,1.000000e-09,1,5,,,,138,9.054306e-10,2.841076e-04,8.035776e-04,9.394273,0.040582
+solver_comparison,cpp20_omp,double,sine,RB SOR 3D,63,10000,1.000000e-09,1,5,,,,283,9.620478e-10,7.100122e-05,2.008218e-04,29.711709,0.402853
+solver_comparison,cpp20_omp,double,sine,RB SOR 3D,95,10000,1.000000e-09,1,5,,,,431,9.628654e-10,3.155399e-05,8.924815e-05,88.279313,0.810265
+solver_comparison,cpp20_omp,double,sine,RB SOR 3D,127,10000,1.000000e-09,1,5,,,,580,9.992679e-10,1.774870e-05,5.020090e-05,213.966091,1.315576
+solver_comparison,cpp20_omp,double,sine,RB SOR 3D,159,10000,1.000000e-09,1,5,,,,731,9.959779e-10,1.135904e-05,3.212823e-05,500.122965,2.938384
+mg_compare,cpp20_omp,double,sine,"MG 3D(v,w=1.25,coarse=exact)",15,150,1.000000e-09,1,5,v,1.25,3,6,1.655598e-10,1.138076e-03,3.218964e-03,1.669947,0.014038
+mg_compare,cpp20_omp,double,sine,"MG 3D(v,w=1.25,coarse=exact)",31,150,1.000000e-09,1,5,v,1.25,3,6,3.866361e-10,2.841075e-04,8.035775e-04,3.713143,0.040773
+mg_compare,cpp20_omp,double,sine,"MG 3D(v,w=1.25,coarse=exact)",63,150,1.000000e-09,1,5,v,1.25,3,6,4.725820e-10,7.100115e-05,2.008216e-04,8.849615,0.260629
+mg_compare,cpp20_omp,double,sine,"MG 3D(v,w=1.25,coarse=exact)",127,150,1.000000e-09,1,5,v,1.25,3,6,4.964209e-10,1.774862e-05,5.020067e-05,30.079160,1.263616
+mg_compare,cpp20_omp,double,sine,"MG 3D(v,w=1.25,coarse=exact)",255,150,1.000000e-09,1,5,v,1.25,3,6,5.019057e-10,4.436989e-06,1.254970e-05,388.549200,3.378484
+mg_compare,cpp20_omp,double,sine,"MG 3D(v,w=1.25,coarse=exact)",383,150,1.000000e-09,1,5,v,1.25,3,6,3.900824e-10,1.971958e-06,5.577539e-06,1562.457553,2.343552
+mg_compare,cpp20_omp,double,sine,"MG 3D(v,w=1.25,coarse=sor)",15,150,1.000000e-09,1,5,v,1.25,3,6,1.655594e-10,1.138076e-03,3.218964e-03,2.850141,0.013369
+mg_compare,cpp20_omp,double,sine,"MG 3D(v,w=1.25,coarse=sor)",31,150,1.000000e-09,1,5,v,1.25,3,6,3.866355e-10,2.841075e-04,8.035775e-04,4.874718,0.025841
+mg_compare,cpp20_omp,double,sine,"MG 3D(v,w=1.25,coarse=sor)",63,150,1.000000e-09,1,5,v,1.25,3,6,4.725817e-10,7.100115e-05,2.008216e-04,9.904749,0.107959
+mg_compare,cpp20_omp,double,sine,"MG 3D(v,w=1.25,coarse=sor)",127,150,1.000000e-09,1,5,v,1.25,3,6,4.964239e-10,1.774862e-05,5.020067e-05,31.301340,1.255339
+mg_compare,cpp20_omp,double,sine,"MG 3D(v,w=1.25,coarse=sor)",255,150,1.000000e-09,1,5,v,1.25,3,6,5.019068e-10,4.436989e-06,1.254970e-05,390.162713,1.940831
+mg_compare,cpp20_omp,double,sine,"MG 3D(v,w=1.25,coarse=sor)",383,150,1.000000e-09,1,5,v,1.25,3,6,3.900803e-10,1.971958e-06,5.577539e-06,1564.555868,1.723298
+mg_compare,cpp20_omp,double,sine,"MG 3D(w,w=1.25,coarse=exact)",15,150,1.000000e-09,1,5,w,1.25,3,6,1.350064e-11,1.138076e-03,3.218964e-03,2.345528,0.015753
+mg_compare,cpp20_omp,double,sine,"MG 3D(w,w=1.25,coarse=exact)",31,150,1.000000e-09,1,5,w,1.25,3,5,1.143122e-11,2.841076e-04,8.035777e-04,5.449580,0.022811
+mg_compare,cpp20_omp,double,sine,"MG 3D(w,w=1.25,coarse=exact)",63,150,1.000000e-09,1,5,w,1.25,3,4,4.757326e-11,7.100123e-05,2.008218e-04,12.194129,0.076334
+mg_compare,cpp20_omp,double,sine,"MG 3D(w,w=1.25,coarse=exact)",127,150,1.000000e-09,1,5,w,1.25,3,4,1.467917e-12,1.774870e-05,5.020092e-05,38.710514,1.218142
+mg_compare,cpp20_omp,double,sine,"MG 3D(w,w=1.25,coarse=exact)",255,150,1.000000e-09,1,5,w,1.25,3,3,8.081852e-10,4.437075e-06,1.254994e-05,254.561012,1.229250
+mg_compare,cpp20_omp,double,sine,"MG 3D(w,w=1.25,coarse=exact)",383,150,1.000000e-09,1,5,w,1.25,3,3,5.715329e-10,1.972025e-06,5.577730e-06,960.172177,1.442626
+mg_compare,cpp20_omp,double,sine,"MG 3D(w,w=1.25,coarse=sor)",15,150,1.000000e-09,1,5,w,1.25,3,6,1.350121e-11,1.138076e-03,3.218964e-03,7.163534,0.030178
+mg_compare,cpp20_omp,double,sine,"MG 3D(w,w=1.25,coarse=sor)",31,150,1.000000e-09,1,5,w,1.25,3,5,1.143138e-11,2.841076e-04,8.035777e-04,13.506944,0.041744
+mg_compare,cpp20_omp,double,sine,"MG 3D(w,w=1.25,coarse=sor)",63,150,1.000000e-09,1,5,w,1.25,3,4,4.757269e-11,7.100123e-05,2.008218e-04,24.814015,0.105714
+mg_compare,cpp20_omp,double,sine,"MG 3D(w,w=1.25,coarse=sor)",127,150,1.000000e-09,1,5,w,1.25,3,4,1.468780e-12,1.774870e-05,5.020092e-05,64.378716,1.175022
+mg_compare,cpp20_omp,double,sine,"MG 3D(w,w=1.25,coarse=sor)",255,150,1.000000e-09,1,5,w,1.25,3,3,8.081850e-10,4.437075e-06,1.254994e-05,293.556229,0.845329
+mg_compare,cpp20_omp,double,sine,"MG 3D(w,w=1.25,coarse=sor)",383,150,1.000000e-09,1,5,w,1.25,3,3,5.715316e-10,1.972025e-06,5.577730e-06,1049.790067,18.582099
