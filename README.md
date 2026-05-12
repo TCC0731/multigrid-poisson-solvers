@@ -54,15 +54,19 @@ $$
 ## Current Scope
 
 The Python reference implementation supports both the 2D and 3D Poisson
-equation. The C++, OpenMP, and CUDA implementations currently focus on 2D.
+equation. The pure C++ implementation supports both 2D and 3D. The OpenMP C++
+implementation now supports the same 2D and 3D solver set as the pure C++
+implementation, with the 3D numerical logic kept aligned with the pure C++ 3D
+code. The CUDA implementation currently focuses on the existing accelerated 2D
+paths.
 
 ## Current Solver Support
 
 | Backend        | Jacobi 2D | Gauss-Seidel 2D | SOR 2D | Multigrid 2D | Jacobi 3D | Gauss-Seidel 3D | SOR 3D | Multigrid 3D |
 | -------------- | --------: | --------------: | -----: | -----------: | --------: | --------------: | -----: | -----------: |
 | Python + Numba |       Yes |             Yes |    Yes |          Yes |       Yes |             Yes |    Yes |          Yes |
-| C++ (pure)     |       Yes |             Yes |    Yes |          Yes |        No |              No |     No |           No |
-| C++ + OpenMP   |        No |              No |     No |           No |        No |              No |     No |           No |
+| C++ (pure)     |       Yes |             Yes |    Yes |          Yes |       Yes |             Yes |    Yes |          Yes |
+| C++ + OpenMP   |       Yes |             Yes |    Yes |          Yes |       Yes |             Yes |    Yes |          Yes |
 | CUDA           |        No |              No |     No |           No |        No |              No |     No |           No |
 
 ## Repository Structure
@@ -105,6 +109,7 @@ multigrid-poisson-solvers/
 │   ├── include/
 │   │   └── poisson/
 │   │       ├── grid2d.hpp
+│   │       ├── grid3d.hpp
 │   │       ├── gs.hpp
 │   │       ├── jacobi.hpp
 │   │       ├── metrics.hpp
@@ -154,9 +159,11 @@ multigrid-poisson-solvers/
 │   └── reference/
 │
 └── results/
-    ├── raw/
-    ├── plots/
-    └── tables/
+    ├── cpp/
+    ├── cpp_3d/
+    ├── python/
+    ├── python_3d/
+    └── benchmark/
 ```
 
 ## Validation Problems
@@ -177,15 +184,15 @@ $$
 
 These cases provide simple tests for residual convergence, boundary-condition handling, and second-order accuracy.
 
-The Python 3D implementation uses matching manufactured solutions:
+The 3D implementations use matching manufactured solutions:
 
-| Case               | Exact Solution $$\phi(x,y,z)$$                         | Right-Hand Side $$f(x,y,z)$$                              | Boundary          |
-| ------------------ | ------------------------------------------------------ | --------------------------------------------------------- | ----------------- |
-| Sine mode          | $$\sin(\pi x)\sin(\pi y)\sin(\pi z)$$                  | $$3\pi^2\sin(\pi x)\sin(\pi y)\sin(\pi z)$$               | Zero Dirichlet    |
-| Mixed sine mode    | $$\sin(2\pi x)\sin(3\pi y)\sin(4\pi z)$$               | $$29\pi^2\sin(2\pi x)\sin(3\pi y)\sin(4\pi z)$$           | Zero Dirichlet    |
-| Polynomial bubble  | $$x(1-x)y(1-y)z(1-z)$$                                 | $$2[y(1-y)z(1-z)+x(1-x)z(1-z)+x(1-x)y(1-y)]$$             | Zero Dirichlet    |
-| Smooth exponential | $$e^{x+y+z}$$                                          | $$-3e^{x+y+z}$$                                           | Nonzero Dirichlet |
-| Cosine mode        | $$\cos(\pi x)\cos(\pi y)\cos(\pi z)$$                  | $$3\pi^2\cos(\pi x)\cos(\pi y)\cos(\pi z)$$               | Nonzero Dirichlet |
+| Case               | Exact Solution $$\phi(x,y,z)$$           | Right-Hand Side $$f(x,y,z)$$                    | Boundary          |
+| ------------------ | ---------------------------------------- | ----------------------------------------------- | ----------------- |
+| Sine mode          | $$\sin(\pi x)\sin(\pi y)\sin(\pi z)$$    | $$3\pi^2\sin(\pi x)\sin(\pi y)\sin(\pi z)$$     | Zero Dirichlet    |
+| Mixed sine mode    | $$\sin(2\pi x)\sin(3\pi y)\sin(4\pi z)$$ | $$29\pi^2\sin(2\pi x)\sin(3\pi y)\sin(4\pi z)$$ | Zero Dirichlet    |
+| Polynomial bubble  | $$x(1-x)y(1-y)z(1-z)$$                   | $$2[y(1-y)z(1-z)+x(1-x)z(1-z)+x(1-x)y(1-y)]$$   | Zero Dirichlet    |
+| Smooth exponential | $$e^{x+y+z}$$                            | $$-3e^{x+y+z}$$                                 | Nonzero Dirichlet |
+| Cosine mode        | $$\cos(\pi x)\cos(\pi y)\cos(\pi z)$$    | $$3\pi^2\cos(\pi x)\cos(\pi y)\cos(\pi z)$$     | Nonzero Dirichlet |
 
 ## Development Plan
 
@@ -206,6 +213,43 @@ solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_m
 The same output format should remain consistent for the future C++ OpenMP and CUDA implementations.
 
 The C++ baseline is covered by a small GTest suite built as `poisson_tests` and executed through CTest.
+The pure C++ 3D extension is covered by `poisson_tests_3d`, using the same GTest
+and CTest flow.
+
+### C++ CLI
+
+The pure C++ runner defaults to the existing 2D behavior. Pass `--dim 3` to use
+the 3D problem setup, stencil, metrics, and solvers:
+
+```bash
+./build/poisson_cpp --solver mg --case sine -n 31 --tol 1e-10 --max-iter 100
+./build/poisson_cpp --dim 3 --solver mg --case sine -n 15 --tol 1e-8 --max-iter 100
+./build/poisson_cpp --dim 3 --solver sor --case exp --dtype float -n 15 --tol 1e-3
+```
+
+The available 3D cases are the same as the Python 3D reference: `sine`,
+`mixed_sine`, `bubble`, `exp`, and `cosine`. Dirichlet boundary values are copied
+from the manufactured exact solution on all boundary faces, and the interior
+initial guess remains zero, matching the C++ 2D convention.
+
+The OpenMP C++ runner uses the same CLI and keeps the same default 2D behavior.
+Pass `--dim 3` to use the OpenMP 3D path:
+
+```bash
+export OMP_NUM_THREADS=8
+export OMP_PROC_BIND=close
+export OMP_PLACES=cores
+
+./build/poisson_cpp_omp --dim 3 --solver jacobi --case sine -n 15 --tol 1e-8 --max-iter 20000
+./build/poisson_cpp_omp --dim 3 --solver sor --case sine -n 31 --tol 1e-8
+./build/poisson_cpp_omp --dim 3 --solver mg --case sine -n 31 --cycle v --nu 2 --mg-coarse exact
+```
+
+The OpenMP 3D implementation follows the pure C++ 3D discretization,
+residual normalization, boundary handling, and multigrid cycle semantics. The
+OpenMP-specific changes are limited to parallelizing the same hot loops used by
+the 2D OpenMP path: manufactured-problem setup, stencil/residual loops,
+red-black smoothers, restriction, prolongation, validation, and metrics.
 
 ### Benchmark Entry Points
 
@@ -236,6 +280,24 @@ The benchmark suites mirror the repository's existing comparison groups:
 
 The multigrid benchmark keeps the current comparison defaults of `nu=3`, `omega=1.25`, `coarse_steps=16`, and reports both `coarse=exact` and `coarse=sor`.
 
+The pure C++ benchmark also accepts `--dim 3`. The default remains `--dim 2`, so
+existing benchmark commands keep their previous behavior. The OpenMP benchmark
+accepts the same `--dim 3` option. A small smoke run can be bounded with
+`--max-grid-size`:
+
+```bash
+./build/poisson_benchmark_cpp --dim 3 --suite solver_comparison --max-grid-size 31
+./build/poisson_benchmark_cpp --dim 3 --suite mg_compare --max-grid-size 31
+OMP_NUM_THREADS=8 ./build/poisson_benchmark_omp --dim 3 --suite solver_comparison --max-grid-size 31
+OMP_NUM_THREADS=8 ./build/poisson_benchmark_omp --dim 3 --suite mg_compare --max-grid-size 31
+```
+
+The default C++ 3D benchmark sizes are:
+
+- Jacobi 3D and RB GS 3D: `15, 31, 47, 63`
+- RB SOR 3D: `31, 63, 95, 127, 159`
+- MG 3D: `15, 31, 63, 127, 255, 383`
+
 The 3D Python benchmark is calibrated for the `mg` conda environment so each
 timed solve stays below 10 seconds on the development workstation. It records
 `max_time_ms` in both CSV files to make that limit explicit. The default 3D
@@ -252,7 +314,9 @@ cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build build --target poisson_benchmark_cpp poisson_benchmark_omp
 
 ./build/poisson_benchmark_cpp --output results/cpp/benchmark
+./build/poisson_benchmark_cpp --dim 3 --output results/cpp_3d/benchmark
 ./build/poisson_benchmark_omp --output results/omp/benchmark
+./build/poisson_benchmark_omp --dim 3 --output results/omp_3d/benchmark
 python python/run_benchmark.py --output results/benchmark/python/benchmark_python_v1
 python python/run_benchmark_3d.py --output results/benchmark/python/benchmark_python_3d_v1
 ```
@@ -265,11 +329,18 @@ Run the Python CLI in 3D with `--dim 3`:
 python python/run_poisson.py --dim 3 --solver mg --case sine -n 15 --tol 1e-8 --max-iter 100
 ```
 
+OpenMP timings are sensitive to `OMP_NUM_THREADS`, `OMP_PROC_BIND`,
+`OMP_PLACES`, and the CPU topology. The helper scripts default to
+`OMP_PROC_BIND=close` and `OMP_PLACES=cores` when those variables are unset, but
+thread count should be set explicitly for reproducible comparisons.
+
 ## C++ Build and Test
 
 Configure and build the C++ targets with CMake:
 
 ```bash
+source ~/miniconda3/etc/profile.d/conda.sh
+conda activate mg
 cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
@@ -279,3 +350,21 @@ Run the C++ test suite with CTest:
 ```bash
 ctest --test-dir build --output-on-failure
 ```
+
+The C++ analysis scripts follow the existing results layout. The 3D pure C++
+analysis entry points are:
+
+- `results/cpp_3d/solver_comparison/run_and_plot.py`
+- `results/cpp_3d/solver_comparison_float32/run_and_plot_float32.py`
+- `results/cpp_3d/mg_compare/run_and_plot_mg_compare.py`
+- `results/cpp_3d/mg_compare_float32/run_and_plot_mg_compare_float32.py`
+
+The 3D OpenMP C++ analysis entry points mirror the pure C++ 3D layout:
+
+- `results/omp_3d/solver_comparison/run_and_plot.py`
+- `results/omp_3d/solver_comparison_float32/run_and_plot_float32.py`
+- `results/omp_3d/mg_compare/run_and_plot_mg_compare.py`
+- `results/omp_3d/mg_compare_float32/run_and_plot_mg_compare_float32.py`
+
+The float32 runs use looser tolerances than float64, matching the Python 3D
+workflow and the existing C++ 2D float32 analysis scripts.

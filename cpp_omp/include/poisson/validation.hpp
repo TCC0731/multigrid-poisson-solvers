@@ -18,4 +18,7 @@ struct ValidationReport {
 template <typename Real>
 [[nodiscard]] ValidationReport validate_problem(const Problem2D<Real>& problem);
 
+template <typename Real>
+[[nodiscard]] ValidationReport validate_problem(const Problem3D<Real>& problem);
+
 } // namespace poisson

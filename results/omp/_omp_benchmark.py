@@ -47,6 +47,7 @@ def run_solver(
     dtype_cli: str,
     tol: float,
     max_iter: int,
+    dim: int = 2,
     extra_args: Sequence[str] = (),
     executable: Path | None = None,
 ) -> dict[str, object]:
@@ -59,6 +60,8 @@ def run_solver(
 
     cmd = [
         str(exe),
+        "--dim",
+        str(int(dim)),
         "--solver",
         solver,
         "--case",
@@ -105,6 +108,7 @@ def run_solver(
         "solver": row["solver"],
         "backend": row["backend"],
         "dtype": row["dtype"],
+        "dim": dim,
         "grid_size": int(row["grid_size"]),
         "iterations": int(row["iterations"]),
         "residual_l2": float(row["residual_l2"]),
