@@ -27,15 +27,19 @@ constexpr std::string_view kBackendLabel{
 
 struct Options {
     poisson::benchmark::Suite suite{poisson::benchmark::Suite::All};
+    std::size_t dimension{2};
+    std::size_t max_grid_size{0};
     std::filesystem::path output_base_path{};
     bool has_output{false};
 };
 
 void print_usage(const char* argv0) {
     std::cerr << "Usage: " << argv0
-              << " [--suite all|solver_comparison|mg_compare] [--output BASE]\n";
+              << " [--suite all|solver_comparison|mg_compare] [--dim 2|3]"
+                 " [--max-grid-size N] [--output BASE]\n";
     std::cerr << "When BASE is provided, the program writes BASE.csv and BASE_all.csv.\n";
     std::cerr << "Default suite: all (runs solver_comparison + mg_compare)\n";
+    std::cerr << "Default dimension: 2\n";
     std::cerr << "Backend label: " << kBackendLabel << '\n';
 }
 
@@ -55,6 +59,30 @@ Options parse_args(int argc, char** argv) {
                 throw std::invalid_argument("--suite requires a value");
             }
             options.suite = poisson::benchmark::parse_suite(argv[++i]);
+            continue;
+        }
+
+        if (arg == "--dim") {
+            if (i + 1 >= argc) {
+                throw std::invalid_argument("--dim requires a value");
+            }
+            const long long parsed = std::stoll(argv[++i]);
+            if (parsed != 2 && parsed != 3) {
+                throw std::invalid_argument("dim must be 2 or 3");
+            }
+            options.dimension = static_cast<std::size_t>(parsed);
+            continue;
+        }
+
+        if (arg == "--max-grid-size") {
+            if (i + 1 >= argc) {
+                throw std::invalid_argument("--max-grid-size requires a value");
+            }
+            const long long parsed = std::stoll(argv[++i]);
+            if (parsed < 1) {
+                throw std::invalid_argument("max-grid-size must be positive");
+            }
+            options.max_grid_size = static_cast<std::size_t>(parsed);
             continue;
         }
 
@@ -115,9 +143,14 @@ int main(int argc, char** argv) {
 #endif
 
         std::cerr << "Running benchmark suite '" << poisson::benchmark::to_string(options.suite)
-                  << "' on backend '" << kBackendLabel << "'\n";
+                  << "' in " << options.dimension << "D on backend '" << kBackendLabel << "'\n";
 
-        const auto rows = poisson::benchmark::run_suite<double>(options.suite, kBackendLabel);
+        const auto rows = poisson::benchmark::run_suite<double>(
+            options.suite,
+            kBackendLabel,
+            options.dimension,
+            options.max_grid_size
+        );
 
         if (options.has_output) {
             const OutputPaths paths = resolve_output_paths(options.output_base_path);

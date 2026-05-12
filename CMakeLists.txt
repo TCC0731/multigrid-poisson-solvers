@@ -66,7 +66,10 @@ add_executable(poisson_benchmark_cpp
 )
 
 target_link_libraries(poisson_benchmark_cpp PRIVATE poisson_core)
-target_compile_definitions(poisson_benchmark_cpp PRIVATE POISSON_BENCHMARK_BACKEND_LABEL=cpp20)
+target_compile_definitions(poisson_benchmark_cpp PRIVATE
+    POISSON_BENCHMARK_BACKEND_LABEL=cpp20
+    POISSON_ENABLE_3D=1
+)
 enable_release_perf_flags(poisson_benchmark_cpp)
 
 find_package(OpenMP)
@@ -190,6 +193,22 @@ if (BUILD_TESTING)
     endif()
 
     gtest_discover_tests(poisson_tests)
+
+    add_executable(poisson_tests_3d
+        tests/cpp/test_poisson_3d.cpp
+    )
+
+    target_link_libraries(poisson_tests_3d PRIVATE poisson_core GTest::gtest_main)
+    target_compile_features(poisson_tests_3d PRIVATE cxx_std_20)
+    enable_release_perf_flags(poisson_tests_3d)
+
+    if (MSVC)
+        target_compile_options(poisson_tests_3d PRIVATE /W4)
+    else()
+        target_compile_options(poisson_tests_3d PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+
+    gtest_discover_tests(poisson_tests_3d TEST_PREFIX 3d.)
 
     if (OpenMP_CXX_FOUND)
         add_executable(poisson_tests_omp
