@@ -4,11 +4,12 @@
 
 namespace poisson::cuda_kernels {
 
-inline constexpr std::size_t kFusedCoarseSorMaxArrayN = 6;
-inline constexpr std::size_t kFusedCoarseSorMaxElements =
-    kFusedCoarseSorMaxArrayN * kFusedCoarseSorMaxArrayN;
+inline constexpr std::size_t kFusedSmallGridSorMaxArrayN2D = 32;
+inline constexpr std::size_t kFusedSmallGridSorMaxElements2D =
+    kFusedSmallGridSorMaxArrayN2D * kFusedSmallGridSorMaxArrayN2D;
+inline constexpr std::size_t kFusedCoarseSorMaxArrayN3D = 6;
 inline constexpr std::size_t kFusedCoarseSorMaxElements3D =
-    kFusedCoarseSorMaxArrayN * kFusedCoarseSorMaxArrayN * kFusedCoarseSorMaxArrayN;
+    kFusedCoarseSorMaxArrayN3D * kFusedCoarseSorMaxArrayN3D * kFusedCoarseSorMaxArrayN3D;
 
 template <typename Real>
 __global__ void rb_sor_color_kernel(
@@ -93,12 +94,12 @@ __global__ void rb_sor_fused_coarse_kernel(
     Real omega,
     std::size_t steps
 ) {
-    // The coarsest MG grid is tiny (at most 6x6), so one block can keep the
-    // whole stencil state in shared memory and perform all sweeps in place.
+    // Small 2D MG grids fit in one block, so we can keep the whole stencil
+    // state in shared memory and perform all sweeps in place.
     if (blockIdx.x != 0 || blockIdx.y != 0 || blockIdx.z != 0) {
         return;
     }
-    if (array_n < 3 || array_n > kFusedCoarseSorMaxArrayN) {
+    if (array_n < 3 || array_n > kFusedSmallGridSorMaxArrayN2D) {
         return;
     }
 
@@ -107,8 +108,8 @@ __global__ void rb_sor_fused_coarse_kernel(
     const std::size_t idx = offset(array_n, i, j);
     const std::size_t interior_n = array_n - 2;
 
-    __shared__ Real shared_phi[kFusedCoarseSorMaxElements];
-    __shared__ Real shared_rhs[kFusedCoarseSorMaxElements];
+    __shared__ Real shared_phi[kFusedSmallGridSorMaxElements2D];
+    __shared__ Real shared_rhs[kFusedSmallGridSorMaxElements2D];
 
     shared_phi[idx] = phi[idx];
     shared_rhs[idx] = rhs[idx];
@@ -149,7 +150,7 @@ __global__ void rb_sor_fused_coarse_kernel_3d(
     if (blockIdx.x != 0 || blockIdx.y != 0 || blockIdx.z != 0) {
         return;
     }
-    if (array_n < 3 || array_n > kFusedCoarseSorMaxArrayN) {
+    if (array_n < 3 || array_n > kFusedCoarseSorMaxArrayN3D) {
         return;
     }
 

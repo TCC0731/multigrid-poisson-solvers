@@ -727,8 +727,8 @@ void run_fused_rb_sor_steps(
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
     }
-    if (phi.size() < 3 || phi.size() > cuda_kernels::kFusedCoarseSorMaxArrayN) {
-        throw std::invalid_argument("fused coarse SOR only supports 3x3 through 6x6 grids");
+    if (phi.size() < 3 || phi.size() > cuda_kernels::kFusedSmallGridSorMaxArrayN2D) {
+        throw std::invalid_argument("fused small-grid SOR only supports 3x3 through 32x32 grids");
     }
 
     const detail::ScopedNvtxRange range{"cuda::run_fused_rb_sor_steps"};
@@ -755,7 +755,7 @@ void run_fused_rb_sor_steps(
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
     }
-    if (phi.size() < 3 || phi.size() > cuda_kernels::kFusedCoarseSorMaxArrayN) {
+    if (phi.size() < 3 || phi.size() > cuda_kernels::kFusedCoarseSorMaxArrayN3D) {
         throw std::invalid_argument("fused coarse SOR only supports 3x3x3 through 6x6x6 grids");
     }
 
@@ -783,7 +783,7 @@ void run_fused_rb_sor_steps(
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
     }
-    if (phi.size() < 3 || phi.size() > cuda_kernels::kFusedCoarseSorMaxArrayN) {
+    if (phi.size() < 3 || phi.size() > cuda_kernels::kFusedCoarseSorMaxArrayN3D) {
         throw std::invalid_argument("fused coarse SOR only supports 3x3x3 through 6x6x6 grids");
     }
 
