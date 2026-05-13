@@ -1257,6 +1257,27 @@ void prolong_add(const DeviceGridView3D<Real>& coarse, DeviceGridView3D<Real>& f
     check_kernel("prolong_add_kernel_3d");
 }
 
+template <typename Real, typename PhiGrid, typename RhsGrid>
+void run_exact_coarse_solve(PhiGrid& phi, const RhsGrid& rhs, Real h) {
+    if (phi.size() != rhs.size()) {
+        throw std::invalid_argument("phi and rhs device grid sizes do not match");
+    }
+    if (phi.size() < 3 || phi.size() > cuda_kernels::kExactCoarseSolveMaxArrayN) {
+        throw std::invalid_argument("exact coarse solve only supports 3x3 through 6x6 grids");
+    }
+
+    const detail::ScopedNvtxRange range{"cuda::run_exact_coarse_solve"};
+    const dim3 block{
+        static_cast<unsigned int>(phi.size()),
+        static_cast<unsigned int>(phi.size()),
+        1U,
+    };
+
+    cuda_kernels::exact_coarse_solve_kernel_2d<Real>
+        <<<1, block>>>(phi.data(), rhs.data(), phi.size(), h * h);
+    check_kernel("exact_coarse_solve_kernel_2d");
+}
+
 } // namespace poisson::cuda
 
 #define POISSON_CUDA_CHECK(expr) ::poisson::cuda::check((expr), #expr, __FILE__, __LINE__)
