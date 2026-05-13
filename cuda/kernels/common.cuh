@@ -30,6 +30,12 @@ __device__ __forceinline__ std::uint32_t offset_u32(
     return i * stride + j;
 }
 
+__device__ __forceinline__ std::uint32_t offset_u32(
+    std::uint32_t stride, std::uint32_t i, std::uint32_t j, std::uint32_t k
+) {
+    return (i * stride + j) * stride + k;
+}
+
 inline dim3 make_block_2d() {
     return dim3{static_cast<unsigned int>(kBlockX), static_cast<unsigned int>(kBlockY), 1U};
 }
