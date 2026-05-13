@@ -12,34 +12,36 @@ inline constexpr std::size_t kFusedCoarseSorMaxElements3D =
 
 template <typename Real>
 __global__ void rb_sor_color_kernel(
-    Real* phi,
-    const Real* rhs,
+    Real* __restrict__ phi,
+    const Real* __restrict__ rhs,
     std::size_t array_n,
     Real h2,
     Real omega,
     int color
 ) {
-    const std::size_t interior_n = array_n - 2;
-    const std::size_t i = static_cast<std::size_t>(blockIdx.y) * blockDim.y + threadIdx.y + 1;
-    const std::size_t active_j =
-        static_cast<std::size_t>(blockIdx.x) * blockDim.x + threadIdx.x;
+    // This smoother only targets practical grid sizes, so 32-bit indices help
+    // reduce integer instruction count and register pressure in the hot path.
+    const std::uint32_t stride = static_cast<std::uint32_t>(array_n);
+    const std::uint32_t interior_n = stride - 2U;
+    const std::uint32_t i = blockIdx.y * blockDim.y + threadIdx.y + 1U;
+    const std::uint32_t active_j = blockIdx.x * blockDim.x + threadIdx.x;
     if (i > interior_n) {
         return;
     }
 
     // Map x to the k-th active cell on the selected checkerboard color.
-    const std::size_t j0 = 1 + ((i + static_cast<std::size_t>(color)) & 1U);
-    const std::size_t j = j0 + 2 * active_j;
+    const std::uint32_t j0 = 1U + ((i + static_cast<std::uint32_t>(color)) & 1U);
+    const std::uint32_t j = j0 + (active_j << 1U);
     if (j > interior_n) {
         return;
     }
 
-    const std::size_t idx = offset(array_n, i, j);
+    const std::uint32_t idx = offset_u32(stride, i, j);
     const Real update = Real{0.25} * (
-        phi[offset(array_n, i + 1, j)] +
-        phi[offset(array_n, i - 1, j)] +
-        phi[offset(array_n, i, j + 1)] +
-        phi[offset(array_n, i, j - 1)] +
+        phi[offset_u32(stride, i + 1U, j)] +
+        phi[offset_u32(stride, i - 1U, j)] +
+        phi[offset_u32(stride, i, j + 1U)] +
+        phi[offset_u32(stride, i, j - 1U)] +
         h2 * rhs[idx]
     );
     phi[idx] = (Real{1} - omega) * phi[idx] + omega * update;

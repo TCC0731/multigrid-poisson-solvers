@@ -3,6 +3,7 @@
 #include <cuda_runtime.h>
 
 #include <cstddef>
+#include <cstdint>
 
 namespace poisson::cuda_kernels {
 
@@ -13,14 +14,20 @@ inline constexpr int kBlock3DY = 8;
 inline constexpr int kBlock3DZ = 4;
 inline constexpr int kReductionThreads = 256;
 
-__device__ inline std::size_t offset(std::size_t stride, std::size_t i, std::size_t j) {
+__device__ __forceinline__ std::size_t offset(std::size_t stride, std::size_t i, std::size_t j) {
     return i * stride + j;
 }
 
-__device__ inline std::size_t offset(
+__device__ __forceinline__ std::size_t offset(
     std::size_t stride, std::size_t i, std::size_t j, std::size_t k
 ) {
     return (i * stride + j) * stride + k;
+}
+
+__device__ __forceinline__ std::uint32_t offset_u32(
+    std::uint32_t stride, std::uint32_t i, std::uint32_t j
+) {
+    return i * stride + j;
 }
 
 inline dim3 make_block_2d() {
