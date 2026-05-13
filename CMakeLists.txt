@@ -148,6 +148,47 @@ if (CMAKE_CUDA_COMPILER)
             ${CMAKE_CURRENT_SOURCE_DIR}/cuda/include
     )
 
+    set(POISSON_NVTX3_INCLUDE_DIR "")
+    find_path(POISSON_NVTX3_INCLUDE_DIR
+        NAMES nvtx3/nvtx3.hpp
+        HINTS
+            "$ENV{CONDA_PREFIX}/include"
+            "$ENV{CONDA_PREFIX}/targets/x86_64-linux/include"
+            "/usr/local/cuda/include"
+    )
+
+    if (NOT POISSON_NVTX3_INCLUDE_DIR AND DEFINED ENV{CONDA_PREFIX})
+        file(GLOB POISSON_NVTX3_ROOTS
+            "$ENV{CONDA_PREFIX}/nsight-compute-*"
+            "$ENV{CONDA_PREFIX}/nsight-systems-*"
+        )
+        foreach(POISSON_NVTX3_ROOT IN LISTS POISSON_NVTX3_ROOTS)
+            foreach(POISSON_NVTX3_CANDIDATE
+                    "${POISSON_NVTX3_ROOT}/host/target-linux-x64/nvtx/include"
+                    "${POISSON_NVTX3_ROOT}/target-linux-x64/nvtx/include"
+                    "${POISSON_NVTX3_ROOT}/include")
+                if (EXISTS "${POISSON_NVTX3_CANDIDATE}/nvtx3/nvtx3.hpp")
+                    set(POISSON_NVTX3_INCLUDE_DIR "${POISSON_NVTX3_CANDIDATE}")
+                    break()
+                endif()
+            endforeach()
+            if (POISSON_NVTX3_INCLUDE_DIR)
+                break()
+            endif()
+        endforeach()
+    endif()
+
+    if (POISSON_NVTX3_INCLUDE_DIR)
+        target_include_directories(poisson_cuda_core PUBLIC "${POISSON_NVTX3_INCLUDE_DIR}")
+        message(STATUS "NVTX enabled from ${POISSON_NVTX3_INCLUDE_DIR}")
+    else()
+        message(STATUS "NVTX not found; building without NVTX ranges")
+    endif()
+
+    if (CMAKE_DL_LIBS)
+        target_link_libraries(poisson_cuda_core PUBLIC ${CMAKE_DL_LIBS})
+    endif()
+
     target_compile_features(poisson_cuda_core PUBLIC cxx_std_17)
     set_target_properties(poisson_cuda_core PROPERTIES
         CUDA_STANDARD 17
