@@ -275,27 +275,6 @@ private:
 };
 
 template <typename Real>
-void copy_boundary_values(const Grid2D<Real>& source, Grid2D<Real>& target) {
-    if (source.size() != target.size()) {
-        throw std::invalid_argument("boundary template size mismatch");
-    }
-
-    if (source.size() == 0) {
-        return;
-    }
-
-    const std::size_t last = source.size() - 1;
-    for (std::size_t i = 0; i <= last; ++i) {
-        target.unchecked(i, 0) = source.unchecked(i, 0);
-        target.unchecked(i, last) = source.unchecked(i, last);
-    }
-    for (std::size_t j = 0; j <= last; ++j) {
-        target.unchecked(0, j) = source.unchecked(0, j);
-        target.unchecked(last, j) = source.unchecked(last, j);
-    }
-}
-
-template <typename Real>
 void copy_boundary_values(const Grid3D<Real>& source, Grid3D<Real>& target) {
     if (source.size() != target.size()) {
         throw std::invalid_argument("boundary template size mismatch");
@@ -327,80 +306,9 @@ void copy_boundary_values(const Grid3D<Real>& source, Grid3D<Real>& target) {
 }
 
 template <typename Real, typename PhiGrid, typename RhsGrid>
-void solve_coarsest_exact(
-    PhiGrid& phi,
-    const RhsGrid& rhs,
-    Real h,
-    const Grid2D<Real>* boundary_template
-) {
+void solve_coarsest_exact(PhiGrid& phi, const RhsGrid& rhs, Real h) {
     const cuda::detail::ScopedNvtxRange range{"mg::solve_coarsest_exact"};
-    Grid2D<Real> host_phi{phi.size()};
-    if (boundary_template != nullptr) {
-        copy_boundary_values(*boundary_template, host_phi);
-    }
-    const Grid2D<Real> host_rhs = rhs.download();
-
-    const std::size_t n = host_rhs.size() - 2;
-    const std::size_t m = n * n;
-    const Real inv_h2 = Real{1} / (h * h);
-
-    std::vector<Real> a(m * m, Real{});
-    std::vector<Real> b(m, Real{});
-    std::vector<Real> x(m, Real{});
-
-    const auto index = [n](std::size_t i, std::size_t j) {
-        return i * n + j;
-    };
-
-    // Recursive coarse solves operate on the error equation and therefore use
-    // zero boundaries. A top-level tiny problem passes its physical boundary
-    // values in through boundary_template instead.
-    for (std::size_t i = 0; i < n; ++i) {
-        for (std::size_t j = 0; j < n; ++j) {
-            const std::size_t row = index(i, j);
-            a[row * m + row] = Real{4} * inv_h2;
-            if (i > 0) {
-                a[row * m + index(i - 1, j)] = -inv_h2;
-            }
-            if (i + 1 < n) {
-                a[row * m + index(i + 1, j)] = -inv_h2;
-            }
-            if (j > 0) {
-                a[row * m + index(i, j - 1)] = -inv_h2;
-            }
-            if (j + 1 < n) {
-                a[row * m + index(i, j + 1)] = -inv_h2;
-            }
-            b[row] = host_rhs.unchecked(i + 1, j + 1);
-        }
-    }
-
-    for (std::size_t k = 0; k < m; ++k) {
-        const Real pivot = a[k * m + k];
-        for (std::size_t row = k + 1; row < m; ++row) {
-            const Real factor = a[row * m + k] / pivot;
-            for (std::size_t col = k; col < m; ++col) {
-                a[row * m + col] -= factor * a[k * m + col];
-            }
-            b[row] -= factor * b[k];
-        }
-    }
-
-    for (std::size_t row = m; row-- > 0;) {
-        Real sum = b[row];
-        for (std::size_t col = row + 1; col < m; ++col) {
-            sum -= a[row * m + col] * x[col];
-        }
-        x[row] = sum / a[row * m + row];
-    }
-
-    for (std::size_t i = 0; i < n; ++i) {
-        for (std::size_t j = 0; j < n; ++j) {
-            host_phi.unchecked(i + 1, j + 1) = x[index(i, j)];
-        }
-    }
-
-    phi.upload(host_phi);
+    cuda::run_exact_coarse_solve(phi, rhs, h);
 }
 
 template <typename Real, typename PhiGrid, typename RhsGrid>
@@ -498,8 +406,7 @@ void mg_cycle(
     CoarseSolve coarse_mode,
     std::size_t coarse_steps,
     MGWorkspace<Real>& workspace,
-    std::size_t level_index,
-    const Grid2D<Real>* boundary_template
+    std::size_t level_index
 ) {
     const std::size_t n = phi.size() - 2;
     const std::string cycle_label = make_mg_cycle_label(level_index, n, cycle, coarse_mode);
@@ -507,7 +414,7 @@ void mg_cycle(
 
     if (n <= 4) {
         if (coarse_mode == CoarseSolve::Exact) {
-            solve_coarsest_exact(phi, rhs, h, boundary_template);
+            solve_coarsest_exact(phi, rhs, h);
         } else {
             cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, coarse_steps);
         }
@@ -546,8 +453,7 @@ void mg_cycle(
             coarse_mode,
             coarse_steps,
             workspace,
-            level_index + 1,
-            static_cast<const Grid2D<Real>*>(nullptr)
+            level_index + 1
         );
         if (cycle == MGCycle::W) {
             mg_cycle<Real>(
@@ -560,8 +466,7 @@ void mg_cycle(
                 coarse_mode,
                 coarse_steps,
                 workspace,
-                level_index + 1,
-                static_cast<const Grid2D<Real>*>(nullptr)
+                level_index + 1
             );
         }
     }
@@ -751,8 +656,7 @@ SolveResult solve_mg_impl(
             coarse_mode,
             options.coarse_steps,
             workspace,
-            0,
-            &problem.phi0
+            0
         );
 
         const double residual =
