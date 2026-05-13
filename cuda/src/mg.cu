@@ -75,6 +75,19 @@ void run_mg_smoother_2d(PhiGrid& phi, const RhsGrid& rhs, Real h, Real omega, st
     cuda::run_rb_sor_steps(phi, rhs, h, omega, steps);
 }
 
+[[nodiscard]] bool use_fused_small_grid_smoother_3d(std::size_t array_n) {
+    return array_n >= 3 && array_n <= cuda_kernels::kFusedSmallGridSorMaxArrayN3D;
+}
+
+template <typename Real, typename PhiGrid, typename RhsGrid>
+void run_mg_smoother_3d(PhiGrid& phi, const RhsGrid& rhs, Real h, Real omega, std::size_t steps) {
+    if (use_fused_small_grid_smoother_3d(phi.size())) {
+        cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, steps);
+        return;
+    }
+    cuda::run_rb_sor_steps(phi, rhs, h, omega, steps);
+}
+
 template <typename Real>
 struct MGLevelWorkspace {
     cuda::DeviceGridView2D<Real> fine_residual;
@@ -287,37 +300,6 @@ private:
     std::vector<MGLevelWorkspace3D<Real>> levels_{};
 };
 
-template <typename Real>
-void copy_boundary_values(const Grid3D<Real>& source, Grid3D<Real>& target) {
-    if (source.size() != target.size()) {
-        throw std::invalid_argument("boundary template size mismatch");
-    }
-
-    if (source.size() == 0) {
-        return;
-    }
-
-    const std::size_t last = source.size() - 1;
-    for (std::size_t i = 0; i <= last; ++i) {
-        for (std::size_t j = 0; j <= last; ++j) {
-            target.unchecked(i, j, 0) = source.unchecked(i, j, 0);
-            target.unchecked(i, j, last) = source.unchecked(i, j, last);
-        }
-    }
-    for (std::size_t i = 0; i <= last; ++i) {
-        for (std::size_t k = 0; k <= last; ++k) {
-            target.unchecked(i, 0, k) = source.unchecked(i, 0, k);
-            target.unchecked(i, last, k) = source.unchecked(i, last, k);
-        }
-    }
-    for (std::size_t j = 0; j <= last; ++j) {
-        for (std::size_t k = 0; k <= last; ++k) {
-            target.unchecked(0, j, k) = source.unchecked(0, j, k);
-            target.unchecked(last, j, k) = source.unchecked(last, j, k);
-        }
-    }
-}
-
 template <typename Real, typename PhiGrid, typename RhsGrid>
 void solve_coarsest_exact(PhiGrid& phi, const RhsGrid& rhs, Real h) {
     const cuda::detail::ScopedNvtxRange range{"mg::solve_coarsest_exact"};
@@ -325,87 +307,9 @@ void solve_coarsest_exact(PhiGrid& phi, const RhsGrid& rhs, Real h) {
 }
 
 template <typename Real, typename PhiGrid, typename RhsGrid>
-void solve_coarsest_exact_3d(
-    PhiGrid& phi,
-    const RhsGrid& rhs,
-    Real h,
-    const Grid3D<Real>* boundary_template
-) {
+void solve_coarsest_exact_3d(PhiGrid& phi, const RhsGrid& rhs, Real h) {
     const cuda::detail::ScopedNvtxRange range{"mg::solve_coarsest_exact_3d"};
-    Grid3D<Real> host_phi{phi.size()};
-    if (boundary_template != nullptr) {
-        copy_boundary_values(*boundary_template, host_phi);
-    }
-    const Grid3D<Real> host_rhs = rhs.download();
-
-    const std::size_t n = host_rhs.size() - 2;
-    const std::size_t m = n * n * n;
-    const Real inv_h2 = Real{1} / (h * h);
-
-    std::vector<Real> a(m * m, Real{});
-    std::vector<Real> b(m, Real{});
-    std::vector<Real> x(m, Real{});
-
-    const auto index = [n](std::size_t i, std::size_t j, std::size_t k) {
-        return (i * n + j) * n + k;
-    };
-
-    for (std::size_t i = 0; i < n; ++i) {
-        for (std::size_t j = 0; j < n; ++j) {
-            for (std::size_t k = 0; k < n; ++k) {
-                const std::size_t row = index(i, j, k);
-                a[row * m + row] = Real{6} * inv_h2;
-                if (i > 0) {
-                    a[row * m + index(i - 1, j, k)] = -inv_h2;
-                }
-                if (i + 1 < n) {
-                    a[row * m + index(i + 1, j, k)] = -inv_h2;
-                }
-                if (j > 0) {
-                    a[row * m + index(i, j - 1, k)] = -inv_h2;
-                }
-                if (j + 1 < n) {
-                    a[row * m + index(i, j + 1, k)] = -inv_h2;
-                }
-                if (k > 0) {
-                    a[row * m + index(i, j, k - 1)] = -inv_h2;
-                }
-                if (k + 1 < n) {
-                    a[row * m + index(i, j, k + 1)] = -inv_h2;
-                }
-                b[row] = host_rhs.unchecked(i + 1, j + 1, k + 1);
-            }
-        }
-    }
-
-    for (std::size_t pivot_col = 0; pivot_col < m; ++pivot_col) {
-        const Real pivot = a[pivot_col * m + pivot_col];
-        for (std::size_t row = pivot_col + 1; row < m; ++row) {
-            const Real factor = a[row * m + pivot_col] / pivot;
-            for (std::size_t col = pivot_col; col < m; ++col) {
-                a[row * m + col] -= factor * a[pivot_col * m + col];
-            }
-            b[row] -= factor * b[pivot_col];
-        }
-    }
-
-    for (std::size_t row = m; row-- > 0;) {
-        Real sum = b[row];
-        for (std::size_t col = row + 1; col < m; ++col) {
-            sum -= a[row * m + col] * x[col];
-        }
-        x[row] = sum / a[row * m + row];
-    }
-
-    for (std::size_t i = 0; i < n; ++i) {
-        for (std::size_t j = 0; j < n; ++j) {
-            for (std::size_t k = 0; k < n; ++k) {
-                host_phi.unchecked(i + 1, j + 1, k + 1) = x[index(i, j, k)];
-            }
-        }
-    }
-
-    phi.upload(host_phi);
+    cuda::run_exact_coarse_solve(phi, rhs, h);
 }
 
 template <typename Real, typename PhiGrid, typename RhsGrid>
@@ -505,8 +409,7 @@ void mg_cycle_3d(
     CoarseSolve coarse_mode,
     std::size_t coarse_steps,
     MGWorkspace3D<Real>& workspace,
-    std::size_t level_index,
-    const Grid3D<Real>* boundary_template
+    std::size_t level_index
 ) {
     const std::size_t n = phi.size() - 2;
     const std::string cycle_label = make_mg_cycle_label(level_index, n, cycle, coarse_mode);
@@ -514,7 +417,7 @@ void mg_cycle_3d(
 
     if (n <= 4) {
         if (coarse_mode == CoarseSolve::Exact) {
-            solve_coarsest_exact_3d(phi, rhs, h, boundary_template);
+            solve_coarsest_exact_3d(phi, rhs, h);
         } else {
             cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, coarse_steps);
         }
@@ -523,7 +426,7 @@ void mg_cycle_3d(
 
     {
         const cuda::detail::ScopedNvtxRange pre_smooth_range{"mg::pre_smooth_3d"};
-        cuda::run_rb_sor_steps(phi, rhs, h, omega, nu);
+        run_mg_smoother_3d(phi, rhs, h, omega, nu);
     }
 
     auto& level = workspace.level(level_index);
@@ -553,8 +456,7 @@ void mg_cycle_3d(
             coarse_mode,
             coarse_steps,
             workspace,
-            level_index + 1,
-            static_cast<const Grid3D<Real>*>(nullptr)
+            level_index + 1
         );
         if (cycle == MGCycle::W) {
             mg_cycle_3d<Real>(
@@ -567,8 +469,7 @@ void mg_cycle_3d(
                 coarse_mode,
                 coarse_steps,
                 workspace,
-                level_index + 1,
-                static_cast<const Grid3D<Real>*>(nullptr)
+                level_index + 1
             );
         }
     }
@@ -579,7 +480,7 @@ void mg_cycle_3d(
     }
     {
         const cuda::detail::ScopedNvtxRange post_smooth_range{"mg::post_smooth_3d"};
-        cuda::run_rb_sor_steps(phi, rhs, h, omega, nu);
+        run_mg_smoother_3d(phi, rhs, h, omega, nu);
     }
 }
 
@@ -673,14 +574,14 @@ SolveResult solve_mg_impl(
         );
 
         const double residual =
-            cuda::compute_relative_residual_uncached(phi, rhs, problem.h, residual_workspace);
+            cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
         if (residual <= static_cast<double>(options.tol)) {
             return make_solve_result(phi.download(), iteration, static_cast<Real>(residual));
         }
     }
 
     const double residual =
-        cuda::compute_relative_residual_uncached(phi, rhs, problem.h, residual_workspace);
+        cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
     return make_solve_result(phi.download(), options.max_iter, static_cast<Real>(residual));
 }
 
@@ -714,19 +615,18 @@ SolveResult3D solve_mg_3d_impl(
             coarse_mode,
             options.coarse_steps,
             workspace,
-            0,
-            &problem.phi0
+            0
         );
 
         const double residual =
-            cuda::compute_relative_residual_uncached_3d(phi, rhs, problem.h, residual_workspace);
+            cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
         if (residual <= static_cast<double>(options.tol)) {
             return make_solve_result(phi.download(), iteration, static_cast<Real>(residual));
         }
     }
 
     const double residual =
-        cuda::compute_relative_residual_uncached_3d(phi, rhs, problem.h, residual_workspace);
+        cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
     return make_solve_result(phi.download(), options.max_iter, static_cast<Real>(residual));
 }
 
