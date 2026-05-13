@@ -62,6 +62,19 @@ Real effective_mg_omega(const Problem3D<Real>& problem, const MGOptions<Real>& o
     return label;
 }
 
+[[nodiscard]] bool use_fused_small_grid_smoother_2d(std::size_t array_n) {
+    return array_n >= 3 && array_n <= cuda_kernels::kFusedSmallGridSorMaxArrayN2D;
+}
+
+template <typename Real, typename PhiGrid, typename RhsGrid>
+void run_mg_smoother_2d(PhiGrid& phi, const RhsGrid& rhs, Real h, Real omega, std::size_t steps) {
+    if (use_fused_small_grid_smoother_2d(phi.size())) {
+        cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, steps);
+        return;
+    }
+    cuda::run_rb_sor_steps(phi, rhs, h, omega, steps);
+}
+
 template <typename Real>
 struct MGLevelWorkspace {
     cuda::DeviceGridView2D<Real> fine_residual;
@@ -423,7 +436,7 @@ void mg_cycle(
 
     {
         const cuda::detail::ScopedNvtxRange pre_smooth_range{"mg::pre_smooth"};
-        cuda::run_rb_sor_steps(phi, rhs, h, omega, nu);
+        run_mg_smoother_2d(phi, rhs, h, omega, nu);
     }
 
     auto& level = workspace.level(level_index);
@@ -477,7 +490,7 @@ void mg_cycle(
     }
     {
         const cuda::detail::ScopedNvtxRange post_smooth_range{"mg::post_smooth"};
-        cuda::run_rb_sor_steps(phi, rhs, h, omega, nu);
+        run_mg_smoother_2d(phi, rhs, h, omega, nu);
     }
 }
 
