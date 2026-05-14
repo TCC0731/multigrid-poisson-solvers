@@ -3,7 +3,6 @@
 #include "poisson/cuda_utils.hpp"
 #include "poisson/validation.hpp"
 
-#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <stdexcept>
@@ -135,6 +134,173 @@ Real effective_mg_omega(const Problem3D<Real>& problem, const MGOptions<Real>& o
     return options.omega;
 }
 
+template <typename Real>
+void initialize_mg_phi(cuda::DeviceGrid2D<Real>& phi, const Grid2D<Real>& host_phi0) {
+    const std::size_t array_n = host_phi0.size();
+    if (array_n == 0) {
+        return;
+    }
+
+    // `phi0` already has a zero interior on the host, so we only need to
+    // materialize the physical boundary on the device.
+    phi.zero();
+
+    const Real* const host_data = host_phi0.data().data();
+    Real* const device_data = phi.data();
+    const std::size_t row_bytes = array_n * sizeof(Real);
+
+    cuda::check(
+        cudaMemcpy(device_data, host_data, row_bytes, cudaMemcpyHostToDevice),
+        "cudaMemcpyHostToDevice",
+        __FILE__,
+        __LINE__
+    );
+
+    if (array_n > 1) {
+        cuda::check(
+            cudaMemcpy(
+                device_data + (array_n - 1) * array_n,
+                host_data + (array_n - 1) * array_n,
+                row_bytes,
+                cudaMemcpyHostToDevice
+            ),
+            "cudaMemcpyHostToDevice",
+            __FILE__,
+            __LINE__
+        );
+    }
+
+    if (array_n > 2) {
+        cuda::check(
+            cudaMemcpy2D(
+                device_data,
+                row_bytes,
+                host_data,
+                row_bytes,
+                sizeof(Real),
+                array_n,
+                cudaMemcpyHostToDevice
+            ),
+            "cudaMemcpy2D",
+            __FILE__,
+            __LINE__
+        );
+        cuda::check(
+            cudaMemcpy2D(
+                device_data + (array_n - 1),
+                row_bytes,
+                host_data + (array_n - 1),
+                row_bytes,
+                sizeof(Real),
+                array_n,
+                cudaMemcpyHostToDevice
+            ),
+            "cudaMemcpy2D",
+            __FILE__,
+            __LINE__
+        );
+    }
+}
+
+template <typename Real>
+void initialize_mg_phi(cuda::DeviceGrid3D<Real>& phi, const Grid3D<Real>& host_phi0) {
+    const std::size_t array_n = host_phi0.size();
+    if (array_n == 0) {
+        return;
+    }
+
+    // `phi0` already has a zero interior on the host, so we only need to
+    // materialize the physical boundary on the device.
+    phi.zero();
+
+    const Real* const host_data = host_phi0.data().data();
+    Real* const device_data = phi.data();
+    const std::size_t face_bytes = array_n * array_n * sizeof(Real);
+    const std::size_t row_bytes = array_n * sizeof(Real);
+
+    cuda::check(
+        cudaMemcpy(device_data, host_data, face_bytes, cudaMemcpyHostToDevice),
+        "cudaMemcpyHostToDevice",
+        __FILE__,
+        __LINE__
+    );
+
+    if (array_n > 1) {
+        cuda::check(
+            cudaMemcpy(
+                device_data + (array_n - 1) * array_n * array_n,
+                host_data + (array_n - 1) * array_n * array_n,
+                face_bytes,
+                cudaMemcpyHostToDevice
+            ),
+            "cudaMemcpyHostToDevice",
+            __FILE__,
+            __LINE__
+        );
+    }
+
+    if (array_n > 2) {
+        // The grid is stored as rows of length `array_n` along k, so the
+        // k-faces are simple column copies in that flattened 2D view.
+        cuda::check(
+            cudaMemcpy2D(
+                device_data,
+                face_bytes,
+                host_data,
+                face_bytes,
+                row_bytes,
+                array_n,
+                cudaMemcpyHostToDevice
+            ),
+            "cudaMemcpy2D",
+            __FILE__,
+            __LINE__
+        );
+        cuda::check(
+            cudaMemcpy2D(
+                device_data + (array_n - 1) * array_n,
+                face_bytes,
+                host_data + (array_n - 1) * array_n,
+                face_bytes,
+                row_bytes,
+                array_n,
+                cudaMemcpyHostToDevice
+            ),
+            "cudaMemcpy2D",
+            __FILE__,
+            __LINE__
+        );
+        cuda::check(
+            cudaMemcpy2D(
+                device_data,
+                row_bytes,
+                host_data,
+                row_bytes,
+                sizeof(Real),
+                array_n * array_n,
+                cudaMemcpyHostToDevice
+            ),
+            "cudaMemcpy2D",
+            __FILE__,
+            __LINE__
+        );
+        cuda::check(
+            cudaMemcpy2D(
+                device_data + (array_n - 1),
+                row_bytes,
+                host_data + (array_n - 1),
+                row_bytes,
+                sizeof(Real),
+                array_n * array_n,
+                cudaMemcpyHostToDevice
+            ),
+            "cudaMemcpy2D",
+            __FILE__,
+            __LINE__
+        );
+    }
+}
+
 [[nodiscard]] std::string make_mg_cycle_label(
     std::size_t level_index, std::size_t interior_n, MGCycle cycle, CoarseSolve coarse_mode
 ) {
@@ -192,14 +358,18 @@ void run_mg_smoother_3d(
 
 template <typename Real>
 struct MGLevelWorkspace {
-    cuda::DeviceGridView2D<Real> fine_residual;
+    // The 2D path now fuses residual computation and restriction, so each
+    // level only needs the coarse rhs plus the coarse error used during
+    // recursion.
     cuda::DeviceGridView2D<Real> coarse_rhs;
     cuda::DeviceGridView2D<Real> coarse_error;
 };
 
 template <typename Real>
 struct MGLevelWorkspace3D {
-    cuda::DeviceGridView3D<Real> fine_residual;
+    // The 3D path now fuses residual computation and restriction, so each
+    // level only needs the coarse rhs plus the coarse error used during
+    // recursion.
     cuda::DeviceGridView3D<Real> coarse_rhs;
     cuda::DeviceGridView3D<Real> coarse_error;
 };
@@ -235,10 +405,6 @@ public:
         for (const auto& layout : layouts_) {
             levels_.push_back(MGLevelWorkspace<Real>{
                 cuda::DeviceGridView2D<Real>{
-                    pool_data + layout.fine_residual_offset,
-                    layout.fine_array_n,
-                },
-                cuda::DeviceGridView2D<Real>{
                     pool_data + layout.coarse_rhs_offset,
                     layout.coarse_array_n,
                 },
@@ -259,9 +425,7 @@ public:
 
 private:
     struct MGLevelLayout {
-        std::size_t fine_array_n{};
         std::size_t coarse_array_n{};
-        std::size_t fine_residual_offset{};
         std::size_t coarse_rhs_offset{};
         std::size_t coarse_error_offset{};
     };
@@ -274,27 +438,20 @@ private:
 
         const std::size_t coarse_interior_n = (interior_n - 1) / 2;
         const std::size_t coarse_array_n = coarse_interior_n + 2;
-        const std::size_t fine_elements = fine_array_n * fine_array_n;
         const std::size_t coarse_elements = coarse_array_n * coarse_array_n;
 
         const std::size_t level_index = layouts_.size();
         layouts_.push_back(MGLevelLayout{
-            fine_array_n,
             coarse_array_n,
-            base_offset,
             0,
             base_offset,
         });
 
         const std::size_t child_elements =
             append_layout(coarse_array_n, base_offset + coarse_elements);
-        // Reuse the fine-residual slot for coarse_error plus the entire child
-        // subtree once restriction has finished.
-        const std::size_t transient_or_child_elements =
-            std::max(fine_elements, coarse_elements + child_elements);
 
-        layouts_[level_index].coarse_rhs_offset = base_offset + transient_or_child_elements;
-        return transient_or_child_elements + coarse_elements;
+        layouts_[level_index].coarse_rhs_offset = base_offset + coarse_elements + child_elements;
+        return 2 * coarse_elements + child_elements;
     }
 
     std::size_t configured_array_n_{0};
@@ -335,10 +492,6 @@ public:
         for (const auto& layout : layouts_) {
             levels_.push_back(MGLevelWorkspace3D<Real>{
                 cuda::DeviceGridView3D<Real>{
-                    pool_data + layout.fine_residual_offset,
-                    layout.fine_array_n,
-                },
-                cuda::DeviceGridView3D<Real>{
                     pool_data + layout.coarse_rhs_offset,
                     layout.coarse_array_n,
                 },
@@ -359,9 +512,7 @@ public:
 
 private:
     struct MGLevelLayout {
-        std::size_t fine_array_n{};
         std::size_t coarse_array_n{};
-        std::size_t fine_residual_offset{};
         std::size_t coarse_rhs_offset{};
         std::size_t coarse_error_offset{};
     };
@@ -374,25 +525,20 @@ private:
 
         const std::size_t coarse_interior_n = (interior_n - 1) / 2;
         const std::size_t coarse_array_n = coarse_interior_n + 2;
-        const std::size_t fine_elements = fine_array_n * fine_array_n * fine_array_n;
         const std::size_t coarse_elements = coarse_array_n * coarse_array_n * coarse_array_n;
 
         const std::size_t level_index = layouts_.size();
         layouts_.push_back(MGLevelLayout{
-            fine_array_n,
             coarse_array_n,
             base_offset,
-            0,
             base_offset,
         });
 
         const std::size_t child_elements =
             append_layout(coarse_array_n, base_offset + coarse_elements);
-        const std::size_t transient_or_child_elements =
-            std::max(fine_elements, coarse_elements + child_elements);
 
-        layouts_[level_index].coarse_rhs_offset = base_offset + transient_or_child_elements;
-        return transient_or_child_elements + coarse_elements;
+        layouts_[level_index].coarse_rhs_offset = base_offset + coarse_elements + child_elements;
+        return 2 * coarse_elements + child_elements;
     }
 
     std::size_t configured_array_n_{0};
@@ -447,16 +593,10 @@ void mg_cycle(
     }
 
     auto& level = workspace.level(level_index);
-    auto& fine_residual = level.fine_residual;
-    {
-        const cuda::detail::ScopedNvtxRange residual_range{"mg::compute_fine_residual"};
-        cuda::compute_residual_full(phi, rhs, h, fine_residual, stream);
-    }
-
     auto& coarse_rhs = level.coarse_rhs;
     {
-        const cuda::detail::ScopedNvtxRange restriction_range{"mg::restrict_to_coarse"};
-        cuda::restrict_full_weighting<Real>(fine_residual, coarse_rhs, stream);
+        const cuda::detail::ScopedNvtxRange fused_range{"mg::compute_residual_restrict"};
+        cuda::compute_residual_restrict_full_weighting<Real>(phi, rhs, h, coarse_rhs, stream);
     }
 
     auto& coarse_error = level.coarse_error;
@@ -536,16 +676,10 @@ void mg_cycle_3d(
     }
 
     auto& level = workspace.level(level_index);
-    auto& fine_residual = level.fine_residual;
-    {
-        const cuda::detail::ScopedNvtxRange residual_range{"mg::compute_fine_residual_3d"};
-        cuda::compute_residual_full(phi, rhs, h, fine_residual, stream);
-    }
-
     auto& coarse_rhs = level.coarse_rhs;
     {
-        const cuda::detail::ScopedNvtxRange restriction_range{"mg::restrict_to_coarse_3d"};
-        cuda::restrict_full_weighting(fine_residual, coarse_rhs, stream);
+        const cuda::detail::ScopedNvtxRange fused_range{"mg::compute_residual_restrict_3d"};
+        cuda::compute_residual_restrict_full_weighting<Real>(phi, rhs, h, coarse_rhs, stream);
     }
 
     auto& coarse_error = level.coarse_error;
@@ -657,7 +791,8 @@ SolveResult solve_mg_impl(
     cuda::ensure_device_available();
 
     const Real omega = effective_mg_omega(problem, options);
-    cuda::DeviceGrid2D<Real> phi{problem.phi0};
+    cuda::DeviceGrid2D<Real> phi{problem.array_n()};
+    initialize_mg_phi(phi, problem.phi0);
     const cuda::DeviceGrid2D<Real> rhs{problem.rhs};
     thread_local MGWorkspace<Real> workspace{};
     {
@@ -770,7 +905,8 @@ SolveResult3D solve_mg_3d_impl(
     cuda::ensure_device_available();
 
     const Real omega = effective_mg_omega(problem, options);
-    cuda::DeviceGrid3D<Real> phi{problem.phi0};
+    cuda::DeviceGrid3D<Real> phi{problem.array_n()};
+    initialize_mg_phi(phi, problem.phi0);
     const cuda::DeviceGrid3D<Real> rhs{problem.rhs};
     thread_local MGWorkspace3D<Real> workspace{};
     {

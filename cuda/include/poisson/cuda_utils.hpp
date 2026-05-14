@@ -1144,106 +1144,26 @@ template <typename Real>
     return compute_relative_residual(phi, rhs, h, workspace);
 }
 
-template <typename Real, typename PhiGrid, typename RhsGrid, typename ResidualGrid>
-void compute_residual_full(
+template <typename Real, typename PhiGrid, typename RhsGrid, typename CoarseGrid>
+void compute_residual_restrict_full_weighting(
     const PhiGrid& phi,
     const RhsGrid& rhs,
     Real h,
-    ResidualGrid& residual_out,
+    CoarseGrid& coarse,
     cudaStream_t stream = nullptr
 ) {
-    if (phi.size() != rhs.size() || phi.size() != residual_out.size()) {
-        throw std::invalid_argument("residual_full device grid sizes do not match");
+    if (phi.size() != rhs.size()) {
+        throw std::invalid_argument("phi and rhs device grid sizes do not match");
+    }
+    if (coarse.size() < 3 || phi.size() != (2 * coarse.size() - 1)) {
+        throw std::invalid_argument(
+            "fused residual/restriction device grid sizes do not match"
+        );
     }
 
-    const detail::ScopedNvtxRange range{"cuda::compute_residual_full"};
-    residual_out.zero(stream);
-    const dim3 block = cuda_kernels::make_block_2d();
-    const dim3 grid = cuda_kernels::make_grid_2d(phi.size() - 2, phi.size() - 2, block);
-
-    cuda_kernels::residual_full_kernel<Real>
-        <<<grid, block, 0, stream>>>(
-            phi.data(),
-            rhs.data(),
-            residual_out.data(),
-            phi.size(),
-            Real{1} / (h * h)
-        );
-    check_kernel("residual_full_kernel", stream);
-}
-
-template <typename Real>
-void compute_residual_full(
-    const DeviceGrid3D<Real>& phi,
-    const DeviceGrid3D<Real>& rhs,
-    Real h,
-    DeviceGridView3D<Real>& residual_out,
-    cudaStream_t stream = nullptr
-) {
-    if (phi.size() != rhs.size() || phi.size() != residual_out.size()) {
-        throw std::invalid_argument("residual_full device grid sizes do not match");
-    }
-
-    const detail::ScopedNvtxRange range{"cuda::compute_residual_full_3d"};
-    residual_out.zero(stream);
-    const dim3 block = cuda_kernels::make_block_3d();
-    const dim3 grid = cuda_kernels::make_grid_3d(
-        phi.size() - 2,
-        phi.size() - 2,
-        phi.size() - 2,
-        block
-    );
-
-    cuda_kernels::residual_full_kernel_3d<Real>
-        <<<grid, block, 0, stream>>>(
-            phi.data(),
-            rhs.data(),
-            residual_out.data(),
-            phi.size(),
-            Real{1} / (h * h)
-        );
-    check_kernel("residual_full_kernel_3d", stream);
-}
-
-template <typename Real>
-void compute_residual_full(
-    const DeviceGridView3D<Real>& phi,
-    const DeviceGridView3D<Real>& rhs,
-    Real h,
-    DeviceGridView3D<Real>& residual_out,
-    cudaStream_t stream = nullptr
-) {
-    if (phi.size() != rhs.size() || phi.size() != residual_out.size()) {
-        throw std::invalid_argument("residual_full device grid sizes do not match");
-    }
-
-    const detail::ScopedNvtxRange range{"cuda::compute_residual_full_3d"};
-    residual_out.zero(stream);
-    const dim3 block = cuda_kernels::make_block_3d();
-    const dim3 grid = cuda_kernels::make_grid_3d(
-        phi.size() - 2,
-        phi.size() - 2,
-        phi.size() - 2,
-        block
-    );
-
-    cuda_kernels::residual_full_kernel_3d<Real>
-        <<<grid, block, 0, stream>>>(
-            phi.data(),
-            rhs.data(),
-            residual_out.data(),
-            phi.size(),
-            Real{1} / (h * h)
-        );
-    check_kernel("residual_full_kernel_3d", stream);
-}
-
-template <typename Real, typename FineGrid, typename CoarseGrid>
-void restrict_full_weighting(const FineGrid& fine, CoarseGrid& coarse, cudaStream_t stream = nullptr) {
-    const detail::ScopedNvtxRange range{"cuda::restrict_full_weighting"};
-    const std::size_t coarse_interior_n = coarse.size() - 2;
+    const detail::ScopedNvtxRange range{"cuda::compute_residual_restrict_full_weighting"};
     coarse.zero(stream);
-
+    const std::size_t coarse_interior_n = coarse.size() - 2;
     const dim3 block = cuda_kernels::make_block_2d();
     const dim3 grid = cuda_kernels::make_grid_2d(
         coarse_interior_n,
@@ -1251,21 +1171,38 @@ void restrict_full_weighting(const FineGrid& fine, CoarseGrid& coarse, cudaStrea
         block
     );
 
-    cuda_kernels::restrict_full_weighting_kernel<Real>
-        <<<grid, block, 0, stream>>>(fine.data(), coarse.data(), coarse.size());
-    check_kernel("restrict_full_weighting_kernel", stream);
+    cuda_kernels::residual_restrict_full_weighting_kernel_2d<Real>
+        <<<grid, block, 0, stream>>>(
+            phi.data(),
+            rhs.data(),
+            coarse.data(),
+            coarse.size(),
+            Real{1} / (h * h)
+        );
+    check_kernel("residual_restrict_full_weighting_kernel_2d", stream);
 }
 
-template <typename Real>
-void restrict_full_weighting(
-    const DeviceGridView3D<Real>& fine,
-    DeviceGridView3D<Real>& coarse,
-    cudaStream_t stream = nullptr
+template <typename Real, typename PhiGrid, typename RhsGrid, typename CoarseGrid>
+void compute_residual_restrict_full_weighting_3d_impl(
+    const PhiGrid& phi,
+    const RhsGrid& rhs,
+    Real h,
+    CoarseGrid& coarse,
+    cudaStream_t stream,
+    const char* range_name
 ) {
-    const detail::ScopedNvtxRange range{"cuda::restrict_full_weighting_3d"};
-    const std::size_t coarse_interior_n = coarse.size() - 2;
-    coarse.zero(stream);
+    if (phi.size() != rhs.size()) {
+        throw std::invalid_argument("phi and rhs device grid sizes do not match");
+    }
+    if (coarse.size() < 3 || phi.size() != (2 * coarse.size() - 1)) {
+        throw std::invalid_argument(
+            "fused residual/restriction device grid sizes do not match"
+        );
+    }
 
+    const detail::ScopedNvtxRange range{range_name};
+    coarse.zero(stream);
+    const std::size_t coarse_interior_n = coarse.size() - 2;
     const dim3 block = cuda_kernels::make_block_3d();
     const dim3 grid = cuda_kernels::make_grid_3d(
         coarse_interior_n,
@@ -1274,9 +1211,51 @@ void restrict_full_weighting(
         block
     );
 
-    cuda_kernels::restrict_full_weighting_kernel_3d<Real>
-        <<<grid, block, 0, stream>>>(fine.data(), coarse.data(), coarse.size());
-    check_kernel("restrict_full_weighting_kernel_3d", stream);
+    cuda_kernels::residual_restrict_full_weighting_kernel_3d<Real>
+        <<<grid, block, 0, stream>>>(
+            phi.data(),
+            rhs.data(),
+            coarse.data(),
+            coarse.size(),
+            Real{1} / (h * h)
+        );
+    check_kernel("residual_restrict_full_weighting_kernel_3d", stream);
+}
+
+template <typename Real>
+void compute_residual_restrict_full_weighting(
+    const DeviceGridView3D<Real>& phi,
+    const DeviceGridView3D<Real>& rhs,
+    Real h,
+    DeviceGridView3D<Real>& coarse,
+    cudaStream_t stream = nullptr
+) {
+    compute_residual_restrict_full_weighting_3d_impl<Real>(
+        phi,
+        rhs,
+        h,
+        coarse,
+        stream,
+        "cuda::compute_residual_restrict_full_weighting_3d"
+    );
+}
+
+template <typename Real>
+void compute_residual_restrict_full_weighting(
+    const DeviceGrid3D<Real>& phi,
+    const DeviceGrid3D<Real>& rhs,
+    Real h,
+    DeviceGridView3D<Real>& coarse,
+    cudaStream_t stream = nullptr
+) {
+    compute_residual_restrict_full_weighting_3d_impl<Real>(
+        phi,
+        rhs,
+        h,
+        coarse,
+        stream,
+        "cuda::compute_residual_restrict_full_weighting_3d"
+    );
 }
 
 template <typename Real, typename CoarseGrid, typename FineGrid>
