@@ -30,7 +30,7 @@ inline constexpr std::string_view kCaseName{"sine"};
 inline constexpr std::string_view kSolverComparisonSuite{"solver_comparison"};
 inline constexpr std::string_view kMgCompareSuite{"mg_compare"};
 inline constexpr std::size_t kWarmupRuns{1};
-inline constexpr std::size_t kTimedRuns{5};
+inline constexpr std::size_t kTimedRuns{50};
 inline constexpr std::size_t kWarmupMaxIter{10};
 inline constexpr double kTol{1e-9};
 inline constexpr double kMgOmega{1.25};

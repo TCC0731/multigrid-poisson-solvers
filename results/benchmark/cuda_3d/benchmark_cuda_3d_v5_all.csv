@@ -1,0 +1,25 @@
+suite,backend,dtype,case,solver,grid_size,max_iter,tol,warmup_runs,timed_runs,cycle,omega,nu,iterations,residual_l2,error_l2,error_linf,mean_time_ms,std_time_ms
+mg_compare,cuda,double,sine,"MG 3D(v,w=1.25,coarse=exact)",15,150,1.000000e-09,1,50,v,1.25,3,6,1.655582e-10,1.138076e-03,3.218964e-03,4.258163,0.333611
+mg_compare,cuda,double,sine,"MG 3D(v,w=1.25,coarse=exact)",31,150,1.000000e-09,1,50,v,1.25,3,6,3.866364e-10,2.841075e-04,8.035775e-04,4.891867,0.577632
+mg_compare,cuda,double,sine,"MG 3D(v,w=1.25,coarse=exact)",63,150,1.000000e-09,1,50,v,1.25,3,6,4.725830e-10,7.100115e-05,2.008216e-04,8.945671,0.633213
+mg_compare,cuda,double,sine,"MG 3D(v,w=1.25,coarse=exact)",127,150,1.000000e-09,1,50,v,1.25,3,6,4.964238e-10,1.774862e-05,5.020067e-05,22.815191,1.001190
+mg_compare,cuda,double,sine,"MG 3D(v,w=1.25,coarse=exact)",255,150,1.000000e-09,1,50,v,1.25,3,6,5.019057e-10,4.436989e-06,1.254970e-05,198.791695,9.618820
+mg_compare,cuda,double,sine,"MG 3D(v,w=1.25,coarse=exact)",383,150,1.000000e-09,1,50,v,1.25,3,6,3.900855e-10,1.971958e-06,5.577539e-06,680.152521,58.967309
+mg_compare,cuda,double,sine,"MG 3D(v,w=1.25,coarse=sor)",15,150,1.000000e-09,1,50,v,1.25,3,6,1.655582e-10,1.138076e-03,3.218964e-03,2.773993,0.815700
+mg_compare,cuda,double,sine,"MG 3D(v,w=1.25,coarse=sor)",31,150,1.000000e-09,1,50,v,1.25,3,6,3.866374e-10,2.841075e-04,8.035775e-04,3.772265,0.795679
+mg_compare,cuda,double,sine,"MG 3D(v,w=1.25,coarse=sor)",63,150,1.000000e-09,1,50,v,1.25,3,6,4.725816e-10,7.100115e-05,2.008216e-04,6.677587,0.684323
+mg_compare,cuda,double,sine,"MG 3D(v,w=1.25,coarse=sor)",127,150,1.000000e-09,1,50,v,1.25,3,6,4.964207e-10,1.774862e-05,5.020067e-05,21.408440,1.357665
+mg_compare,cuda,double,sine,"MG 3D(v,w=1.25,coarse=sor)",255,150,1.000000e-09,1,50,v,1.25,3,6,5.019041e-10,4.436989e-06,1.254970e-05,197.873904,11.576897
+mg_compare,cuda,double,sine,"MG 3D(v,w=1.25,coarse=sor)",383,150,1.000000e-09,1,50,v,1.25,3,6,3.900820e-10,1.971958e-06,5.577539e-06,685.796102,70.171525
+mg_compare,cuda,double,sine,"MG 3D(w,w=1.25,coarse=exact)",15,150,1.000000e-09,1,50,w,1.25,3,6,1.350167e-11,1.138076e-03,3.218964e-03,14.135067,6.974483
+mg_compare,cuda,double,sine,"MG 3D(w,w=1.25,coarse=exact)",31,150,1.000000e-09,1,50,w,1.25,3,5,1.143164e-11,2.841076e-04,8.035777e-04,19.992663,0.586988
+mg_compare,cuda,double,sine,"MG 3D(w,w=1.25,coarse=exact)",63,150,1.000000e-09,1,50,w,1.25,3,4,4.757176e-11,7.100123e-05,2.008218e-04,33.918716,0.656693
+mg_compare,cuda,double,sine,"MG 3D(w,w=1.25,coarse=exact)",127,150,1.000000e-09,1,50,w,1.25,3,4,1.467201e-12,1.774870e-05,5.020092e-05,77.906403,0.940105
+mg_compare,cuda,double,sine,"MG 3D(w,w=1.25,coarse=exact)",255,150,1.000000e-09,1,50,w,1.25,3,3,8.081855e-10,4.437075e-06,1.254994e-05,247.485793,7.285761
+mg_compare,cuda,double,sine,"MG 3D(w,w=1.25,coarse=exact)",383,150,1.000000e-09,1,50,w,1.25,3,3,5.715318e-10,1.972025e-06,5.577730e-06,592.209279,37.952889
+mg_compare,cuda,double,sine,"MG 3D(w,w=1.25,coarse=sor)",15,150,1.000000e-09,1,50,w,1.25,3,6,1.350108e-11,1.138076e-03,3.218964e-03,4.314865,0.681140
+mg_compare,cuda,double,sine,"MG 3D(w,w=1.25,coarse=sor)",31,150,1.000000e-09,1,50,w,1.25,3,5,1.143194e-11,2.841076e-04,8.035777e-04,6.668678,1.128071
+mg_compare,cuda,double,sine,"MG 3D(w,w=1.25,coarse=sor)",63,150,1.000000e-09,1,50,w,1.25,3,4,4.757177e-11,7.100123e-05,2.008218e-04,10.812564,1.777433
+mg_compare,cuda,double,sine,"MG 3D(w,w=1.25,coarse=sor)",127,150,1.000000e-09,1,50,w,1.25,3,4,1.469222e-12,1.774870e-05,5.020092e-05,30.801730,2.680746
+mg_compare,cuda,double,sine,"MG 3D(w,w=1.25,coarse=sor)",255,150,1.000000e-09,1,50,w,1.25,3,3,8.081873e-10,4.437075e-06,1.254994e-05,176.297282,8.622682
+mg_compare,cuda,double,sine,"MG 3D(w,w=1.25,coarse=sor)",383,150,1.000000e-09,1,50,w,1.25,3,3,5.715323e-10,1.972025e-06,5.577730e-06,587.703861,57.301123

@@ -4,6 +4,18 @@
 
 namespace poisson::cuda_kernels {
 
+inline constexpr std::size_t kExactCoarseSolveMaxArrayN = 6;
+inline constexpr std::size_t kExactCoarseSolveMaxElements =
+    kExactCoarseSolveMaxArrayN * kExactCoarseSolveMaxArrayN;
+inline constexpr std::size_t kExactCoarseSolveMaxInteriorN = kExactCoarseSolveMaxArrayN - 2;
+inline constexpr std::size_t kExactCoarseSolveMaxUnknowns =
+    kExactCoarseSolveMaxInteriorN * kExactCoarseSolveMaxInteriorN;
+inline constexpr std::size_t kExactCoarseSolveMaxElements3D =
+    kExactCoarseSolveMaxArrayN * kExactCoarseSolveMaxArrayN * kExactCoarseSolveMaxArrayN;
+inline constexpr std::size_t kExactCoarseSolveMaxUnknowns3D =
+    kExactCoarseSolveMaxInteriorN * kExactCoarseSolveMaxInteriorN *
+    kExactCoarseSolveMaxInteriorN;
+
 template <typename Real>
 __global__ void residual_full_kernel(
     const Real* phi,
@@ -202,6 +214,248 @@ __global__ void prolong_add_kernel_3d(const Real* coarse, Real* fine, std::size_
         wi1 * wj0 * wk1 * coarse[offset(coarse_array_n, i1, j0, k1)] +
         wi0 * wj1 * wk1 * coarse[offset(coarse_array_n, i0, j1, k1)] +
         wi1 * wj1 * wk1 * coarse[offset(coarse_array_n, i1, j1, k1)];
+}
+
+template <typename Real>
+__global__ void exact_coarse_solve_kernel_2d(
+    Real* phi,
+    const Real* rhs,
+    std::size_t array_n,
+    Real h2
+) {
+    if (blockIdx.x != 0 || blockIdx.y != 0 || blockIdx.z != 0) {
+        return;
+    }
+    if (array_n < 3 || array_n > kExactCoarseSolveMaxArrayN) {
+        return;
+    }
+
+    const std::size_t i = static_cast<std::size_t>(threadIdx.y);
+    const std::size_t j = static_cast<std::size_t>(threadIdx.x);
+    const std::size_t idx = offset(array_n, i, j);
+    const std::size_t interior_n = array_n - 2;
+
+    __shared__ Real shared_phi[kExactCoarseSolveMaxElements];
+    __shared__ Real shared_rhs[kExactCoarseSolveMaxElements];
+    __shared__ Real system_matrix[kExactCoarseSolveMaxUnknowns * kExactCoarseSolveMaxUnknowns];
+    __shared__ Real rhs_vector[kExactCoarseSolveMaxUnknowns];
+    __shared__ Real solution[kExactCoarseSolveMaxUnknowns];
+
+    shared_phi[idx] = phi[idx];
+    shared_rhs[idx] = rhs[idx];
+    __syncthreads();
+
+    if (threadIdx.x == 0 && threadIdx.y == 0) {
+        const std::size_t unknown_count = interior_n * interior_n;
+
+        for (std::size_t entry = 0; entry < unknown_count * unknown_count; ++entry) {
+            system_matrix[entry] = Real{};
+        }
+
+        // Use the current device-side boundary values directly. The top-level
+        // tiny-grid solve already carries physical boundaries in phi, while
+        // recursive coarse error equations keep zero boundaries in phi.
+        for (std::size_t row_i = 0; row_i < interior_n; ++row_i) {
+            for (std::size_t row_j = 0; row_j < interior_n; ++row_j) {
+                const std::size_t row = row_i * interior_n + row_j;
+                const std::size_t grid_i = row_i + 1;
+                const std::size_t grid_j = row_j + 1;
+
+                Real rhs_entry = h2 * shared_rhs[offset(array_n, grid_i, grid_j)];
+                system_matrix[row * unknown_count + row] = Real{4};
+
+                if (row_i > 0) {
+                    system_matrix[row * unknown_count + (row_i - 1) * interior_n + row_j] =
+                        Real{-1};
+                } else {
+                    rhs_entry += shared_phi[offset(array_n, grid_i - 1, grid_j)];
+                }
+
+                if (row_i + 1 < interior_n) {
+                    system_matrix[row * unknown_count + (row_i + 1) * interior_n + row_j] =
+                        Real{-1};
+                } else {
+                    rhs_entry += shared_phi[offset(array_n, grid_i + 1, grid_j)];
+                }
+
+                if (row_j > 0) {
+                    system_matrix[row * unknown_count + row_i * interior_n + (row_j - 1)] =
+                        Real{-1};
+                } else {
+                    rhs_entry += shared_phi[offset(array_n, grid_i, grid_j - 1)];
+                }
+
+                if (row_j + 1 < interior_n) {
+                    system_matrix[row * unknown_count + row_i * interior_n + (row_j + 1)] =
+                        Real{-1};
+                } else {
+                    rhs_entry += shared_phi[offset(array_n, grid_i, grid_j + 1)];
+                }
+
+                rhs_vector[row] = rhs_entry;
+            }
+        }
+
+        for (std::size_t pivot_col = 0; pivot_col < unknown_count; ++pivot_col) {
+            const Real pivot = system_matrix[pivot_col * unknown_count + pivot_col];
+            for (std::size_t row = pivot_col + 1; row < unknown_count; ++row) {
+                const Real factor =
+                    system_matrix[row * unknown_count + pivot_col] / pivot;
+                for (std::size_t col = pivot_col; col < unknown_count; ++col) {
+                    system_matrix[row * unknown_count + col] -=
+                        factor * system_matrix[pivot_col * unknown_count + col];
+                }
+                rhs_vector[row] -= factor * rhs_vector[pivot_col];
+            }
+        }
+
+        for (std::size_t row = unknown_count; row-- > 0;) {
+            Real sum = rhs_vector[row];
+            for (std::size_t col = row + 1; col < unknown_count; ++col) {
+                sum -= system_matrix[row * unknown_count + col] * solution[col];
+            }
+            solution[row] = sum / system_matrix[row * unknown_count + row];
+        }
+    }
+    __syncthreads();
+
+    if (i >= 1 && i <= interior_n && j >= 1 && j <= interior_n) {
+        phi[idx] = solution[(i - 1) * interior_n + (j - 1)];
+    }
+}
+
+template <typename Real>
+__global__ void exact_coarse_solve_kernel_3d(
+    Real* phi,
+    const Real* rhs,
+    std::size_t array_n,
+    Real h2
+) {
+    if (blockIdx.x != 0 || blockIdx.y != 0 || blockIdx.z != 0) {
+        return;
+    }
+    if (array_n < 3 || array_n > kExactCoarseSolveMaxArrayN) {
+        return;
+    }
+
+    const std::size_t i = static_cast<std::size_t>(threadIdx.z);
+    const std::size_t j = static_cast<std::size_t>(threadIdx.y);
+    const std::size_t k = static_cast<std::size_t>(threadIdx.x);
+    const std::size_t idx = offset(array_n, i, j, k);
+    const std::size_t interior_n = array_n - 2;
+
+    __shared__ Real shared_phi[kExactCoarseSolveMaxElements3D];
+    __shared__ Real shared_rhs[kExactCoarseSolveMaxElements3D];
+    __shared__ Real
+        system_matrix[kExactCoarseSolveMaxUnknowns3D * kExactCoarseSolveMaxUnknowns3D];
+    __shared__ Real rhs_vector[kExactCoarseSolveMaxUnknowns3D];
+    __shared__ Real solution[kExactCoarseSolveMaxUnknowns3D];
+
+    shared_phi[idx] = phi[idx];
+    shared_rhs[idx] = rhs[idx];
+    __syncthreads();
+
+    if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
+        const std::size_t unknown_count = interior_n * interior_n * interior_n;
+
+        for (std::size_t entry = 0; entry < unknown_count * unknown_count; ++entry) {
+            system_matrix[entry] = Real{};
+        }
+
+        for (std::size_t row_i = 0; row_i < interior_n; ++row_i) {
+            for (std::size_t row_j = 0; row_j < interior_n; ++row_j) {
+                for (std::size_t row_k = 0; row_k < interior_n; ++row_k) {
+                    const std::size_t row =
+                        (row_i * interior_n + row_j) * interior_n + row_k;
+                    const std::size_t grid_i = row_i + 1;
+                    const std::size_t grid_j = row_j + 1;
+                    const std::size_t grid_k = row_k + 1;
+
+                    Real rhs_entry = h2 * shared_rhs[offset(array_n, grid_i, grid_j, grid_k)];
+                    system_matrix[row * unknown_count + row] = Real{6};
+
+                    if (row_i > 0) {
+                        system_matrix
+                            [row * unknown_count + ((row_i - 1) * interior_n + row_j) * interior_n + row_k] =
+                            Real{-1};
+                    } else {
+                        rhs_entry += shared_phi[offset(array_n, grid_i - 1, grid_j, grid_k)];
+                    }
+
+                    if (row_i + 1 < interior_n) {
+                        system_matrix
+                            [row * unknown_count + ((row_i + 1) * interior_n + row_j) * interior_n + row_k] =
+                            Real{-1};
+                    } else {
+                        rhs_entry += shared_phi[offset(array_n, grid_i + 1, grid_j, grid_k)];
+                    }
+
+                    if (row_j > 0) {
+                        system_matrix
+                            [row * unknown_count + (row_i * interior_n + (row_j - 1)) * interior_n + row_k] =
+                            Real{-1};
+                    } else {
+                        rhs_entry += shared_phi[offset(array_n, grid_i, grid_j - 1, grid_k)];
+                    }
+
+                    if (row_j + 1 < interior_n) {
+                        system_matrix
+                            [row * unknown_count + (row_i * interior_n + (row_j + 1)) * interior_n + row_k] =
+                            Real{-1};
+                    } else {
+                        rhs_entry += shared_phi[offset(array_n, grid_i, grid_j + 1, grid_k)];
+                    }
+
+                    if (row_k > 0) {
+                        system_matrix
+                            [row * unknown_count + (row_i * interior_n + row_j) * interior_n + (row_k - 1)] =
+                            Real{-1};
+                    } else {
+                        rhs_entry += shared_phi[offset(array_n, grid_i, grid_j, grid_k - 1)];
+                    }
+
+                    if (row_k + 1 < interior_n) {
+                        system_matrix
+                            [row * unknown_count + (row_i * interior_n + row_j) * interior_n + (row_k + 1)] =
+                            Real{-1};
+                    } else {
+                        rhs_entry += shared_phi[offset(array_n, grid_i, grid_j, grid_k + 1)];
+                    }
+
+                    rhs_vector[row] = rhs_entry;
+                }
+            }
+        }
+
+        for (std::size_t pivot_col = 0; pivot_col < unknown_count; ++pivot_col) {
+            const Real pivot = system_matrix[pivot_col * unknown_count + pivot_col];
+            for (std::size_t row = pivot_col + 1; row < unknown_count; ++row) {
+                const Real factor = system_matrix[row * unknown_count + pivot_col] / pivot;
+                for (std::size_t col = pivot_col; col < unknown_count; ++col) {
+                    system_matrix[row * unknown_count + col] -=
+                        factor * system_matrix[pivot_col * unknown_count + col];
+                }
+                rhs_vector[row] -= factor * rhs_vector[pivot_col];
+            }
+        }
+
+        for (std::size_t row = unknown_count; row-- > 0;) {
+            Real sum = rhs_vector[row];
+            for (std::size_t col = row + 1; col < unknown_count; ++col) {
+                sum -= system_matrix[row * unknown_count + col] * solution[col];
+            }
+            solution[row] = sum / system_matrix[row * unknown_count + row];
+        }
+    }
+    __syncthreads();
+
+    if (
+        i >= 1 && i <= interior_n &&
+        j >= 1 && j <= interior_n &&
+        k >= 1 && k <= interior_n
+    ) {
+        phi[idx] = solution[((i - 1) * interior_n + (j - 1)) * interior_n + (k - 1)];
+    }
 }
 
 } // namespace poisson::cuda_kernels
