@@ -18,6 +18,85 @@ enum class CoarseSolve {
     Sor,
 };
 
+class ScopedCudaStream {
+public:
+    ScopedCudaStream() {
+        cuda::check(
+            cudaStreamCreateWithFlags(&stream_, cudaStreamNonBlocking),
+            "cudaStreamCreateWithFlags",
+            __FILE__,
+            __LINE__
+        );
+    }
+
+    ~ScopedCudaStream() {
+        if (stream_ != nullptr) {
+            (void)cudaStreamDestroy(stream_);
+        }
+    }
+
+    ScopedCudaStream(const ScopedCudaStream&) = delete;
+    ScopedCudaStream& operator=(const ScopedCudaStream&) = delete;
+
+    [[nodiscard]] cudaStream_t get() const noexcept { return stream_; }
+
+private:
+    cudaStream_t stream_{nullptr};
+};
+
+class ScopedCudaGraph {
+public:
+    ScopedCudaGraph() = default;
+
+    ~ScopedCudaGraph() {
+        if (graph_ != nullptr) {
+            (void)cudaGraphDestroy(graph_);
+        }
+    }
+
+    ScopedCudaGraph(const ScopedCudaGraph&) = delete;
+    ScopedCudaGraph& operator=(const ScopedCudaGraph&) = delete;
+
+    [[nodiscard]] cudaGraph_t get() const noexcept { return graph_; }
+
+    void reset(cudaGraph_t graph = nullptr) noexcept {
+        if (graph_ != nullptr) {
+            (void)cudaGraphDestroy(graph_);
+        }
+        graph_ = graph;
+    }
+
+private:
+    cudaGraph_t graph_{nullptr};
+};
+
+class ScopedCudaGraphExec {
+public:
+    ScopedCudaGraphExec() = default;
+
+    ~ScopedCudaGraphExec() {
+        if (graph_exec_ != nullptr) {
+            (void)cudaGraphExecDestroy(graph_exec_);
+        }
+    }
+
+    ScopedCudaGraphExec(const ScopedCudaGraphExec&) = delete;
+    ScopedCudaGraphExec& operator=(const ScopedCudaGraphExec&) = delete;
+
+    [[nodiscard]] cudaGraphExec_t get() const noexcept { return graph_exec_; }
+
+    [[nodiscard]] cudaGraphExec_t* put() noexcept {
+        if (graph_exec_ != nullptr) {
+            (void)cudaGraphExecDestroy(graph_exec_);
+            graph_exec_ = nullptr;
+        }
+        return &graph_exec_;
+    }
+
+private:
+    cudaGraphExec_t graph_exec_{nullptr};
+};
+
 template <typename Real>
 constexpr Real pi_v = static_cast<Real>(3.14159265358979323846264338327950288L);
 
@@ -67,12 +146,19 @@ Real effective_mg_omega(const Problem3D<Real>& problem, const MGOptions<Real>& o
 }
 
 template <typename Real, typename PhiGrid, typename RhsGrid>
-void run_mg_smoother_2d(PhiGrid& phi, const RhsGrid& rhs, Real h, Real omega, std::size_t steps) {
+void run_mg_smoother_2d(
+    PhiGrid& phi,
+    const RhsGrid& rhs,
+    Real h,
+    Real omega,
+    std::size_t steps,
+    cudaStream_t stream
+) {
     if (use_fused_small_grid_smoother_2d(phi.size())) {
-        cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, steps);
+        cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, steps, stream);
         return;
     }
-    cuda::run_rb_sor_steps(phi, rhs, h, omega, steps);
+    cuda::run_rb_sor_steps(phi, rhs, h, omega, steps, stream);
 }
 
 [[nodiscard]] bool use_fused_small_grid_smoother_3d(std::size_t array_n) {
@@ -301,9 +387,9 @@ private:
 };
 
 template <typename Real, typename PhiGrid, typename RhsGrid>
-void solve_coarsest_exact(PhiGrid& phi, const RhsGrid& rhs, Real h) {
+void solve_coarsest_exact(PhiGrid& phi, const RhsGrid& rhs, Real h, cudaStream_t stream) {
     const cuda::detail::ScopedNvtxRange range{"mg::solve_coarsest_exact"};
-    cuda::run_exact_coarse_solve(phi, rhs, h);
+    cuda::run_exact_coarse_solve(phi, rhs, h, stream);
 }
 
 template <typename Real, typename PhiGrid, typename RhsGrid>
@@ -323,7 +409,8 @@ void mg_cycle(
     CoarseSolve coarse_mode,
     std::size_t coarse_steps,
     MGWorkspace<Real>& workspace,
-    std::size_t level_index
+    std::size_t level_index,
+    cudaStream_t stream
 ) {
     const std::size_t n = phi.size() - 2;
     const std::string cycle_label = make_mg_cycle_label(level_index, n, cycle, coarse_mode);
@@ -331,35 +418,35 @@ void mg_cycle(
 
     if (n <= 4) {
         if (coarse_mode == CoarseSolve::Exact) {
-            solve_coarsest_exact(phi, rhs, h);
+            solve_coarsest_exact(phi, rhs, h, stream);
         } else {
-            cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, coarse_steps);
+            cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, coarse_steps, stream);
         }
         return;
     }
 
     {
         const cuda::detail::ScopedNvtxRange pre_smooth_range{"mg::pre_smooth"};
-        run_mg_smoother_2d(phi, rhs, h, omega, nu);
+        run_mg_smoother_2d(phi, rhs, h, omega, nu, stream);
     }
 
     auto& level = workspace.level(level_index);
     auto& fine_residual = level.fine_residual;
     {
         const cuda::detail::ScopedNvtxRange residual_range{"mg::compute_fine_residual"};
-        cuda::compute_residual_full(phi, rhs, h, fine_residual);
+        cuda::compute_residual_full(phi, rhs, h, fine_residual, stream);
     }
 
     auto& coarse_rhs = level.coarse_rhs;
     {
         const cuda::detail::ScopedNvtxRange restriction_range{"mg::restrict_to_coarse"};
-        cuda::restrict_full_weighting<Real>(fine_residual, coarse_rhs);
+        cuda::restrict_full_weighting<Real>(fine_residual, coarse_rhs, stream);
     }
 
     auto& coarse_error = level.coarse_error;
     {
         const cuda::detail::ScopedNvtxRange coarse_correction_range{"mg::coarse_correction"};
-        coarse_error.zero();
+        coarse_error.zero(stream);
         mg_cycle<Real>(
             coarse_error,
             coarse_rhs,
@@ -370,7 +457,8 @@ void mg_cycle(
             coarse_mode,
             coarse_steps,
             workspace,
-            level_index + 1
+            level_index + 1,
+            stream
         );
         if (cycle == MGCycle::W) {
             mg_cycle<Real>(
@@ -383,18 +471,19 @@ void mg_cycle(
                 coarse_mode,
                 coarse_steps,
                 workspace,
-                level_index + 1
+                level_index + 1,
+                stream
             );
         }
     }
 
     {
         const cuda::detail::ScopedNvtxRange prolong_range{"mg::prolongate"};
-        cuda::prolong_add<Real>(coarse_error, phi);
+        cuda::prolong_add<Real>(coarse_error, phi, stream);
     }
     {
         const cuda::detail::ScopedNvtxRange post_smooth_range{"mg::post_smooth"};
-        run_mg_smoother_2d(phi, rhs, h, omega, nu);
+        run_mg_smoother_2d(phi, rhs, h, omega, nu, stream);
     }
 }
 
@@ -557,20 +646,70 @@ SolveResult solve_mg_impl(
         workspace.reserve_for(problem.array_n());
     }
     cuda::RelativeResidualWorkspace residual_workspace{problem.array_n()};
+    ScopedCudaStream graph_stream{};
+    ScopedCudaGraph graph{};
+    {
+        const cuda::detail::ScopedNvtxRange capture_range{"mg::graph_capture"};
+        cuda::check(
+            cudaStreamBeginCapture(graph_stream.get(), cudaStreamCaptureModeThreadLocal),
+            "cudaStreamBeginCapture",
+            __FILE__,
+            __LINE__
+        );
+        try {
+            mg_cycle<Real>(
+                phi,
+                rhs,
+                problem.h,
+                omega,
+                options.nu,
+                options.cycle,
+                coarse_mode,
+                options.coarse_steps,
+                workspace,
+                0,
+                graph_stream.get()
+            );
+        } catch (...) {
+            cudaGraph_t abandoned_graph = nullptr;
+            (void)cudaStreamEndCapture(graph_stream.get(), &abandoned_graph);
+            if (abandoned_graph != nullptr) {
+                (void)cudaGraphDestroy(abandoned_graph);
+            }
+            throw;
+        }
+
+        cudaGraph_t captured_graph = nullptr;
+        cuda::check(
+            cudaStreamEndCapture(graph_stream.get(), &captured_graph),
+            "cudaStreamEndCapture",
+            __FILE__,
+            __LINE__
+        );
+        graph.reset(captured_graph);
+    }
+
+    ScopedCudaGraphExec graph_exec{};
+    cuda::check(
+        cudaGraphInstantiate(graph_exec.put(), graph.get(), nullptr, nullptr, 0),
+        "cudaGraphInstantiate",
+        __FILE__,
+        __LINE__
+    );
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
         const cuda::detail::ScopedNvtxRange iteration_range{"mg::iteration"};
-        mg_cycle<Real>(
-            phi,
-            rhs,
-            problem.h,
-            omega,
-            options.nu,
-            options.cycle,
-            coarse_mode,
-            options.coarse_steps,
-            workspace,
-            0
+        cuda::check(
+            cudaGraphLaunch(graph_exec.get(), graph_stream.get()),
+            "cudaGraphLaunch",
+            __FILE__,
+            __LINE__
+        );
+        cuda::check(
+            cudaStreamSynchronize(graph_stream.get()),
+            "cudaStreamSynchronize",
+            __FILE__,
+            __LINE__
         );
 
         const double residual =
