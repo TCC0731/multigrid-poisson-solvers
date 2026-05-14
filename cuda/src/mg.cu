@@ -4,6 +4,7 @@
 #include "poisson/validation.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <stdexcept>
 #include <string>
@@ -99,6 +100,14 @@ private:
 
 template <typename Real>
 constexpr Real pi_v = static_cast<Real>(3.14159265358979323846264338327950288L);
+
+using MgClock = std::chrono::steady_clock;
+
+[[nodiscard]] double elapsed_ms(
+    const MgClock::time_point& start, const MgClock::time_point& end
+) {
+    return std::chrono::duration<double, std::milli>(end - start).count();
+}
 
 template <typename Real>
 Real default_sor_omega(std::size_t interior_n) {
@@ -656,6 +665,7 @@ SolveResult solve_mg_impl(
         workspace.reserve_for(problem.array_n());
     }
     cuda::RelativeResidualWorkspace residual_workspace{problem.array_n()};
+    const MgClock::time_point graph_timing_start = MgClock::now();
     ScopedCudaStream graph_stream{};
     ScopedCudaGraph graph{};
     {
@@ -706,6 +716,7 @@ SolveResult solve_mg_impl(
         __FILE__,
         __LINE__
     );
+    const MgClock::time_point compute_timing_start = MgClock::now();
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
         const cuda::detail::ScopedNvtxRange iteration_range{"mg::iteration"};
@@ -725,13 +736,29 @@ SolveResult solve_mg_impl(
         const double residual =
             cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
         if (residual <= static_cast<double>(options.tol)) {
-            return make_solve_result(phi.download(), iteration, static_cast<Real>(residual));
+            auto host_phi = phi.download();
+            const MgClock::time_point solve_end = MgClock::now();
+            return make_solve_result(
+                std::move(host_phi),
+                iteration,
+                static_cast<Real>(residual),
+                elapsed_ms(compute_timing_start, solve_end),
+                elapsed_ms(graph_timing_start, solve_end)
+            );
         }
     }
 
     const double residual =
         cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
-    return make_solve_result(phi.download(), options.max_iter, static_cast<Real>(residual));
+    auto host_phi = phi.download();
+    const MgClock::time_point solve_end = MgClock::now();
+    return make_solve_result(
+        std::move(host_phi),
+        options.max_iter,
+        static_cast<Real>(residual),
+        elapsed_ms(compute_timing_start, solve_end),
+        elapsed_ms(graph_timing_start, solve_end)
+    );
 }
 
 template <typename Real>
@@ -751,6 +778,7 @@ SolveResult3D solve_mg_3d_impl(
         workspace.reserve_for(problem.array_n());
     }
     cuda::RelativeResidualWorkspace3D residual_workspace{problem.array_n()};
+    const MgClock::time_point graph_timing_start = MgClock::now();
     ScopedCudaStream graph_stream{};
     ScopedCudaGraph graph{};
     {
@@ -801,6 +829,7 @@ SolveResult3D solve_mg_3d_impl(
         __FILE__,
         __LINE__
     );
+    const MgClock::time_point compute_timing_start = MgClock::now();
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
         const cuda::detail::ScopedNvtxRange iteration_range{"mg::iteration_3d"};
@@ -820,13 +849,29 @@ SolveResult3D solve_mg_3d_impl(
         const double residual =
             cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
         if (residual <= static_cast<double>(options.tol)) {
-            return make_solve_result(phi.download(), iteration, static_cast<Real>(residual));
+            auto host_phi = phi.download();
+            const MgClock::time_point solve_end = MgClock::now();
+            return make_solve_result(
+                std::move(host_phi),
+                iteration,
+                static_cast<Real>(residual),
+                elapsed_ms(compute_timing_start, solve_end),
+                elapsed_ms(graph_timing_start, solve_end)
+            );
         }
     }
 
     const double residual =
         cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
-    return make_solve_result(phi.download(), options.max_iter, static_cast<Real>(residual));
+    auto host_phi = phi.download();
+    const MgClock::time_point solve_end = MgClock::now();
+    return make_solve_result(
+        std::move(host_phi),
+        options.max_iter,
+        static_cast<Real>(residual),
+        elapsed_ms(compute_timing_start, solve_end),
+        elapsed_ms(graph_timing_start, solve_end)
+    );
 }
 
 } // namespace

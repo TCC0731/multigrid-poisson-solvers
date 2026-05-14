@@ -151,6 +151,11 @@ struct TimingStats {
     double std_ms{0.0};
 };
 
+struct SolverTimingStats {
+    TimingStats benchmark_ms{};
+    TimingStats including_graph_ms{};
+};
+
 struct BenchmarkRow {
     std::string suite;
     std::string backend;
@@ -171,7 +176,40 @@ struct BenchmarkRow {
     double error_linf{0.0};
     double mean_time_ms{0.0};
     double std_time_ms{0.0};
+    double mean_time_including_graph_ms{0.0};
+    double std_time_including_graph_ms{0.0};
 };
+
+[[nodiscard]] inline TimingStats summarize_samples(const std::vector<double>& samples) {
+    double mean = 0.0;
+    for (const double sample : samples) {
+        mean += sample;
+    }
+    mean /= static_cast<double>(samples.size());
+
+    double variance = 0.0;
+    if (samples.size() > 1) {
+        for (const double sample : samples) {
+            const double diff = sample - mean;
+            variance += diff * diff;
+        }
+        variance /= static_cast<double>(samples.size() - 1);
+    }
+
+    return {mean, std::sqrt(variance)};
+}
+
+template <typename Result>
+[[nodiscard]] double benchmark_sample_time_ms(const Result& result, double fallback_ms) {
+    return result.benchmark_compute_time_ms >= 0.0 ? result.benchmark_compute_time_ms : fallback_ms;
+}
+
+template <typename Result>
+[[nodiscard]] double including_graph_sample_time_ms(const Result& result, double fallback_ms) {
+    return result.benchmark_including_graph_time_ms >= 0.0
+        ? result.benchmark_including_graph_time_ms
+        : fallback_ms;
+}
 
 template <typename WarmupSolverFn, typename TimedSolverFn>
 [[nodiscard]] auto time_solver(
@@ -190,6 +228,8 @@ template <typename WarmupSolverFn, typename TimedSolverFn>
 
     std::vector<double> samples;
     samples.reserve(timed_runs);
+    std::vector<double> including_graph_samples;
+    including_graph_samples.reserve(timed_runs);
     using Result = std::invoke_result_t<TimedSolverFn&>;
     std::optional<Result> last_result;
 
@@ -197,25 +237,19 @@ template <typename WarmupSolverFn, typename TimedSolverFn>
         const auto start = std::chrono::steady_clock::now();
         last_result = timed_solver();
         const auto end = std::chrono::steady_clock::now();
-        samples.push_back(std::chrono::duration<double, std::milli>(end - start).count());
+        const double full_sample_ms =
+            std::chrono::duration<double, std::milli>(end - start).count();
+        samples.push_back(benchmark_sample_time_ms(*last_result, full_sample_ms));
+        including_graph_samples.push_back(including_graph_sample_time_ms(*last_result, full_sample_ms));
     }
 
-    double mean = 0.0;
-    for (const double sample : samples) {
-        mean += sample;
-    }
-    mean /= static_cast<double>(samples.size());
-
-    double variance = 0.0;
-    if (samples.size() > 1) {
-        for (const double sample : samples) {
-            const double diff = sample - mean;
-            variance += diff * diff;
-        }
-        variance /= static_cast<double>(samples.size() - 1);
-    }
-
-    return std::pair<Result, TimingStats>{std::move(*last_result), TimingStats{mean, std::sqrt(variance)}};
+    return std::pair<Result, SolverTimingStats>{
+        std::move(*last_result),
+        SolverTimingStats{
+            summarize_samples(samples),
+            summarize_samples(including_graph_samples),
+        },
+    };
 }
 
 template <typename Real, typename WarmupSolverFn, typename TimedSolverFn>
@@ -264,8 +298,10 @@ template <typename Real, typename WarmupSolverFn, typename TimedSolverFn>
         result.residual_l2,
         metrics.error_l2,
         metrics.error_linf,
-        stats.mean_ms,
-        stats.std_ms,
+        stats.benchmark_ms.mean_ms,
+        stats.benchmark_ms.std_ms,
+        stats.including_graph_ms.mean_ms,
+        stats.including_graph_ms.std_ms,
     };
 }
 
@@ -316,8 +352,10 @@ template <typename Real, typename WarmupSolverFn, typename TimedSolverFn>
         result.residual_l2,
         metrics.error_l2,
         metrics.error_linf,
-        stats.mean_ms,
-        stats.std_ms,
+        stats.benchmark_ms.mean_ms,
+        stats.benchmark_ms.std_ms,
+        stats.including_graph_ms.mean_ms,
+        stats.including_graph_ms.std_ms,
     };
 }
 #endif
@@ -853,7 +891,7 @@ template <typename Real>
 }
 
 inline void write_csv_header(std::ostream& os) {
-    os << "suite,backend,dtype,case,solver,grid_size,max_iter,tol,warmup_runs,timed_runs,cycle,omega,nu,iterations,residual_l2,error_l2,error_linf,mean_time_ms,std_time_ms\n";
+    os << "suite,backend,dtype,case,solver,grid_size,max_iter,tol,warmup_runs,timed_runs,cycle,omega,nu,iterations,residual_l2,error_l2,error_linf,mean_time_ms,std_time_ms,mean_time_including_graph_ms,std_time_including_graph_ms\n";
 }
 
 inline void write_csv_row(std::ostream& os, const BenchmarkRow& row) {
@@ -889,6 +927,10 @@ inline void write_csv_row(std::ostream& os, const BenchmarkRow& row) {
     detail::write_fixed(os, row.mean_time_ms);
     os << ',';
     detail::write_fixed(os, row.std_time_ms);
+    os << ',';
+    detail::write_fixed(os, row.mean_time_including_graph_ms);
+    os << ',';
+    detail::write_fixed(os, row.std_time_including_graph_ms);
     os << '\n';
 }
 

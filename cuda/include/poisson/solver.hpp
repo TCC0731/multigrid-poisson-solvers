@@ -19,33 +19,69 @@ struct SolveResult {
     Grid2D<double> phi{};
     std::size_t iterations{0};
     double residual_l2{0.0};
+    double benchmark_compute_time_ms{-1.0};
+    double benchmark_including_graph_time_ms{-1.0};
 };
 
 struct SolveResult3D {
     Grid3D<double> phi{};
     std::size_t iterations{0};
     double residual_l2{0.0};
+    double benchmark_compute_time_ms{-1.0};
+    double benchmark_including_graph_time_ms{-1.0};
 };
 
 template <typename Real>
 [[nodiscard]] SolveResult make_solve_result(
-    Grid2D<Real>&& phi, std::size_t iterations, Real residual_l2
+    Grid2D<Real>&& phi,
+    std::size_t iterations,
+    Real residual_l2,
+    double benchmark_compute_time_ms = -1.0,
+    double benchmark_including_graph_time_ms = -1.0
 ) {
     if constexpr (std::is_same_v<Real, double>) {
-        return {std::move(phi), iterations, static_cast<double>(residual_l2)};
+        return {
+            std::move(phi),
+            iterations,
+            static_cast<double>(residual_l2),
+            benchmark_compute_time_ms,
+            benchmark_including_graph_time_ms,
+        };
     } else {
-        return {cast_grid<double>(phi), iterations, static_cast<double>(residual_l2)};
+        return {
+            cast_grid<double>(phi),
+            iterations,
+            static_cast<double>(residual_l2),
+            benchmark_compute_time_ms,
+            benchmark_including_graph_time_ms,
+        };
     }
 }
 
 template <typename Real>
 [[nodiscard]] SolveResult3D make_solve_result(
-    Grid3D<Real>&& phi, std::size_t iterations, Real residual_l2
+    Grid3D<Real>&& phi,
+    std::size_t iterations,
+    Real residual_l2,
+    double benchmark_compute_time_ms = -1.0,
+    double benchmark_including_graph_time_ms = -1.0
 ) {
     if constexpr (std::is_same_v<Real, double>) {
-        return {std::move(phi), iterations, static_cast<double>(residual_l2)};
+        return {
+            std::move(phi),
+            iterations,
+            static_cast<double>(residual_l2),
+            benchmark_compute_time_ms,
+            benchmark_including_graph_time_ms,
+        };
     } else {
-        return {cast_grid<double>(phi), iterations, static_cast<double>(residual_l2)};
+        return {
+            cast_grid<double>(phi),
+            iterations,
+            static_cast<double>(residual_l2),
+            benchmark_compute_time_ms,
+            benchmark_including_graph_time_ms,
+        };
     }
 }
 
