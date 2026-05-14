@@ -727,8 +727,8 @@ void run_fused_rb_sor_steps(
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
     }
-    if (phi.size() < 3 || phi.size() > cuda_kernels::kFusedCoarseSorMaxArrayN) {
-        throw std::invalid_argument("fused coarse SOR only supports 3x3 through 6x6 grids");
+    if (phi.size() < 3 || phi.size() > cuda_kernels::kFusedSmallGridSorMaxArrayN2D) {
+        throw std::invalid_argument("fused small-grid SOR only supports 3x3 through 32x32 grids");
     }
 
     const detail::ScopedNvtxRange range{"cuda::run_fused_rb_sor_steps"};
@@ -755,8 +755,8 @@ void run_fused_rb_sor_steps(
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
     }
-    if (phi.size() < 3 || phi.size() > cuda_kernels::kFusedCoarseSorMaxArrayN) {
-        throw std::invalid_argument("fused coarse SOR only supports 3x3x3 through 6x6x6 grids");
+    if (phi.size() < 3 || phi.size() > cuda_kernels::kFusedSmallGridSorMaxArrayN3D) {
+        throw std::invalid_argument("fused small-grid SOR only supports 3x3x3 through 10x10x10 grids");
     }
 
     const detail::ScopedNvtxRange range{"cuda::run_fused_rb_sor_steps_3d"};
@@ -783,8 +783,8 @@ void run_fused_rb_sor_steps(
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
     }
-    if (phi.size() < 3 || phi.size() > cuda_kernels::kFusedCoarseSorMaxArrayN) {
-        throw std::invalid_argument("fused coarse SOR only supports 3x3x3 through 6x6x6 grids");
+    if (phi.size() < 3 || phi.size() > cuda_kernels::kFusedSmallGridSorMaxArrayN3D) {
+        throw std::invalid_argument("fused small-grid SOR only supports 3x3x3 through 10x10x10 grids");
     }
 
     const detail::ScopedNvtxRange range{"cuda::run_fused_rb_sor_steps_3d"};
@@ -1255,6 +1255,71 @@ void prolong_add(const DeviceGridView3D<Real>& coarse, DeviceGridView3D<Real>& f
     cuda_kernels::prolong_add_kernel_3d<Real>
         <<<grid, block>>>(coarse.data(), fine.data(), fine.size());
     check_kernel("prolong_add_kernel_3d");
+}
+
+template <typename Real, typename PhiGrid, typename RhsGrid>
+void run_exact_coarse_solve(PhiGrid& phi, const RhsGrid& rhs, Real h) {
+    if (phi.size() != rhs.size()) {
+        throw std::invalid_argument("phi and rhs device grid sizes do not match");
+    }
+    if (phi.size() < 3 || phi.size() > cuda_kernels::kExactCoarseSolveMaxArrayN) {
+        throw std::invalid_argument("exact coarse solve only supports 3x3 through 6x6 grids");
+    }
+
+    const detail::ScopedNvtxRange range{"cuda::run_exact_coarse_solve"};
+    const dim3 block{
+        static_cast<unsigned int>(phi.size()),
+        static_cast<unsigned int>(phi.size()),
+        1U,
+    };
+
+    cuda_kernels::exact_coarse_solve_kernel_2d<Real>
+        <<<1, block>>>(phi.data(), rhs.data(), phi.size(), h * h);
+    check_kernel("exact_coarse_solve_kernel_2d");
+}
+
+template <typename Real>
+void run_exact_coarse_solve(DeviceGrid3D<Real>& phi, const DeviceGrid3D<Real>& rhs, Real h) {
+    if (phi.size() != rhs.size()) {
+        throw std::invalid_argument("phi and rhs device grid sizes do not match");
+    }
+    if (phi.size() < 3 || phi.size() > cuda_kernels::kExactCoarseSolveMaxArrayN) {
+        throw std::invalid_argument("exact coarse solve only supports 3x3x3 through 6x6x6 grids");
+    }
+
+    const detail::ScopedNvtxRange range{"cuda::run_exact_coarse_solve_3d"};
+    const dim3 block{
+        static_cast<unsigned int>(phi.size()),
+        static_cast<unsigned int>(phi.size()),
+        static_cast<unsigned int>(phi.size()),
+    };
+
+    cuda_kernels::exact_coarse_solve_kernel_3d<Real>
+        <<<1, block>>>(phi.data(), rhs.data(), phi.size(), h * h);
+    check_kernel("exact_coarse_solve_kernel_3d");
+}
+
+template <typename Real>
+void run_exact_coarse_solve(
+    DeviceGridView3D<Real>& phi, const DeviceGridView3D<Real>& rhs, Real h
+) {
+    if (phi.size() != rhs.size()) {
+        throw std::invalid_argument("phi and rhs device grid sizes do not match");
+    }
+    if (phi.size() < 3 || phi.size() > cuda_kernels::kExactCoarseSolveMaxArrayN) {
+        throw std::invalid_argument("exact coarse solve only supports 3x3x3 through 6x6x6 grids");
+    }
+
+    const detail::ScopedNvtxRange range{"cuda::run_exact_coarse_solve_3d"};
+    const dim3 block{
+        static_cast<unsigned int>(phi.size()),
+        static_cast<unsigned int>(phi.size()),
+        static_cast<unsigned int>(phi.size()),
+    };
+
+    cuda_kernels::exact_coarse_solve_kernel_3d<Real>
+        <<<1, block>>>(phi.data(), rhs.data(), phi.size(), h * h);
+    check_kernel("exact_coarse_solve_kernel_3d");
 }
 
 } // namespace poisson::cuda
