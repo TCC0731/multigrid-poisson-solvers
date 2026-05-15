@@ -3,7 +3,7 @@
 #include "poisson/cuda_utils.hpp"
 #include "poisson/validation.hpp"
 
-#include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <stdexcept>
 #include <string>
@@ -18,8 +18,95 @@ enum class CoarseSolve {
     Sor,
 };
 
+class ScopedCudaStream {
+public:
+    ScopedCudaStream() {
+        cuda::check(
+            cudaStreamCreateWithFlags(&stream_, cudaStreamNonBlocking),
+            "cudaStreamCreateWithFlags",
+            __FILE__,
+            __LINE__
+        );
+    }
+
+    ~ScopedCudaStream() {
+        if (stream_ != nullptr) {
+            (void)cudaStreamDestroy(stream_);
+        }
+    }
+
+    ScopedCudaStream(const ScopedCudaStream&) = delete;
+    ScopedCudaStream& operator=(const ScopedCudaStream&) = delete;
+
+    [[nodiscard]] cudaStream_t get() const noexcept { return stream_; }
+
+private:
+    cudaStream_t stream_{nullptr};
+};
+
+class ScopedCudaGraph {
+public:
+    ScopedCudaGraph() = default;
+
+    ~ScopedCudaGraph() {
+        if (graph_ != nullptr) {
+            (void)cudaGraphDestroy(graph_);
+        }
+    }
+
+    ScopedCudaGraph(const ScopedCudaGraph&) = delete;
+    ScopedCudaGraph& operator=(const ScopedCudaGraph&) = delete;
+
+    [[nodiscard]] cudaGraph_t get() const noexcept { return graph_; }
+
+    void reset(cudaGraph_t graph = nullptr) noexcept {
+        if (graph_ != nullptr) {
+            (void)cudaGraphDestroy(graph_);
+        }
+        graph_ = graph;
+    }
+
+private:
+    cudaGraph_t graph_{nullptr};
+};
+
+class ScopedCudaGraphExec {
+public:
+    ScopedCudaGraphExec() = default;
+
+    ~ScopedCudaGraphExec() {
+        if (graph_exec_ != nullptr) {
+            (void)cudaGraphExecDestroy(graph_exec_);
+        }
+    }
+
+    ScopedCudaGraphExec(const ScopedCudaGraphExec&) = delete;
+    ScopedCudaGraphExec& operator=(const ScopedCudaGraphExec&) = delete;
+
+    [[nodiscard]] cudaGraphExec_t get() const noexcept { return graph_exec_; }
+
+    [[nodiscard]] cudaGraphExec_t* put() noexcept {
+        if (graph_exec_ != nullptr) {
+            (void)cudaGraphExecDestroy(graph_exec_);
+            graph_exec_ = nullptr;
+        }
+        return &graph_exec_;
+    }
+
+private:
+    cudaGraphExec_t graph_exec_{nullptr};
+};
+
 template <typename Real>
 constexpr Real pi_v = static_cast<Real>(3.14159265358979323846264338327950288L);
+
+using MgClock = std::chrono::steady_clock;
+
+[[nodiscard]] double elapsed_ms(
+    const MgClock::time_point& start, const MgClock::time_point& end
+) {
+    return std::chrono::duration<double, std::milli>(end - start).count();
+}
 
 template <typename Real>
 Real default_sor_omega(std::size_t interior_n) {
@@ -67,12 +154,19 @@ Real effective_mg_omega(const Problem3D<Real>& problem, const MGOptions<Real>& o
 }
 
 template <typename Real, typename PhiGrid, typename RhsGrid>
-void run_mg_smoother_2d(PhiGrid& phi, const RhsGrid& rhs, Real h, Real omega, std::size_t steps) {
+void run_mg_smoother_2d(
+    PhiGrid& phi,
+    const RhsGrid& rhs,
+    Real h,
+    Real omega,
+    std::size_t steps,
+    cudaStream_t stream
+) {
     if (use_fused_small_grid_smoother_2d(phi.size())) {
-        cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, steps);
+        cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, steps, stream);
         return;
     }
-    cuda::run_rb_sor_steps(phi, rhs, h, omega, steps);
+    cuda::run_rb_sor_steps(phi, rhs, h, omega, steps, stream);
 }
 
 [[nodiscard]] bool use_fused_small_grid_smoother_3d(std::size_t array_n) {
@@ -80,24 +174,35 @@ void run_mg_smoother_2d(PhiGrid& phi, const RhsGrid& rhs, Real h, Real omega, st
 }
 
 template <typename Real, typename PhiGrid, typename RhsGrid>
-void run_mg_smoother_3d(PhiGrid& phi, const RhsGrid& rhs, Real h, Real omega, std::size_t steps) {
+void run_mg_smoother_3d(
+    PhiGrid& phi,
+    const RhsGrid& rhs,
+    Real h,
+    Real omega,
+    std::size_t steps,
+    cudaStream_t stream
+) {
     if (use_fused_small_grid_smoother_3d(phi.size())) {
-        cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, steps);
+        cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, steps, stream);
         return;
     }
-    cuda::run_rb_sor_steps(phi, rhs, h, omega, steps);
+    cuda::run_rb_sor_steps(phi, rhs, h, omega, steps, stream);
 }
 
 template <typename Real>
 struct MGLevelWorkspace {
-    cuda::DeviceGridView2D<Real> fine_residual;
+    // The 2D path now fuses residual computation and restriction, so each
+    // level only needs the coarse rhs plus the coarse error used during
+    // recursion.
     cuda::DeviceGridView2D<Real> coarse_rhs;
     cuda::DeviceGridView2D<Real> coarse_error;
 };
 
 template <typename Real>
 struct MGLevelWorkspace3D {
-    cuda::DeviceGridView3D<Real> fine_residual;
+    // The 3D path now fuses residual computation and restriction, so each
+    // level only needs the coarse rhs plus the coarse error used during
+    // recursion.
     cuda::DeviceGridView3D<Real> coarse_rhs;
     cuda::DeviceGridView3D<Real> coarse_error;
 };
@@ -133,10 +238,6 @@ public:
         for (const auto& layout : layouts_) {
             levels_.push_back(MGLevelWorkspace<Real>{
                 cuda::DeviceGridView2D<Real>{
-                    pool_data + layout.fine_residual_offset,
-                    layout.fine_array_n,
-                },
-                cuda::DeviceGridView2D<Real>{
                     pool_data + layout.coarse_rhs_offset,
                     layout.coarse_array_n,
                 },
@@ -157,9 +258,7 @@ public:
 
 private:
     struct MGLevelLayout {
-        std::size_t fine_array_n{};
         std::size_t coarse_array_n{};
-        std::size_t fine_residual_offset{};
         std::size_t coarse_rhs_offset{};
         std::size_t coarse_error_offset{};
     };
@@ -172,27 +271,20 @@ private:
 
         const std::size_t coarse_interior_n = (interior_n - 1) / 2;
         const std::size_t coarse_array_n = coarse_interior_n + 2;
-        const std::size_t fine_elements = fine_array_n * fine_array_n;
         const std::size_t coarse_elements = coarse_array_n * coarse_array_n;
 
         const std::size_t level_index = layouts_.size();
         layouts_.push_back(MGLevelLayout{
-            fine_array_n,
             coarse_array_n,
-            base_offset,
             0,
             base_offset,
         });
 
         const std::size_t child_elements =
             append_layout(coarse_array_n, base_offset + coarse_elements);
-        // Reuse the fine-residual slot for coarse_error plus the entire child
-        // subtree once restriction has finished.
-        const std::size_t transient_or_child_elements =
-            std::max(fine_elements, coarse_elements + child_elements);
 
-        layouts_[level_index].coarse_rhs_offset = base_offset + transient_or_child_elements;
-        return transient_or_child_elements + coarse_elements;
+        layouts_[level_index].coarse_rhs_offset = base_offset + coarse_elements + child_elements;
+        return 2 * coarse_elements + child_elements;
     }
 
     std::size_t configured_array_n_{0};
@@ -233,10 +325,6 @@ public:
         for (const auto& layout : layouts_) {
             levels_.push_back(MGLevelWorkspace3D<Real>{
                 cuda::DeviceGridView3D<Real>{
-                    pool_data + layout.fine_residual_offset,
-                    layout.fine_array_n,
-                },
-                cuda::DeviceGridView3D<Real>{
                     pool_data + layout.coarse_rhs_offset,
                     layout.coarse_array_n,
                 },
@@ -257,9 +345,7 @@ public:
 
 private:
     struct MGLevelLayout {
-        std::size_t fine_array_n{};
         std::size_t coarse_array_n{};
-        std::size_t fine_residual_offset{};
         std::size_t coarse_rhs_offset{};
         std::size_t coarse_error_offset{};
     };
@@ -272,25 +358,20 @@ private:
 
         const std::size_t coarse_interior_n = (interior_n - 1) / 2;
         const std::size_t coarse_array_n = coarse_interior_n + 2;
-        const std::size_t fine_elements = fine_array_n * fine_array_n * fine_array_n;
         const std::size_t coarse_elements = coarse_array_n * coarse_array_n * coarse_array_n;
 
         const std::size_t level_index = layouts_.size();
         layouts_.push_back(MGLevelLayout{
-            fine_array_n,
             coarse_array_n,
             base_offset,
-            0,
             base_offset,
         });
 
         const std::size_t child_elements =
             append_layout(coarse_array_n, base_offset + coarse_elements);
-        const std::size_t transient_or_child_elements =
-            std::max(fine_elements, coarse_elements + child_elements);
 
-        layouts_[level_index].coarse_rhs_offset = base_offset + transient_or_child_elements;
-        return transient_or_child_elements + coarse_elements;
+        layouts_[level_index].coarse_rhs_offset = base_offset + coarse_elements + child_elements;
+        return 2 * coarse_elements + child_elements;
     }
 
     std::size_t configured_array_n_{0};
@@ -301,15 +382,15 @@ private:
 };
 
 template <typename Real, typename PhiGrid, typename RhsGrid>
-void solve_coarsest_exact(PhiGrid& phi, const RhsGrid& rhs, Real h) {
+void solve_coarsest_exact(PhiGrid& phi, const RhsGrid& rhs, Real h, cudaStream_t stream) {
     const cuda::detail::ScopedNvtxRange range{"mg::solve_coarsest_exact"};
-    cuda::run_exact_coarse_solve(phi, rhs, h);
+    cuda::run_exact_coarse_solve(phi, rhs, h, stream);
 }
 
 template <typename Real, typename PhiGrid, typename RhsGrid>
-void solve_coarsest_exact_3d(PhiGrid& phi, const RhsGrid& rhs, Real h) {
+void solve_coarsest_exact_3d(PhiGrid& phi, const RhsGrid& rhs, Real h, cudaStream_t stream) {
     const cuda::detail::ScopedNvtxRange range{"mg::solve_coarsest_exact_3d"};
-    cuda::run_exact_coarse_solve(phi, rhs, h);
+    cuda::run_exact_coarse_solve(phi, rhs, h, stream);
 }
 
 template <typename Real, typename PhiGrid, typename RhsGrid>
@@ -323,7 +404,8 @@ void mg_cycle(
     CoarseSolve coarse_mode,
     std::size_t coarse_steps,
     MGWorkspace<Real>& workspace,
-    std::size_t level_index
+    std::size_t level_index,
+    cudaStream_t stream
 ) {
     const std::size_t n = phi.size() - 2;
     const std::string cycle_label = make_mg_cycle_label(level_index, n, cycle, coarse_mode);
@@ -331,35 +413,29 @@ void mg_cycle(
 
     if (n <= 4) {
         if (coarse_mode == CoarseSolve::Exact) {
-            solve_coarsest_exact(phi, rhs, h);
+            solve_coarsest_exact(phi, rhs, h, stream);
         } else {
-            cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, coarse_steps);
+            cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, coarse_steps, stream);
         }
         return;
     }
 
     {
         const cuda::detail::ScopedNvtxRange pre_smooth_range{"mg::pre_smooth"};
-        run_mg_smoother_2d(phi, rhs, h, omega, nu);
+        run_mg_smoother_2d(phi, rhs, h, omega, nu, stream);
     }
 
     auto& level = workspace.level(level_index);
-    auto& fine_residual = level.fine_residual;
-    {
-        const cuda::detail::ScopedNvtxRange residual_range{"mg::compute_fine_residual"};
-        cuda::compute_residual_full(phi, rhs, h, fine_residual);
-    }
-
     auto& coarse_rhs = level.coarse_rhs;
     {
-        const cuda::detail::ScopedNvtxRange restriction_range{"mg::restrict_to_coarse"};
-        cuda::restrict_full_weighting<Real>(fine_residual, coarse_rhs);
+        const cuda::detail::ScopedNvtxRange fused_range{"mg::compute_residual_restrict"};
+        cuda::compute_residual_restrict_full_weighting<Real>(phi, rhs, h, coarse_rhs, stream);
     }
 
     auto& coarse_error = level.coarse_error;
     {
         const cuda::detail::ScopedNvtxRange coarse_correction_range{"mg::coarse_correction"};
-        coarse_error.zero();
+        coarse_error.zero(stream);
         mg_cycle<Real>(
             coarse_error,
             coarse_rhs,
@@ -370,7 +446,8 @@ void mg_cycle(
             coarse_mode,
             coarse_steps,
             workspace,
-            level_index + 1
+            level_index + 1,
+            stream
         );
         if (cycle == MGCycle::W) {
             mg_cycle<Real>(
@@ -383,18 +460,19 @@ void mg_cycle(
                 coarse_mode,
                 coarse_steps,
                 workspace,
-                level_index + 1
+                level_index + 1,
+                stream
             );
         }
     }
 
     {
         const cuda::detail::ScopedNvtxRange prolong_range{"mg::prolongate"};
-        cuda::prolong_add<Real>(coarse_error, phi);
+        cuda::prolong_add<Real>(coarse_error, phi, stream);
     }
     {
         const cuda::detail::ScopedNvtxRange post_smooth_range{"mg::post_smooth"};
-        run_mg_smoother_2d(phi, rhs, h, omega, nu);
+        run_mg_smoother_2d(phi, rhs, h, omega, nu, stream);
     }
 }
 
@@ -409,7 +487,8 @@ void mg_cycle_3d(
     CoarseSolve coarse_mode,
     std::size_t coarse_steps,
     MGWorkspace3D<Real>& workspace,
-    std::size_t level_index
+    std::size_t level_index,
+    cudaStream_t stream
 ) {
     const std::size_t n = phi.size() - 2;
     const std::string cycle_label = make_mg_cycle_label(level_index, n, cycle, coarse_mode);
@@ -417,35 +496,29 @@ void mg_cycle_3d(
 
     if (n <= 4) {
         if (coarse_mode == CoarseSolve::Exact) {
-            solve_coarsest_exact_3d(phi, rhs, h);
+            solve_coarsest_exact_3d(phi, rhs, h, stream);
         } else {
-            cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, coarse_steps);
+            cuda::run_fused_rb_sor_steps(phi, rhs, h, omega, coarse_steps, stream);
         }
         return;
     }
 
     {
         const cuda::detail::ScopedNvtxRange pre_smooth_range{"mg::pre_smooth_3d"};
-        run_mg_smoother_3d(phi, rhs, h, omega, nu);
+        run_mg_smoother_3d(phi, rhs, h, omega, nu, stream);
     }
 
     auto& level = workspace.level(level_index);
-    auto& fine_residual = level.fine_residual;
-    {
-        const cuda::detail::ScopedNvtxRange residual_range{"mg::compute_fine_residual_3d"};
-        cuda::compute_residual_full(phi, rhs, h, fine_residual);
-    }
-
     auto& coarse_rhs = level.coarse_rhs;
     {
-        const cuda::detail::ScopedNvtxRange restriction_range{"mg::restrict_to_coarse_3d"};
-        cuda::restrict_full_weighting(fine_residual, coarse_rhs);
+        const cuda::detail::ScopedNvtxRange fused_range{"mg::compute_residual_restrict_3d"};
+        cuda::compute_residual_restrict_full_weighting<Real>(phi, rhs, h, coarse_rhs, stream);
     }
 
     auto& coarse_error = level.coarse_error;
     {
         const cuda::detail::ScopedNvtxRange coarse_correction_range{"mg::coarse_correction_3d"};
-        coarse_error.zero();
+        coarse_error.zero(stream);
         mg_cycle_3d<Real>(
             coarse_error,
             coarse_rhs,
@@ -456,7 +529,8 @@ void mg_cycle_3d(
             coarse_mode,
             coarse_steps,
             workspace,
-            level_index + 1
+            level_index + 1,
+            stream
         );
         if (cycle == MGCycle::W) {
             mg_cycle_3d<Real>(
@@ -469,18 +543,19 @@ void mg_cycle_3d(
                 coarse_mode,
                 coarse_steps,
                 workspace,
-                level_index + 1
+                level_index + 1,
+                stream
             );
         }
     }
 
     {
         const cuda::detail::ScopedNvtxRange prolong_range{"mg::prolongate_3d"};
-        cuda::prolong_add(coarse_error, phi);
+        cuda::prolong_add(coarse_error, phi, stream);
     }
     {
         const cuda::detail::ScopedNvtxRange post_smooth_range{"mg::post_smooth_3d"};
-        run_mg_smoother_3d(phi, rhs, h, omega, nu);
+        run_mg_smoother_3d(phi, rhs, h, omega, nu, stream);
     }
 }
 
@@ -557,32 +632,100 @@ SolveResult solve_mg_impl(
         workspace.reserve_for(problem.array_n());
     }
     cuda::RelativeResidualWorkspace residual_workspace{problem.array_n()};
+    const MgClock::time_point graph_timing_start = MgClock::now();
+    ScopedCudaStream graph_stream{};
+    ScopedCudaGraph graph{};
+    {
+        const cuda::detail::ScopedNvtxRange capture_range{"mg::graph_capture"};
+        cuda::check(
+            cudaStreamBeginCapture(graph_stream.get(), cudaStreamCaptureModeThreadLocal),
+            "cudaStreamBeginCapture",
+            __FILE__,
+            __LINE__
+        );
+        try {
+            mg_cycle<Real>(
+                phi,
+                rhs,
+                problem.h,
+                omega,
+                options.nu,
+                options.cycle,
+                coarse_mode,
+                options.coarse_steps,
+                workspace,
+                0,
+                graph_stream.get()
+            );
+        } catch (...) {
+            cudaGraph_t abandoned_graph = nullptr;
+            (void)cudaStreamEndCapture(graph_stream.get(), &abandoned_graph);
+            if (abandoned_graph != nullptr) {
+                (void)cudaGraphDestroy(abandoned_graph);
+            }
+            throw;
+        }
+
+        cudaGraph_t captured_graph = nullptr;
+        cuda::check(
+            cudaStreamEndCapture(graph_stream.get(), &captured_graph),
+            "cudaStreamEndCapture",
+            __FILE__,
+            __LINE__
+        );
+        graph.reset(captured_graph);
+    }
+
+    ScopedCudaGraphExec graph_exec{};
+    cuda::check(
+        cudaGraphInstantiate(graph_exec.put(), graph.get(), nullptr, nullptr, 0),
+        "cudaGraphInstantiate",
+        __FILE__,
+        __LINE__
+    );
+    const MgClock::time_point compute_timing_start = MgClock::now();
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
         const cuda::detail::ScopedNvtxRange iteration_range{"mg::iteration"};
-        mg_cycle<Real>(
-            phi,
-            rhs,
-            problem.h,
-            omega,
-            options.nu,
-            options.cycle,
-            coarse_mode,
-            options.coarse_steps,
-            workspace,
-            0
+        cuda::check(
+            cudaGraphLaunch(graph_exec.get(), graph_stream.get()),
+            "cudaGraphLaunch",
+            __FILE__,
+            __LINE__
+        );
+        cuda::check(
+            cudaStreamSynchronize(graph_stream.get()),
+            "cudaStreamSynchronize",
+            __FILE__,
+            __LINE__
         );
 
         const double residual =
             cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
         if (residual <= static_cast<double>(options.tol)) {
-            return make_solve_result(phi.download(), iteration, static_cast<Real>(residual));
+            auto host_phi = phi.download();
+            const MgClock::time_point solve_end = MgClock::now();
+            return make_solve_result(
+                std::move(host_phi),
+                iteration,
+                static_cast<Real>(residual),
+                elapsed_ms(compute_timing_start, solve_end),
+                elapsed_ms(graph_timing_start, solve_end)
+            );
         }
     }
 
     const double residual =
         cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
-    return make_solve_result(phi.download(), options.max_iter, static_cast<Real>(residual));
+    auto host_phi = phi.download();
+    const MgClock::time_point solve_end = MgClock::now();
+    return make_solve_result(
+        std::move(host_phi),
+        options.max_iter,
+        static_cast<Real>(residual),
+        elapsed_ms(compute_timing_start, solve_end),
+        elapsed_ms(graph_timing_start, solve_end)
+    );
 }
 
 template <typename Real>
@@ -602,32 +745,100 @@ SolveResult3D solve_mg_3d_impl(
         workspace.reserve_for(problem.array_n());
     }
     cuda::RelativeResidualWorkspace3D residual_workspace{problem.array_n()};
+    const MgClock::time_point graph_timing_start = MgClock::now();
+    ScopedCudaStream graph_stream{};
+    ScopedCudaGraph graph{};
+    {
+        const cuda::detail::ScopedNvtxRange capture_range{"mg::graph_capture_3d"};
+        cuda::check(
+            cudaStreamBeginCapture(graph_stream.get(), cudaStreamCaptureModeThreadLocal),
+            "cudaStreamBeginCapture",
+            __FILE__,
+            __LINE__
+        );
+        try {
+            mg_cycle_3d<Real>(
+                phi,
+                rhs,
+                problem.h,
+                omega,
+                options.nu,
+                options.cycle,
+                coarse_mode,
+                options.coarse_steps,
+                workspace,
+                0,
+                graph_stream.get()
+            );
+        } catch (...) {
+            cudaGraph_t abandoned_graph = nullptr;
+            (void)cudaStreamEndCapture(graph_stream.get(), &abandoned_graph);
+            if (abandoned_graph != nullptr) {
+                (void)cudaGraphDestroy(abandoned_graph);
+            }
+            throw;
+        }
+
+        cudaGraph_t captured_graph = nullptr;
+        cuda::check(
+            cudaStreamEndCapture(graph_stream.get(), &captured_graph),
+            "cudaStreamEndCapture",
+            __FILE__,
+            __LINE__
+        );
+        graph.reset(captured_graph);
+    }
+
+    ScopedCudaGraphExec graph_exec{};
+    cuda::check(
+        cudaGraphInstantiate(graph_exec.put(), graph.get(), nullptr, nullptr, 0),
+        "cudaGraphInstantiate",
+        __FILE__,
+        __LINE__
+    );
+    const MgClock::time_point compute_timing_start = MgClock::now();
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
         const cuda::detail::ScopedNvtxRange iteration_range{"mg::iteration_3d"};
-        mg_cycle_3d<Real>(
-            phi,
-            rhs,
-            problem.h,
-            omega,
-            options.nu,
-            options.cycle,
-            coarse_mode,
-            options.coarse_steps,
-            workspace,
-            0
+        cuda::check(
+            cudaGraphLaunch(graph_exec.get(), graph_stream.get()),
+            "cudaGraphLaunch",
+            __FILE__,
+            __LINE__
+        );
+        cuda::check(
+            cudaStreamSynchronize(graph_stream.get()),
+            "cudaStreamSynchronize",
+            __FILE__,
+            __LINE__
         );
 
         const double residual =
             cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
         if (residual <= static_cast<double>(options.tol)) {
-            return make_solve_result(phi.download(), iteration, static_cast<Real>(residual));
+            auto host_phi = phi.download();
+            const MgClock::time_point solve_end = MgClock::now();
+            return make_solve_result(
+                std::move(host_phi),
+                iteration,
+                static_cast<Real>(residual),
+                elapsed_ms(compute_timing_start, solve_end),
+                elapsed_ms(graph_timing_start, solve_end)
+            );
         }
     }
 
     const double residual =
         cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
-    return make_solve_result(phi.download(), options.max_iter, static_cast<Real>(residual));
+    auto host_phi = phi.download();
+    const MgClock::time_point solve_end = MgClock::now();
+    return make_solve_result(
+        std::move(host_phi),
+        options.max_iter,
+        static_cast<Real>(residual),
+        elapsed_ms(compute_timing_start, solve_end),
+        elapsed_ms(graph_timing_start, solve_end)
+    );
 }
 
 } // namespace

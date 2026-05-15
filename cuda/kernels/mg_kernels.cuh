@@ -17,62 +17,65 @@ inline constexpr std::size_t kExactCoarseSolveMaxUnknowns3D =
     kExactCoarseSolveMaxInteriorN;
 
 template <typename Real>
-__global__ void residual_full_kernel(
-    const Real* phi,
-    const Real* rhs,
-    Real* residual_out,
-    std::size_t array_n,
-    Real inv_h2
+__device__ inline Real residual_restrict_rhs_sum_2d(
+    const Real* rhs, std::size_t fine_array_n, std::size_t fi, std::size_t fj
 ) {
-    const std::size_t i = static_cast<std::size_t>(blockIdx.y) * blockDim.y + threadIdx.y + 1;
-    const std::size_t j = static_cast<std::size_t>(blockIdx.x) * blockDim.x + threadIdx.x + 1;
-    if (i >= array_n - 1 || j >= array_n - 1) {
-        return;
-    }
-
-    const std::size_t idx = offset(array_n, i, j);
-    residual_out[idx] = rhs[idx] - (
-        Real{4} * phi[idx] -
-        phi[offset(array_n, i + 1, j)] -
-        phi[offset(array_n, i - 1, j)] -
-        phi[offset(array_n, i, j + 1)] -
-        phi[offset(array_n, i, j - 1)]
-    ) * inv_h2;
+    // Standard full-weighting weights for rhs: 4 center, 2 edges, 1 corners.
+    return
+        Real{4} * rhs[offset(fine_array_n, fi, fj)] +
+        Real{2} * (
+            rhs[offset(fine_array_n, fi - 1, fj)] +
+            rhs[offset(fine_array_n, fi + 1, fj)] +
+            rhs[offset(fine_array_n, fi, fj - 1)] +
+            rhs[offset(fine_array_n, fi, fj + 1)]
+        ) +
+        rhs[offset(fine_array_n, fi - 1, fj - 1)] +
+        rhs[offset(fine_array_n, fi - 1, fj + 1)] +
+        rhs[offset(fine_array_n, fi + 1, fj - 1)] +
+        rhs[offset(fine_array_n, fi + 1, fj + 1)];
 }
 
 template <typename Real>
-__global__ void residual_full_kernel_3d(
-    const Real* phi,
-    const Real* rhs,
-    Real* residual_out,
-    std::size_t array_n,
-    Real inv_h2
+__device__ inline Real residual_restrict_laplacian_sum_2d(
+    const Real* phi, std::size_t fine_array_n, std::size_t fi, std::size_t fj
 ) {
-    const std::size_t i = static_cast<std::size_t>(blockIdx.z) * blockDim.z + threadIdx.z + 1;
-    const std::size_t j = static_cast<std::size_t>(blockIdx.y) * blockDim.y + threadIdx.y + 1;
-    const std::size_t k = static_cast<std::size_t>(blockIdx.x) * blockDim.x + threadIdx.x + 1;
-    if (i >= array_n - 1 || j >= array_n - 1 || k >= array_n - 1) {
-        return;
-    }
-
-    const std::size_t idx = offset(array_n, i, j, k);
-    residual_out[idx] = rhs[idx] - (
-        Real{6} * phi[idx] -
-        phi[offset(array_n, i + 1, j, k)] -
-        phi[offset(array_n, i - 1, j, k)] -
-        phi[offset(array_n, i, j + 1, k)] -
-        phi[offset(array_n, i, j - 1, k)] -
-        phi[offset(array_n, i, j, k + 1)] -
-        phi[offset(array_n, i, j, k - 1)]
-    ) * inv_h2;
+    // This is 16 * R(A phi) for the 5-point Laplacian stencil.
+    return
+        Real{8} * phi[offset(fine_array_n, fi, fj)] +
+        Real{2} * (
+            phi[offset(fine_array_n, fi - 1, fj)] +
+            phi[offset(fine_array_n, fi + 1, fj)] +
+            phi[offset(fine_array_n, fi, fj - 1)] +
+            phi[offset(fine_array_n, fi, fj + 1)]
+        ) -
+        Real{2} * (
+            phi[offset(fine_array_n, fi - 2, fj)] +
+            phi[offset(fine_array_n, fi + 2, fj)] +
+            phi[offset(fine_array_n, fi, fj - 2)] +
+            phi[offset(fine_array_n, fi, fj + 2)]
+        ) -
+        (
+            phi[offset(fine_array_n, fi - 1, fj - 2)] +
+            phi[offset(fine_array_n, fi - 1, fj + 2)] +
+            phi[offset(fine_array_n, fi + 1, fj - 2)] +
+            phi[offset(fine_array_n, fi + 1, fj + 2)] +
+            phi[offset(fine_array_n, fi - 2, fj - 1)] +
+            phi[offset(fine_array_n, fi - 2, fj + 1)] +
+            phi[offset(fine_array_n, fi + 2, fj - 1)] +
+            phi[offset(fine_array_n, fi + 2, fj + 1)]
+        );
 }
 
 template <typename Real>
-__global__ void restrict_full_weighting_kernel(
-    const Real* fine,
+__global__ void residual_restrict_full_weighting_kernel_2d(
+    const Real* phi,
+    const Real* rhs,
     Real* coarse,
-    std::size_t coarse_array_n
+    std::size_t coarse_array_n,
+    Real inv_h2
 ) {
+    // Directly evaluate R(rhs - h^{-2} A phi) so we skip the intermediate
+    // fine residual grid and its extra global memory traffic.
     const std::size_t i = static_cast<std::size_t>(blockIdx.y) * blockDim.y + threadIdx.y + 1;
     const std::size_t j = static_cast<std::size_t>(blockIdx.x) * blockDim.x + threadIdx.x + 1;
     if (i >= coarse_array_n - 1 || j >= coarse_array_n - 1) {
@@ -82,33 +85,144 @@ __global__ void restrict_full_weighting_kernel(
     const std::size_t fine_array_n = 2 * coarse_array_n - 1;
     const std::size_t fi = 2 * i;
     const std::size_t fj = 2 * j;
+    const std::size_t idx = offset(coarse_array_n, i, j);
 
-    coarse[offset(coarse_array_n, i, j)] = (
-        Real{4} * fine[offset(fine_array_n, fi, fj)] +
-        Real{2} * (
-            fine[offset(fine_array_n, fi - 1, fj)] +
-            fine[offset(fine_array_n, fi + 1, fj)] +
-            fine[offset(fine_array_n, fi, fj - 1)] +
-            fine[offset(fine_array_n, fi, fj + 1)]
-        ) +
-        fine[offset(fine_array_n, fi - 1, fj - 1)] +
-        fine[offset(fine_array_n, fi - 1, fj + 1)] +
-        fine[offset(fine_array_n, fi + 1, fj - 1)] +
-        fine[offset(fine_array_n, fi + 1, fj + 1)]
-    ) / Real{16};
+    const Real rhs_sum = residual_restrict_rhs_sum_2d<Real>(rhs, fine_array_n, fi, fj);
+    const Real laplacian_sum =
+        residual_restrict_laplacian_sum_2d<Real>(phi, fine_array_n, fi, fj);
+    coarse[idx] = (rhs_sum - inv_h2 * laplacian_sum) / Real{16};
+}
+
+__device__ inline int abs_int(int value) {
+    return value < 0 ? -value : value;
 }
 
 template <typename Real>
-__device__ inline Real restriction_weight_3d(int offset_value) {
-    return offset_value == 0 ? Real{2} : Real{1};
-}
+__device__ inline Real restriction_weight_3d(int offset_value);
 
 template <typename Real>
-__global__ void restrict_full_weighting_kernel_3d(
-    const Real* fine,
-    Real* coarse,
-    std::size_t coarse_array_n
+__device__ inline Real residual_restrict_rhs_sum_3d(
+    const Real* rhs,
+    std::size_t fine_array_n,
+    std::size_t fi,
+    std::size_t fj,
+    std::size_t fk
 ) {
+    // Standard 3D full-weighting weights for rhs: 8 center, 4 faces, 2 edges, 1 corners.
+    Real total{};
+#pragma unroll
+    for (int di = -1; di <= 1; ++di) {
+        const Real wi = restriction_weight_3d<Real>(di);
+#pragma unroll
+        for (int dj = -1; dj <= 1; ++dj) {
+            const Real wij = wi * restriction_weight_3d<Real>(dj);
+#pragma unroll
+            for (int dk = -1; dk <= 1; ++dk) {
+                total += wij
+                    * restriction_weight_3d<Real>(dk)
+                    * rhs[offset(
+                        fine_array_n,
+                        static_cast<std::size_t>(static_cast<int>(fi) + di),
+                        static_cast<std::size_t>(static_cast<int>(fj) + dj),
+                        static_cast<std::size_t>(static_cast<int>(fk) + dk)
+                    )];
+            }
+        }
+    }
+    return total;
+}
+
+template <typename Real>
+__device__ inline Real residual_restrict_laplacian_coeff_3d(int dx, int dy, int dz) {
+    int a = abs_int(dx);
+    int b = abs_int(dy);
+    int c = abs_int(dz);
+
+    if (a < b) {
+        const int tmp = a;
+        a = b;
+        b = tmp;
+    }
+    if (a < c) {
+        const int tmp = a;
+        a = c;
+        c = tmp;
+    }
+    if (b < c) {
+        const int tmp = b;
+        b = c;
+        c = tmp;
+    }
+
+    if (a == 0) {
+        return Real{24};
+    }
+    if (a == 1) {
+        if (b == 0) {
+            return Real{8};
+        }
+        if (b == 1 && c == 0) {
+            return Real{2};
+        }
+        return Real{};
+    }
+    if (a == 2) {
+        if (b == 0) {
+            return Real{-4};
+        }
+        if (b == 1 && c == 0) {
+            return Real{-2};
+        }
+        if (b == 1 && c == 1) {
+            return Real{-1};
+        }
+        return Real{};
+    }
+    return Real{};
+}
+
+template <typename Real>
+__device__ inline Real residual_restrict_laplacian_sum_3d(
+    const Real* phi,
+    std::size_t fine_array_n,
+    std::size_t fi,
+    std::size_t fj,
+    std::size_t fk
+) {
+    // This is 64 * R(A phi) for the 7-point Laplacian stencil.
+    Real total{};
+#pragma unroll
+    for (int di = -2; di <= 2; ++di) {
+#pragma unroll
+        for (int dj = -2; dj <= 2; ++dj) {
+#pragma unroll
+            for (int dk = -2; dk <= 2; ++dk) {
+                const Real coeff = residual_restrict_laplacian_coeff_3d<Real>(di, dj, dk);
+                if (coeff != Real{}) {
+                    total += coeff
+                        * phi[offset(
+                            fine_array_n,
+                            static_cast<std::size_t>(static_cast<int>(fi) + di),
+                            static_cast<std::size_t>(static_cast<int>(fj) + dj),
+                            static_cast<std::size_t>(static_cast<int>(fk) + dk)
+                        )];
+                }
+            }
+        }
+    }
+    return total;
+}
+
+template <typename Real>
+__global__ void residual_restrict_full_weighting_kernel_3d(
+    const Real* phi,
+    const Real* rhs,
+    Real* coarse,
+    std::size_t coarse_array_n,
+    Real inv_h2
+) {
+    // Directly evaluate R(rhs - h^{-2} A phi) so we skip the intermediate
+    // fine residual grid and its extra global memory traffic.
     const std::size_t i = static_cast<std::size_t>(blockIdx.z) * blockDim.z + threadIdx.z + 1;
     const std::size_t j = static_cast<std::size_t>(blockIdx.y) * blockDim.y + threadIdx.y + 1;
     const std::size_t k = static_cast<std::size_t>(blockIdx.x) * blockDim.x + threadIdx.x + 1;
@@ -120,26 +234,18 @@ __global__ void restrict_full_weighting_kernel_3d(
     const std::size_t fi = 2 * i;
     const std::size_t fj = 2 * j;
     const std::size_t fk = 2 * k;
+    const std::size_t idx = offset(coarse_array_n, i, j, k);
 
-    Real total{};
-    for (int di = -1; di <= 1; ++di) {
-        const Real wi = restriction_weight_3d<Real>(di);
-        for (int dj = -1; dj <= 1; ++dj) {
-            const Real wij = wi * restriction_weight_3d<Real>(dj);
-            for (int dk = -1; dk <= 1; ++dk) {
-                total += wij
-                    * restriction_weight_3d<Real>(dk)
-                    * fine[offset(
-                        fine_array_n,
-                        static_cast<std::size_t>(static_cast<int>(fi) + di),
-                        static_cast<std::size_t>(static_cast<int>(fj) + dj),
-                        static_cast<std::size_t>(static_cast<int>(fk) + dk)
-                    )];
-            }
-        }
-    }
+    const Real rhs_sum =
+        residual_restrict_rhs_sum_3d<Real>(rhs, fine_array_n, fi, fj, fk);
+    const Real laplacian_sum =
+        residual_restrict_laplacian_sum_3d<Real>(phi, fine_array_n, fi, fj, fk);
+    coarse[idx] = (rhs_sum - inv_h2 * laplacian_sum) / Real{64};
+}
 
-    coarse[offset(coarse_array_n, i, j, k)] = total / Real{64};
+template <typename Real>
+__device__ inline Real restriction_weight_3d(int offset_value) {
+    return offset_value == 0 ? Real{2} : Real{1};
 }
 
 template <typename Real>

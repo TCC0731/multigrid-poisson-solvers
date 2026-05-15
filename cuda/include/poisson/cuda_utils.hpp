@@ -73,10 +73,24 @@ inline void check(cudaError_t status, const char* expr, const char* file, int li
     throw std::runtime_error(oss.str());
 }
 
-inline void check_kernel(const char* kernel_name) {
+[[nodiscard]] inline bool is_stream_capturing(cudaStream_t stream) {
+    if (stream == nullptr) {
+        return false;
+    }
+
+    cudaStreamCaptureStatus status = cudaStreamCaptureStatusNone;
+    check(cudaStreamIsCapturing(stream, &status), "cudaStreamIsCapturing", __FILE__, __LINE__);
+    return status != cudaStreamCaptureStatusNone;
+}
+
+inline void check_kernel(const char* kernel_name, cudaStream_t stream = nullptr) {
     check(cudaPeekAtLastError(), kernel_name, __FILE__, __LINE__);
 #ifndef NDEBUG
-    check(cudaDeviceSynchronize(), kernel_name, __FILE__, __LINE__);
+    if (stream == nullptr) {
+        check(cudaDeviceSynchronize(), kernel_name, __FILE__, __LINE__);
+    } else if (!is_stream_capturing(stream)) {
+        check(cudaStreamSynchronize(stream), kernel_name, __FILE__, __LINE__);
+    }
 #endif
 }
 
@@ -133,9 +147,18 @@ public:
     [[nodiscard]] T* data() noexcept { return ptr_; }
     [[nodiscard]] const T* data() const noexcept { return ptr_; }
 
-    void zero() {
+    void zero(cudaStream_t stream = nullptr) {
         if (count_ > 0) {
-            check(cudaMemset(ptr_, 0, count_ * sizeof(T)), "cudaMemset", __FILE__, __LINE__);
+            if (stream == nullptr) {
+                check(cudaMemset(ptr_, 0, count_ * sizeof(T)), "cudaMemset", __FILE__, __LINE__);
+            } else {
+                check(
+                    cudaMemsetAsync(ptr_, 0, count_ * sizeof(T), stream),
+                    "cudaMemsetAsync",
+                    __FILE__,
+                    __LINE__
+                );
+            }
         }
     }
 
@@ -195,8 +218,8 @@ public:
     [[nodiscard]] Real* data() noexcept { return buffer_.data(); }
     [[nodiscard]] const Real* data() const noexcept { return buffer_.data(); }
 
-    void zero() {
-        buffer_.zero();
+    void zero(cudaStream_t stream = nullptr) {
+        buffer_.zero(stream);
     }
 
     void upload(const Grid2D<Real>& host_grid) {
@@ -240,8 +263,8 @@ public:
     [[nodiscard]] Real* data() noexcept { return buffer_.data(); }
     [[nodiscard]] const Real* data() const noexcept { return buffer_.data(); }
 
-    void zero() {
-        buffer_.zero();
+    void zero(cudaStream_t stream = nullptr) {
+        buffer_.zero(stream);
     }
 
     void upload(const Grid3D<Real>& host_grid) {
@@ -279,9 +302,18 @@ public:
     [[nodiscard]] Real* data() noexcept { return data_; }
     [[nodiscard]] const Real* data() const noexcept { return data_; }
 
-    void zero() {
+    void zero(cudaStream_t stream = nullptr) {
         if (elements() > 0) {
-            check(cudaMemset(data_, 0, elements() * sizeof(Real)), "cudaMemset", __FILE__, __LINE__);
+            if (stream == nullptr) {
+                check(cudaMemset(data_, 0, elements() * sizeof(Real)), "cudaMemset", __FILE__, __LINE__);
+            } else {
+                check(
+                    cudaMemsetAsync(data_, 0, elements() * sizeof(Real), stream),
+                    "cudaMemsetAsync",
+                    __FILE__,
+                    __LINE__
+                );
+            }
         }
     }
 
@@ -344,9 +376,18 @@ public:
     [[nodiscard]] Real* data() noexcept { return data_; }
     [[nodiscard]] const Real* data() const noexcept { return data_; }
 
-    void zero() {
+    void zero(cudaStream_t stream = nullptr) {
         if (elements() > 0) {
-            check(cudaMemset(data_, 0, elements() * sizeof(Real)), "cudaMemset", __FILE__, __LINE__);
+            if (stream == nullptr) {
+                check(cudaMemset(data_, 0, elements() * sizeof(Real)), "cudaMemset", __FILE__, __LINE__);
+            } else {
+                check(
+                    cudaMemsetAsync(data_, 0, elements() * sizeof(Real), stream),
+                    "cudaMemsetAsync",
+                    __FILE__,
+                    __LINE__
+                );
+            }
         }
     }
 
@@ -638,7 +679,8 @@ void run_rb_sor_steps(
     const RhsGrid& rhs,
     Real h,
     Real omega,
-    std::size_t steps
+    std::size_t steps,
+    cudaStream_t stream = nullptr
 ) {
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
@@ -654,8 +696,8 @@ void run_rb_sor_steps(
     for (std::size_t step = 0; step < steps; ++step) {
         for (int color = 0; color < 2; ++color) {
             cuda_kernels::rb_sor_color_kernel<Real>
-                <<<grid, block>>>(phi.data(), rhs.data(), phi.size(), h2, omega, color);
-            check_kernel("rb_sor_color_kernel");
+                <<<grid, block, 0, stream>>>(phi.data(), rhs.data(), phi.size(), h2, omega, color);
+            check_kernel("rb_sor_color_kernel", stream);
         }
     }
 }
@@ -666,7 +708,8 @@ void run_rb_sor_steps(
     const DeviceGrid3D<Real>& rhs,
     Real h,
     Real omega,
-    std::size_t steps
+    std::size_t steps,
+    cudaStream_t stream = nullptr
 ) {
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
@@ -682,8 +725,8 @@ void run_rb_sor_steps(
     for (std::size_t step = 0; step < steps; ++step) {
         for (int color = 0; color < 2; ++color) {
             cuda_kernels::rb_sor_color_kernel_3d<Real>
-                <<<grid, block>>>(phi.data(), rhs.data(), phi.size(), h2, omega, color);
-            check_kernel("rb_sor_color_kernel_3d");
+                <<<grid, block, 0, stream>>>(phi.data(), rhs.data(), phi.size(), h2, omega, color);
+            check_kernel("rb_sor_color_kernel_3d", stream);
         }
     }
 }
@@ -694,7 +737,8 @@ void run_rb_sor_steps(
     const DeviceGridView3D<Real>& rhs,
     Real h,
     Real omega,
-    std::size_t steps
+    std::size_t steps,
+    cudaStream_t stream = nullptr
 ) {
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
@@ -710,8 +754,8 @@ void run_rb_sor_steps(
     for (std::size_t step = 0; step < steps; ++step) {
         for (int color = 0; color < 2; ++color) {
             cuda_kernels::rb_sor_color_kernel_3d<Real>
-                <<<grid, block>>>(phi.data(), rhs.data(), phi.size(), h2, omega, color);
-            check_kernel("rb_sor_color_kernel_3d");
+                <<<grid, block, 0, stream>>>(phi.data(), rhs.data(), phi.size(), h2, omega, color);
+            check_kernel("rb_sor_color_kernel_3d", stream);
         }
     }
 }
@@ -722,7 +766,8 @@ void run_fused_rb_sor_steps(
     const RhsGrid& rhs,
     Real h,
     Real omega,
-    std::size_t steps
+    std::size_t steps,
+    cudaStream_t stream = nullptr
 ) {
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
@@ -740,8 +785,8 @@ void run_fused_rb_sor_steps(
     };
 
     cuda_kernels::rb_sor_fused_coarse_kernel<Real>
-        <<<1, block>>>(phi.data(), rhs.data(), phi.size(), h2, omega, steps);
-    check_kernel("rb_sor_fused_coarse_kernel");
+        <<<1, block, 0, stream>>>(phi.data(), rhs.data(), phi.size(), h2, omega, steps);
+    check_kernel("rb_sor_fused_coarse_kernel", stream);
 }
 
 template <typename Real>
@@ -750,7 +795,8 @@ void run_fused_rb_sor_steps(
     const DeviceGrid3D<Real>& rhs,
     Real h,
     Real omega,
-    std::size_t steps
+    std::size_t steps,
+    cudaStream_t stream = nullptr
 ) {
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
@@ -768,8 +814,8 @@ void run_fused_rb_sor_steps(
     };
 
     cuda_kernels::rb_sor_fused_coarse_kernel_3d<Real>
-        <<<1, block>>>(phi.data(), rhs.data(), phi.size(), h2, omega, steps);
-    check_kernel("rb_sor_fused_coarse_kernel_3d");
+        <<<1, block, 0, stream>>>(phi.data(), rhs.data(), phi.size(), h2, omega, steps);
+    check_kernel("rb_sor_fused_coarse_kernel_3d", stream);
 }
 
 template <typename Real>
@@ -778,7 +824,8 @@ void run_fused_rb_sor_steps(
     const DeviceGridView3D<Real>& rhs,
     Real h,
     Real omega,
-    std::size_t steps
+    std::size_t steps,
+    cudaStream_t stream = nullptr
 ) {
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
@@ -796,8 +843,8 @@ void run_fused_rb_sor_steps(
     };
 
     cuda_kernels::rb_sor_fused_coarse_kernel_3d<Real>
-        <<<1, block>>>(phi.data(), rhs.data(), phi.size(), h2, omega, steps);
-    check_kernel("rb_sor_fused_coarse_kernel_3d");
+        <<<1, block, 0, stream>>>(phi.data(), rhs.data(), phi.size(), h2, omega, steps);
+    check_kernel("rb_sor_fused_coarse_kernel_3d", stream);
 }
 
 template <typename Real>
@@ -1097,85 +1144,26 @@ template <typename Real>
     return compute_relative_residual(phi, rhs, h, workspace);
 }
 
-template <typename Real, typename PhiGrid, typename RhsGrid, typename ResidualGrid>
-void compute_residual_full(
+template <typename Real, typename PhiGrid, typename RhsGrid, typename CoarseGrid>
+void compute_residual_restrict_full_weighting(
     const PhiGrid& phi,
     const RhsGrid& rhs,
     Real h,
-    ResidualGrid& residual_out
+    CoarseGrid& coarse,
+    cudaStream_t stream = nullptr
 ) {
-    if (phi.size() != rhs.size() || phi.size() != residual_out.size()) {
-        throw std::invalid_argument("residual_full device grid sizes do not match");
+    if (phi.size() != rhs.size()) {
+        throw std::invalid_argument("phi and rhs device grid sizes do not match");
+    }
+    if (coarse.size() < 3 || phi.size() != (2 * coarse.size() - 1)) {
+        throw std::invalid_argument(
+            "fused residual/restriction device grid sizes do not match"
+        );
     }
 
-    const detail::ScopedNvtxRange range{"cuda::compute_residual_full"};
-    residual_out.zero();
-    const dim3 block = cuda_kernels::make_block_2d();
-    const dim3 grid = cuda_kernels::make_grid_2d(phi.size() - 2, phi.size() - 2, block);
-
-    cuda_kernels::residual_full_kernel<Real>
-        <<<grid, block>>>(phi.data(), rhs.data(), residual_out.data(), phi.size(), Real{1} / (h * h));
-    check_kernel("residual_full_kernel");
-}
-
-template <typename Real>
-void compute_residual_full(
-    const DeviceGrid3D<Real>& phi,
-    const DeviceGrid3D<Real>& rhs,
-    Real h,
-    DeviceGridView3D<Real>& residual_out
-) {
-    if (phi.size() != rhs.size() || phi.size() != residual_out.size()) {
-        throw std::invalid_argument("residual_full device grid sizes do not match");
-    }
-
-    const detail::ScopedNvtxRange range{"cuda::compute_residual_full_3d"};
-    residual_out.zero();
-    const dim3 block = cuda_kernels::make_block_3d();
-    const dim3 grid = cuda_kernels::make_grid_3d(
-        phi.size() - 2,
-        phi.size() - 2,
-        phi.size() - 2,
-        block
-    );
-
-    cuda_kernels::residual_full_kernel_3d<Real>
-        <<<grid, block>>>(phi.data(), rhs.data(), residual_out.data(), phi.size(), Real{1} / (h * h));
-    check_kernel("residual_full_kernel_3d");
-}
-
-template <typename Real>
-void compute_residual_full(
-    const DeviceGridView3D<Real>& phi,
-    const DeviceGridView3D<Real>& rhs,
-    Real h,
-    DeviceGridView3D<Real>& residual_out
-) {
-    if (phi.size() != rhs.size() || phi.size() != residual_out.size()) {
-        throw std::invalid_argument("residual_full device grid sizes do not match");
-    }
-
-    const detail::ScopedNvtxRange range{"cuda::compute_residual_full_3d"};
-    residual_out.zero();
-    const dim3 block = cuda_kernels::make_block_3d();
-    const dim3 grid = cuda_kernels::make_grid_3d(
-        phi.size() - 2,
-        phi.size() - 2,
-        phi.size() - 2,
-        block
-    );
-
-    cuda_kernels::residual_full_kernel_3d<Real>
-        <<<grid, block>>>(phi.data(), rhs.data(), residual_out.data(), phi.size(), Real{1} / (h * h));
-    check_kernel("residual_full_kernel_3d");
-}
-
-template <typename Real, typename FineGrid, typename CoarseGrid>
-void restrict_full_weighting(const FineGrid& fine, CoarseGrid& coarse) {
-    const detail::ScopedNvtxRange range{"cuda::restrict_full_weighting"};
+    const detail::ScopedNvtxRange range{"cuda::compute_residual_restrict_full_weighting"};
+    coarse.zero(stream);
     const std::size_t coarse_interior_n = coarse.size() - 2;
-    coarse.zero();
-
     const dim3 block = cuda_kernels::make_block_2d();
     const dim3 grid = cuda_kernels::make_grid_2d(
         coarse_interior_n,
@@ -1183,17 +1171,38 @@ void restrict_full_weighting(const FineGrid& fine, CoarseGrid& coarse) {
         block
     );
 
-    cuda_kernels::restrict_full_weighting_kernel<Real>
-        <<<grid, block>>>(fine.data(), coarse.data(), coarse.size());
-    check_kernel("restrict_full_weighting_kernel");
+    cuda_kernels::residual_restrict_full_weighting_kernel_2d<Real>
+        <<<grid, block, 0, stream>>>(
+            phi.data(),
+            rhs.data(),
+            coarse.data(),
+            coarse.size(),
+            Real{1} / (h * h)
+        );
+    check_kernel("residual_restrict_full_weighting_kernel_2d", stream);
 }
 
-template <typename Real>
-void restrict_full_weighting(const DeviceGridView3D<Real>& fine, DeviceGridView3D<Real>& coarse) {
-    const detail::ScopedNvtxRange range{"cuda::restrict_full_weighting_3d"};
-    const std::size_t coarse_interior_n = coarse.size() - 2;
-    coarse.zero();
+template <typename Real, typename PhiGrid, typename RhsGrid, typename CoarseGrid>
+void compute_residual_restrict_full_weighting_3d_impl(
+    const PhiGrid& phi,
+    const RhsGrid& rhs,
+    Real h,
+    CoarseGrid& coarse,
+    cudaStream_t stream,
+    const char* range_name
+) {
+    if (phi.size() != rhs.size()) {
+        throw std::invalid_argument("phi and rhs device grid sizes do not match");
+    }
+    if (coarse.size() < 3 || phi.size() != (2 * coarse.size() - 1)) {
+        throw std::invalid_argument(
+            "fused residual/restriction device grid sizes do not match"
+        );
+    }
 
+    const detail::ScopedNvtxRange range{range_name};
+    coarse.zero(stream);
+    const std::size_t coarse_interior_n = coarse.size() - 2;
     const dim3 block = cuda_kernels::make_block_3d();
     const dim3 grid = cuda_kernels::make_grid_3d(
         coarse_interior_n,
@@ -1202,13 +1211,55 @@ void restrict_full_weighting(const DeviceGridView3D<Real>& fine, DeviceGridView3
         block
     );
 
-    cuda_kernels::restrict_full_weighting_kernel_3d<Real>
-        <<<grid, block>>>(fine.data(), coarse.data(), coarse.size());
-    check_kernel("restrict_full_weighting_kernel_3d");
+    cuda_kernels::residual_restrict_full_weighting_kernel_3d<Real>
+        <<<grid, block, 0, stream>>>(
+            phi.data(),
+            rhs.data(),
+            coarse.data(),
+            coarse.size(),
+            Real{1} / (h * h)
+        );
+    check_kernel("residual_restrict_full_weighting_kernel_3d", stream);
+}
+
+template <typename Real>
+void compute_residual_restrict_full_weighting(
+    const DeviceGridView3D<Real>& phi,
+    const DeviceGridView3D<Real>& rhs,
+    Real h,
+    DeviceGridView3D<Real>& coarse,
+    cudaStream_t stream = nullptr
+) {
+    compute_residual_restrict_full_weighting_3d_impl<Real>(
+        phi,
+        rhs,
+        h,
+        coarse,
+        stream,
+        "cuda::compute_residual_restrict_full_weighting_3d"
+    );
+}
+
+template <typename Real>
+void compute_residual_restrict_full_weighting(
+    const DeviceGrid3D<Real>& phi,
+    const DeviceGrid3D<Real>& rhs,
+    Real h,
+    DeviceGridView3D<Real>& coarse,
+    cudaStream_t stream = nullptr
+) {
+    compute_residual_restrict_full_weighting_3d_impl<Real>(
+        phi,
+        rhs,
+        h,
+        coarse,
+        stream,
+        "cuda::compute_residual_restrict_full_weighting_3d"
+    );
 }
 
 template <typename Real, typename CoarseGrid, typename FineGrid>
-void prolong_add(const CoarseGrid& coarse, FineGrid& fine) {
+void prolong_add(const CoarseGrid& coarse, FineGrid& fine, cudaStream_t stream = nullptr) {
     const detail::ScopedNvtxRange range{"cuda::prolong_add"};
     const std::size_t fine_interior_n = fine.size() - 2;
     const dim3 block = cuda_kernels::make_block_2d();
@@ -1219,12 +1270,16 @@ void prolong_add(const CoarseGrid& coarse, FineGrid& fine) {
     );
 
     cuda_kernels::prolong_add_kernel<Real>
-        <<<grid, block>>>(coarse.data(), fine.data(), fine.size());
-    check_kernel("prolong_add_kernel");
+        <<<grid, block, 0, stream>>>(coarse.data(), fine.data(), fine.size());
+    check_kernel("prolong_add_kernel", stream);
 }
 
 template <typename Real>
-void prolong_add(const DeviceGridView3D<Real>& coarse, DeviceGrid3D<Real>& fine) {
+void prolong_add(
+    const DeviceGridView3D<Real>& coarse,
+    DeviceGrid3D<Real>& fine,
+    cudaStream_t stream = nullptr
+) {
     const detail::ScopedNvtxRange range{"cuda::prolong_add_3d"};
     const std::size_t fine_interior_n = fine.size() - 2;
     const dim3 block = cuda_kernels::make_block_3d();
@@ -1236,12 +1291,16 @@ void prolong_add(const DeviceGridView3D<Real>& coarse, DeviceGrid3D<Real>& fine)
     );
 
     cuda_kernels::prolong_add_kernel_3d<Real>
-        <<<grid, block>>>(coarse.data(), fine.data(), fine.size());
-    check_kernel("prolong_add_kernel_3d");
+        <<<grid, block, 0, stream>>>(coarse.data(), fine.data(), fine.size());
+    check_kernel("prolong_add_kernel_3d", stream);
 }
 
 template <typename Real>
-void prolong_add(const DeviceGridView3D<Real>& coarse, DeviceGridView3D<Real>& fine) {
+void prolong_add(
+    const DeviceGridView3D<Real>& coarse,
+    DeviceGridView3D<Real>& fine,
+    cudaStream_t stream = nullptr
+) {
     const detail::ScopedNvtxRange range{"cuda::prolong_add_3d"};
     const std::size_t fine_interior_n = fine.size() - 2;
     const dim3 block = cuda_kernels::make_block_3d();
@@ -1253,12 +1312,17 @@ void prolong_add(const DeviceGridView3D<Real>& coarse, DeviceGridView3D<Real>& f
     );
 
     cuda_kernels::prolong_add_kernel_3d<Real>
-        <<<grid, block>>>(coarse.data(), fine.data(), fine.size());
-    check_kernel("prolong_add_kernel_3d");
+        <<<grid, block, 0, stream>>>(coarse.data(), fine.data(), fine.size());
+    check_kernel("prolong_add_kernel_3d", stream);
 }
 
 template <typename Real, typename PhiGrid, typename RhsGrid>
-void run_exact_coarse_solve(PhiGrid& phi, const RhsGrid& rhs, Real h) {
+void run_exact_coarse_solve(
+    PhiGrid& phi,
+    const RhsGrid& rhs,
+    Real h,
+    cudaStream_t stream = nullptr
+) {
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
     }
@@ -1274,34 +1338,16 @@ void run_exact_coarse_solve(PhiGrid& phi, const RhsGrid& rhs, Real h) {
     };
 
     cuda_kernels::exact_coarse_solve_kernel_2d<Real>
-        <<<1, block>>>(phi.data(), rhs.data(), phi.size(), h * h);
-    check_kernel("exact_coarse_solve_kernel_2d");
-}
-
-template <typename Real>
-void run_exact_coarse_solve(DeviceGrid3D<Real>& phi, const DeviceGrid3D<Real>& rhs, Real h) {
-    if (phi.size() != rhs.size()) {
-        throw std::invalid_argument("phi and rhs device grid sizes do not match");
-    }
-    if (phi.size() < 3 || phi.size() > cuda_kernels::kExactCoarseSolveMaxArrayN) {
-        throw std::invalid_argument("exact coarse solve only supports 3x3x3 through 6x6x6 grids");
-    }
-
-    const detail::ScopedNvtxRange range{"cuda::run_exact_coarse_solve_3d"};
-    const dim3 block{
-        static_cast<unsigned int>(phi.size()),
-        static_cast<unsigned int>(phi.size()),
-        static_cast<unsigned int>(phi.size()),
-    };
-
-    cuda_kernels::exact_coarse_solve_kernel_3d<Real>
-        <<<1, block>>>(phi.data(), rhs.data(), phi.size(), h * h);
-    check_kernel("exact_coarse_solve_kernel_3d");
+        <<<1, block, 0, stream>>>(phi.data(), rhs.data(), phi.size(), h * h);
+    check_kernel("exact_coarse_solve_kernel_2d", stream);
 }
 
 template <typename Real>
 void run_exact_coarse_solve(
-    DeviceGridView3D<Real>& phi, const DeviceGridView3D<Real>& rhs, Real h
+    DeviceGrid3D<Real>& phi,
+    const DeviceGrid3D<Real>& rhs,
+    Real h,
+    cudaStream_t stream = nullptr
 ) {
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
@@ -1318,8 +1364,34 @@ void run_exact_coarse_solve(
     };
 
     cuda_kernels::exact_coarse_solve_kernel_3d<Real>
-        <<<1, block>>>(phi.data(), rhs.data(), phi.size(), h * h);
-    check_kernel("exact_coarse_solve_kernel_3d");
+        <<<1, block, 0, stream>>>(phi.data(), rhs.data(), phi.size(), h * h);
+    check_kernel("exact_coarse_solve_kernel_3d", stream);
+}
+
+template <typename Real>
+void run_exact_coarse_solve(
+    DeviceGridView3D<Real>& phi,
+    const DeviceGridView3D<Real>& rhs,
+    Real h,
+    cudaStream_t stream = nullptr
+) {
+    if (phi.size() != rhs.size()) {
+        throw std::invalid_argument("phi and rhs device grid sizes do not match");
+    }
+    if (phi.size() < 3 || phi.size() > cuda_kernels::kExactCoarseSolveMaxArrayN) {
+        throw std::invalid_argument("exact coarse solve only supports 3x3x3 through 6x6x6 grids");
+    }
+
+    const detail::ScopedNvtxRange range{"cuda::run_exact_coarse_solve_3d"};
+    const dim3 block{
+        static_cast<unsigned int>(phi.size()),
+        static_cast<unsigned int>(phi.size()),
+        static_cast<unsigned int>(phi.size()),
+    };
+
+    cuda_kernels::exact_coarse_solve_kernel_3d<Real>
+        <<<1, block, 0, stream>>>(phi.data(), rhs.data(), phi.size(), h * h);
+    check_kernel("exact_coarse_solve_kernel_3d", stream);
 }
 
 } // namespace poisson::cuda
