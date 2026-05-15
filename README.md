@@ -1,12 +1,20 @@
-# Poisson Multigrid Solver
+# Poisson Multigrid Solvers
 
-This repository is for developing and benchmarking Poisson equation solvers, with a focus on geometric multigrid methods and a Python reference implementation.
+This repository collects reference implementations and benchmarks for solving the Poisson equation on uniform grids. The focus is geometric multigrid, with matching solver sets in Python, C++, OpenMP, and CUDA so the same problem setup can be compared across backends.
 
-The project is organized as a research and coursework repository, not as a packaged library. The goal is to keep different solver implementations easy to compare, replace, and optimize.
+The code is intended for experimentation and side-by-side comparison rather than as a packaged library.
+
+## Overview
+
+- Shared Poisson convention across every backend
+- 2D and 3D support
+- Jacobi, Gauss-Seidel, SOR, and multigrid solvers
+- Manufactured-solution validation for accuracy checks
+- CSV-based benchmarking for runtime and convergence comparisons
 
 ## Equation Convention
 
-All solvers in this repository use the same Poisson equation convention:
+All solvers in this repository use the same sign convention:
 
 $$
 -\nabla^2 \phi = f
@@ -51,124 +59,20 @@ $$
 \phi \leftarrow \phi + e
 $$
 
-## Current Scope
+## Solver Coverage
 
-The Python reference implementation supports both the 2D and 3D Poisson
-equation. The pure C++ implementation supports both 2D and 3D. The OpenMP C++
-implementation now supports the same 2D and 3D solver set as the pure C++
-implementation, with the 3D numerical logic kept aligned with the pure C++ 3D
-code. The CUDA implementation currently focuses on the existing accelerated 2D
-paths.
+All backends expose the same solver family in both 2D and 3D: Jacobi, Gauss-Seidel, SOR, and multigrid.
 
-## Current Solver Support
-
-| Backend        | Jacobi 2D | Gauss-Seidel 2D | SOR 2D | Multigrid 2D | Jacobi 3D | Gauss-Seidel 3D | SOR 3D | Multigrid 3D |
-| -------------- | --------: | --------------: | -----: | -----------: | --------: | --------------: | -----: | -----------: |
-| Python + Numba |       Yes |             Yes |    Yes |          Yes |       Yes |             Yes |    Yes |          Yes |
-| C++ (pure)     |       Yes |             Yes |    Yes |          Yes |       Yes |             Yes |    Yes |          Yes |
-| C++ + OpenMP   |       Yes |             Yes |    Yes |          Yes |       Yes |             Yes |    Yes |          Yes |
-| CUDA           |        No |              No |     No |           No |        No |              No |     No |           No |
-
-## Repository Structure
-
-Current files are listed first; the remaining entries are still planned.
-
-```text
-multigrid-poisson-solvers/
-│
-├── README.md
-├── .gitignore
-├── requirements.txt
-│
-├── note/
-│   ├── Architecture.md
-│   ├── cpp_code_analysis.md
-│   ├── install.md
-│   └── python_code_analysis.md
-│
-├── python/
-│   ├── run_poisson.py
-│   ├── problems.py
-│   ├── operators.py
-│   ├── metrics.py
-│   └── solvers/
-│       ├── jacobi_2d.py
-│       ├── jacobi_3d.py
-│       ├── gs_2d.py
-│       ├── gs_3d.py
-│       ├── sor_2d.py
-│       ├── sor_3d.py
-│       ├── mg_2d.py
-│       └── mg_3d.py
-│
-├── CMakeLists.txt
-├── configs/
-│   └── poisson2d_sin.json
-│
-├── cpp/
-│   ├── include/
-│   │   └── poisson/
-│   │       ├── grid2d.hpp
-│   │       ├── grid3d.hpp
-│   │       ├── gs.hpp
-│   │       ├── jacobi.hpp
-│   │       ├── metrics.hpp
-│   │       ├── mg.hpp
-│   │       ├── operators.hpp
-│   │       ├── problem.hpp
-│   │       ├── red_black.hpp
-│   │       ├── solver.hpp
-│   │       ├── sor.hpp
-│   │       └── validation.hpp
-│   ├── src/
-│   │   ├── gs.cpp
-│   │   ├── jacobi.cpp
-│   │   ├── main.cpp
-│   │   ├── metrics.cpp
-│   │   ├── mg.cpp
-│   │   ├── operators.cpp
-│   │   ├── problem.cpp
-│   │   ├── red_black.cpp
-│   │   ├── sor.cpp
-│   │   └── validation.cpp
-│   └── omp/
-│       ├── main_jacobi_2d.cpp
-│       ├── main_rbgs_2d.cpp
-│       ├── main_sor_2d.cpp
-│       └── main_mg_2d.cpp
-│
-├── cuda/
-│   ├── include/
-│   ├── kernels/
-│   └── src/
-│       ├── main_sor_2d.cu
-│       └── main_mg_2d.cu
-│
-├── scripts/
-│   ├── build_cpp.sh
-│   ├── build_cuda.sh
-│   ├── run_benchmark.py
-│   └── plot_results.py
-│
-├── tests/
-│   ├── conftest.py
-│   ├── test_python.py
-│   ├── test_python_3d.py
-│   ├── cpp/
-│   │   └── test_poisson.cpp
-│   └── reference/
-│
-└── results/
-    ├── cpp/
-    ├── cpp_3d/
-    ├── python/
-    ├── python_3d/
-    └── benchmark/
-```
+| Backend | 2D | 3D | Notes |
+| ------- | --: | --: | ----- |
+| Python + Numba | Yes | Yes | Reference implementation |
+| C++ | Yes | Yes | Native baseline |
+| C++ + OpenMP | Yes | Yes | Parallelized loops with the same numerical logic |
+| CUDA | Yes | Yes | GPU implementation with the same CLI style |
 
 ## Validation Problems
 
-Manufactured solutions are used to validate correctness and convergence. For each case, the right-hand side is defined by
+Manufactured solutions are used to validate correctness, boundary handling, and convergence. For the 2D cases, the right-hand side is defined by
 
 $$
 -\nabla^2 \phi = f
@@ -194,177 +98,140 @@ The 3D implementations use matching manufactured solutions:
 | Smooth exponential | $$e^{x+y+z}$$                            | $$-3e^{x+y+z}$$                                 | Nonzero Dirichlet |
 | Cosine mode        | $$\cos(\pi x)\cos(\pi y)\cos(\pi z)$$    | $$3\pi^2\cos(\pi x)\cos(\pi y)\cos(\pi z)$$     | Nonzero Dirichlet |
 
-## Development Plan
+## Build and Test
 
-1. The Python + Numba 2D and 3D solvers are implemented.
-2. The Python version serves as the reference implementation.
-3. Implement the C++ + OpenMP 2D solvers.
-4. Implement the CUDA 2D SOR and multigrid solvers.
-5. Compare correctness, convergence, and performance across implementations.
+The project is typically built inside the `mg` conda environment described in [installation notes](note/install.md).
 
-## Output and Benchmarking
-
-The current Python runner in `python/run_poisson.py` and the C++ baseline in `cpp/src/main.cpp` report the following CSV columns:
-
-```text
-solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms
+```bash
+cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+ctest --test-dir build --output-on-failure
 ```
 
-The same output format should remain consistent for the future C++ OpenMP and CUDA implementations.
+OpenMP and CUDA targets are enabled automatically when the corresponding compiler is available.
 
-The C++ baseline is covered by a small GTest suite built as `poisson_tests` and executed through CTest.
-The pure C++ 3D extension is covered by `poisson_tests_3d`, using the same GTest
-and CTest flow.
+## Running the Solvers
 
-### C++ CLI
+The native runners share the same core CLI. Python uses `--dtype float32|float64`, while C++, OpenMP, and CUDA use `--dtype float|double`.
 
-The pure C++ runner defaults to the existing 2D behavior. Pass `--dim 3` to use
-the 3D problem setup, stencil, metrics, and solvers:
+Supported options include `--dim 2|3`, `--solver jacobi|gs|sor|mg`, `--case sine|mixed_sine|bubble|exp|cosine`, `-n/--grid-size`, `--tol`, `--max-iter`, `--cycle v|w`, `--nu`, `--omega auto|VALUE`, and `--mg-coarse exact|sor`.
+
+### Python
+
+```bash
+python python/run_poisson.py --solver mg --case sine -n 31 --tol 1e-10 --max-iter 100
+python python/run_poisson.py --dim 3 --solver mg --case sine -n 15 --tol 1e-8 --max-iter 100
+```
+
+### C++
 
 ```bash
 ./build/poisson_cpp --solver mg --case sine -n 31 --tol 1e-10 --max-iter 100
-./build/poisson_cpp --dim 3 --solver mg --case sine -n 15 --tol 1e-8 --max-iter 100
 ./build/poisson_cpp --dim 3 --solver sor --case exp --dtype float -n 15 --tol 1e-3
 ```
 
-The available 3D cases are the same as the Python 3D reference: `sine`,
-`mixed_sine`, `bubble`, `exp`, and `cosine`. Dirichlet boundary values are copied
-from the manufactured exact solution on all boundary faces, and the interior
-initial guess remains zero, matching the C++ 2D convention.
-
-The OpenMP C++ runner uses the same CLI and keeps the same default 2D behavior.
-Pass `--dim 3` to use the OpenMP 3D path:
+### OpenMP
 
 ```bash
 export OMP_NUM_THREADS=8
 export OMP_PROC_BIND=close
 export OMP_PLACES=cores
 
-./build/poisson_cpp_omp --dim 3 --solver jacobi --case sine -n 15 --tol 1e-8 --max-iter 20000
-./build/poisson_cpp_omp --dim 3 --solver sor --case sine -n 31 --tol 1e-8
 ./build/poisson_cpp_omp --dim 3 --solver mg --case sine -n 31 --cycle v --nu 2 --mg-coarse exact
 ```
 
-The OpenMP 3D implementation follows the pure C++ 3D discretization,
-residual normalization, boundary handling, and multigrid cycle semantics. The
-OpenMP-specific changes are limited to parallelizing the same hot loops used by
-the 2D OpenMP path: manufactured-problem setup, stencil/residual loops,
-red-black smoothers, restriction, prolongation, validation, and metrics.
+### CUDA
 
-### Benchmark Entry Points
+```bash
+./build/poisson_cuda --dim 3 --solver mg --case sine -n 31 --tol 1e-8 --max-iter 100
+```
 
-Two standalone C++ benchmark executables are available after building:
+### Multigrid Parameters
+
+The `--cycle`, `--nu`, `--omega`, and `--mg-coarse` flags only affect `--solver mg`.
+
+| Flag | Meaning | Notes |
+| ---- | ------- | ----- |
+| `--cycle v|w` | Select a V-cycle or W-cycle. | Default `v`. `w` does extra coarse-grid work per cycle. |
+| `--nu N` | Number of red-black smoothing steps used in each smoothing pass. | Default `2`. The value is applied before restriction and after prolongation. |
+| `--omega auto|VALUE` | Relaxation factor for MG smoothing and MG coarse-grid SOR. | Default `1.0` unless `auto` is requested. `auto` uses the classical grid-dependent estimate `2 / (1 + sin(pi / (n + 1)))`. Manual values should stay in the open interval `(0, 2]`. |
+| `--mg-coarse exact|sor` | Coarsest-level solve strategy. | Default `exact`. `exact` solves the coarsest grid directly; `sor` uses a fixed number of coarse SOR steps (currently 16 in this codebase). |
+| `--tol T` | Residual stopping threshold. | Default `1e-10` for double precision and `1e-6` for float. Smaller values increase work and usually improve accuracy. |
+| `--max-iter N` | Maximum number of solver cycles. | Default `20000`. Prevents long runs when the requested tolerance is hard to reach. |
+
+Note that standalone `--solver sor` does not read `--omega` from the CLI. The SOR solvers choose a grid-dependent relaxation factor internally, while `--omega` is used by the multigrid path.
+
+### OpenMP Runtime Knobs
+
+The OpenMP binary uses the same solver flags as the pure C++ binary, so `--dim`, `--solver`, `--case`, `--tol`, `--max-iter`, `--cycle`, `--nu`, `--omega`, and `--mg-coarse` all behave the same way.
+
+The important OpenMP-specific knobs are environment variables:
+
+- `OMP_NUM_THREADS` controls how many worker threads are launched.
+- `OMP_PROC_BIND=close` keeps threads close together, which is usually a good default for repeatable timings.
+- `OMP_PLACES=cores` binds threads to cores instead of letting them float freely.
+
+If you are comparing runs, keep those values fixed and avoid changing the CPU affinity between measurements.
+
+### CUDA Runtime Knobs
+
+The CUDA binary also uses the same solver CLI as the C++ binary, but the work happens on the GPU.
+
+- `--dim 2|3` switches between the 2D and 3D CUDA code paths.
+- `--dtype float|double` selects the precision. `float` is usually faster; `double` is the conservative choice when you want tighter numerical agreement.
+- `--solver jacobi|gs|sor|mg` selects the kernel family.
+- `--cycle v|w`, `--nu`, `--omega`, and `--mg-coarse` only matter for `--solver mg`.
+- `--solver sor` still uses the internal grid-based relaxation factor and does not take a CLI override for omega.
+- The executable checks that a CUDA device is available before solving, so a missing GPU or driver will fail early.
+
+The runtime solvers print CSV rows in the format
+
+```text
+solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms
+```
+
+## Benchmarking
+
+CMake also builds a shared benchmark driver for C++, OpenMP, and CUDA when the relevant compiler is available:
 
 - `poisson_benchmark_cpp`
 - `poisson_benchmark_omp`
+- `poisson_benchmark_cuda`
 
-The Python reference implementation exposes a matching benchmark runner:
+The benchmark suites are:
 
-- `python/run_benchmark.py`
-- `python/run_benchmark_3d.py`
-
-Both benchmarks run the sine manufactured-solution case with one warmup run and five timed runs per measurement, then report the mean and standard deviation of the measured solver time.
-The warmup pass uses the same solver setup but caps `max_iter` at `10` to keep the warmup cheap.
-Running either executable with no `--suite` argument is equivalent to `--suite all`, so one invocation covers both benchmark groups.
-When `--output BASE` is provided, the benchmark writes two files:
-
-- `BASE.csv` for the simplified view
-- `BASE_all.csv` for the full output
-
-The simplified CSV keeps only `solver,grid_size,iterations,mean_time_ms,std_time_ms`.
-
-The benchmark suites mirror the repository's existing comparison groups:
-
-- `solver_comparison`: Jacobi, RB GS, and RB SOR with the requested `max_iter` and grid sizes.
-- `mg_compare`: MG(V, `omega=1.25`) and MG(W, `omega=1.25`), each with both exact and SOR coarse-grid solves.
-
-The multigrid benchmark keeps the current comparison defaults of `nu=3`, `omega=1.25`, `coarse_steps=16`, and reports both `coarse=exact` and `coarse=sor`.
-
-The pure C++ benchmark also accepts `--dim 3`. The default remains `--dim 2`, so
-existing benchmark commands keep their previous behavior. The OpenMP benchmark
-accepts the same `--dim 3` option. A small smoke run can be bounded with
-`--max-grid-size`:
-
-```bash
-./build/poisson_benchmark_cpp --dim 3 --suite solver_comparison --max-grid-size 31
-./build/poisson_benchmark_cpp --dim 3 --suite mg_compare --max-grid-size 31
-OMP_NUM_THREADS=8 ./build/poisson_benchmark_omp --dim 3 --suite solver_comparison --max-grid-size 31
-OMP_NUM_THREADS=8 ./build/poisson_benchmark_omp --dim 3 --suite mg_compare --max-grid-size 31
-```
-
-The default C++ 3D benchmark sizes are:
-
-- Jacobi 3D and RB GS 3D: `15, 31, 47, 63`
-- RB SOR 3D: `31, 63, 95, 127, 159`
-- MG 3D: `15, 31, 63, 127, 255, 383`
-
-The 3D Python benchmark is calibrated for the `mg` conda environment so each
-timed solve stays below 10 seconds on the development workstation. It records
-`max_time_ms` in both CSV files to make that limit explicit. The default 3D
-grid sizes are:
-
-- Jacobi 3D and RB GS 3D: `15, 31, 47, 63`
-- RB SOR 3D: `31, 63, 95, 127, 159`
-- MG 3D: `15, 31, 63, 127, 255, 383`
+- `all`: runs both benchmark groups
+- `solver_comparison`: Jacobi, RB GS, and RB SOR
+- `mg_compare`: multigrid V/W cycles with exact or SOR coarse-grid solves
 
 Example usage:
 
 ```bash
-cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build build --target poisson_benchmark_cpp poisson_benchmark_omp
 
-./build/poisson_benchmark_cpp --output results/cpp/benchmark
-./build/poisson_benchmark_cpp --dim 3 --output results/cpp_3d/benchmark
-./build/poisson_benchmark_omp --output results/omp/benchmark
-./build/poisson_benchmark_omp --dim 3 --output results/omp_3d/benchmark
-python python/run_benchmark.py --output results/benchmark/python/benchmark_python_v1
-python python/run_benchmark_3d.py --output results/benchmark/python/benchmark_python_3d_v1
+./build/poisson_benchmark_cpp --suite all --output results/cpp/benchmark
+./build/poisson_benchmark_cpp --dim 3 --suite mg_compare --output results/cpp_3d/benchmark
+OMP_NUM_THREADS=8 ./build/poisson_benchmark_omp --suite solver_comparison --output results/omp/benchmark
+./build/poisson_benchmark_cuda --dim 3 --suite mg_compare --output results/cuda_3d/benchmark
+
+python python/run_benchmark.py --output results/python/benchmark
+python python/run_benchmark_3d.py --output results/python_3d/benchmark
 ```
 
-If you only want one group, you can still pass `--suite solver_comparison` or `--suite mg_compare`.
+When `--output BASE` is provided, the benchmark writers create `BASE.csv` and `BASE_all.csv`.
 
-Run the Python CLI in 3D with `--dim 3`:
+OpenMP timings are sensitive to `OMP_NUM_THREADS`, `OMP_PROC_BIND`, `OMP_PLACES`, and CPU topology, so set those values explicitly for reproducible comparisons.
 
-```bash
-python python/run_poisson.py --dim 3 --solver mg --case sine -n 15 --tol 1e-8 --max-iter 100
-```
+The benchmark drivers accept the same `--dim` flag as the solver binaries, plus:
 
-OpenMP timings are sensitive to `OMP_NUM_THREADS`, `OMP_PROC_BIND`,
-`OMP_PLACES`, and the CPU topology. The helper scripts default to
-`OMP_PROC_BIND=close` and `OMP_PLACES=cores` when those variables are unset, but
-thread count should be set explicitly for reproducible comparisons.
+- `--suite all|solver_comparison|mg_compare`
+- `--max-grid-size N` to cap the grid sizes included in a smoke run
+- `--output BASE` to write `BASE.csv` and `BASE_all.csv`
 
-## C++ Build and Test
+The benchmark suites use the sine manufactured solution and fixed comparison settings so the same cases can be compared across backends.
 
-Configure and build the C++ targets with CMake:
+## Notes
 
-```bash
-source ~/miniconda3/etc/profile.d/conda.sh
-conda activate mg
-cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
-cmake --build build
-```
-
-Run the C++ test suite with CTest:
-
-```bash
-ctest --test-dir build --output-on-failure
-```
-
-The C++ analysis scripts follow the existing results layout. The 3D pure C++
-analysis entry points are:
-
-- `results/cpp_3d/solver_comparison/run_and_plot.py`
-- `results/cpp_3d/solver_comparison_float32/run_and_plot_float32.py`
-- `results/cpp_3d/mg_compare/run_and_plot_mg_compare.py`
-- `results/cpp_3d/mg_compare_float32/run_and_plot_mg_compare_float32.py`
-
-The 3D OpenMP C++ analysis entry points mirror the pure C++ 3D layout:
-
-- `results/omp_3d/solver_comparison/run_and_plot.py`
-- `results/omp_3d/solver_comparison_float32/run_and_plot_float32.py`
-- `results/omp_3d/mg_compare/run_and_plot_mg_compare.py`
-- `results/omp_3d/mg_compare_float32/run_and_plot_mg_compare_float32.py`
-
-The float32 runs use looser tolerances than float64, matching the Python 3D
-workflow and the existing C++ 2D float32 analysis scripts.
+- The Python runners and benchmark scripts use the same manufactured problems as the C++ implementations.
+- The CUDA runner uses the same solver names and manufactured cases as the native C++ path.
+- If you only want one benchmark group, pass `--suite solver_comparison` or `--suite mg_compare`.
