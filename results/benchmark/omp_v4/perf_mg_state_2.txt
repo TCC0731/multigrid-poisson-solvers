@@ -1,0 +1,41 @@
+# started on Fri May 15 16:16:29 2026
+
+
+ Performance counter stats for './build/poisson_cpp_omp --solver mg --case sine -n 4095 --omega 1.25 --cycle w --nu 3 --mg-coarse exact --max-iter 10 --tol 1e-9':
+
+         10,677.33 msec task-clock:u                     #    6.980 CPUs utilized             
+                 0      context-switches:u               #    0.000 /sec                      
+                 0      cpu-migrations:u                 #    0.000 /sec                      
+           455,747      page-faults:u                    #   42.684 K/sec                     
+    13,291,832,259      cpu_core/cycles/u                #    1.245 G/sec                       (99.97%)
+    21,234,660,709      cpu_atom/cycles/u                #    1.989 G/sec                       (86.62%)
+    10,687,068,506      cpu_core/instructions/u          #    1.001 G/sec                       (99.97%)
+    12,586,666,618      cpu_atom/instructions/u          #    1.179 G/sec                       (86.62%)
+     1,064,272,828      cpu_core/branches/u              #   99.676 M/sec                       (99.97%)
+     1,274,155,562      cpu_atom/branches/u              #  119.333 M/sec                       (86.62%)
+         1,716,253      cpu_core/branch-misses/u         #  160.738 K/sec                       (99.97%)
+         1,604,277      cpu_atom/branch-misses/u         #  150.251 K/sec                       (86.62%)
+    79,462,500,518      cpu_core/slots:u/                #    7.442 G/sec                       (99.97%)
+    14,140,988,716      cpu_core/topdown-retiring/u      #     17.3% Retiring                   (99.97%)
+       736,736,033      cpu_core/topdown-bad-spec/u      #      0.9% Bad Speculation            (99.97%)
+     3,846,849,614      cpu_core/topdown-fe-bound/u      #      4.7% Frontend Bound             (99.97%)
+    63,119,401,292      cpu_core/topdown-be-bound/u      #     77.1% Backend Bound              (99.97%)
+     3,053,448,174      cpu_core/topdown-heavy-ops/u     #      3.7% Heavy Operations          #     13.5% Light Operations           (99.97%)
+       106,284,691      cpu_core/topdown-br-mispredict/u #      0.1% Branch Mispredict         #      0.8% Machine Clears             (99.97%)
+     1,849,679,994      cpu_core/topdown-fetch-lat/u     #      2.3% Fetch Latency             #      2.4% Fetch Bandwidth            (99.97%)
+    55,077,117,827      cpu_core/topdown-mem-bound/u     #     67.3% Memory Bound              #      9.8% Core Bound                 (99.97%)
+     3,322,870,805      cpu_core/L1-dcache-loads:u/      #  311.208 M/sec                       (99.97%)
+     5,355,459,399      cpu_atom/L1-dcache-loads:u/      #  501.573 M/sec                       (86.62%)
+       176,316,554      cpu_core/L1-dcache-load-misses:u/ #   16.513 M/sec                       (99.97%)
+   <not supported>      cpu_atom/L1-dcache-load-misses:u/                                      
+        50,251,442      cpu_core/LLC-loads:u/            #    4.706 M/sec                       (99.97%)
+        47,673,062      cpu_atom/LLC-loads:u/            #    4.465 M/sec                       (86.62%)
+        42,930,363      cpu_core/LLC-load-misses:u/      #    4.021 M/sec                       (99.97%)
+            39,682      cpu_atom/LLC-load-misses:u/      #    3.716 K/sec                       (86.62%)
+
+       1.529629474 seconds time elapsed
+
+       6.857940000 seconds user
+       3.986078000 seconds sys
+
+

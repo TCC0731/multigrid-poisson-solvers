@@ -1,0 +1,1187 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 17K of event 'cpu_core/cycles:u/'
+# Event count (approx.): 13147349061
+#
+# Children      Self  Command          Shared Object         Symbol                                                             
+# ........  ........  ...............  ....................  ...................................................................
+#
+    71.06%     0.00%  poisson_cpp_omp  [unknown]             [.] 0000000000000000
+            |
+            ---0
+               |          
+               |--68.74%--gomp_thread_start
+               |          |          
+               |          |--49.83%--poisson::(anonymous namespace)::smooth_red_black<double>
+               |          |          
+               |          |--5.03%--poisson::(anonymous namespace)::residual_full<double>
+               |          |          
+               |          |--2.35%--poisson::(anonymous namespace)::restrict_full_weighting<double>
+               |          |          
+               |          |--2.30%--poisson::relative_physical_residual_l2<double>
+               |          |          
+               |          |--1.75%--poisson::(anonymous namespace)::prolong_add<double>
+               |          |          
+               |          |--1.70%--poisson::(anonymous namespace)::prolong_add<double>
+               |          |          
+               |          |--1.51%--poisson::(anonymous namespace)::prolong_add<double>
+               |          |          
+               |          |--1.50%--poisson::(anonymous namespace)::prolong_add<double>
+               |          |          
+               |          |--0.86%--poisson::error_metrics<double>
+               |          |          
+               |           --0.70%--poisson::validate_problem<double>
+               |          
+               |--0.78%--gomp_barrier_wait_end
+               |          
+               |--0.63%--gomp_team_barrier_wait_final
+               |          
+                --0.62%--0x7f98629ad010
+                          __memmove_avx_unaligned_erms
+
+    68.77%     1.10%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_thread_start
+            |          
+            |--67.67%--gomp_thread_start
+            |          |          
+            |          |--49.83%--poisson::(anonymous namespace)::smooth_red_black<double>
+            |          |          
+            |          |--5.03%--poisson::(anonymous namespace)::residual_full<double>
+            |          |          
+            |          |--2.35%--poisson::(anonymous namespace)::restrict_full_weighting<double>
+            |          |          
+            |          |--2.30%--poisson::relative_physical_residual_l2<double>
+            |          |          
+            |          |--1.75%--poisson::(anonymous namespace)::prolong_add<double>
+            |          |          
+            |          |--1.70%--poisson::(anonymous namespace)::prolong_add<double>
+            |          |          
+            |          |--1.51%--poisson::(anonymous namespace)::prolong_add<double>
+            |          |          
+            |          |--1.50%--poisson::(anonymous namespace)::prolong_add<double>
+            |          |          
+            |          |--0.86%--poisson::error_metrics<double>
+            |          |          
+            |           --0.70%--poisson::validate_problem<double>
+            |          
+             --1.10%--0
+                       |          
+                        --1.07%--gomp_thread_start
+
+    56.66%    56.64%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::smooth_red_black<double>
+            |          
+            |--49.84%--0
+            |          |          
+            |           --49.84%--gomp_thread_start
+            |                     |          
+            |                      --49.83%--poisson::(anonymous namespace)::smooth_red_black<double>
+            |          
+            |--5.17%--0x7f98629ad010
+            |          0x7ffd9d228b68
+            |          GOMP_parallel
+            |          poisson::(anonymous namespace)::smooth_red_black<double>
+            |          
+             --1.27%--0x7f98609a4010
+                       0x7ffd9d228840
+                       GOMP_parallel
+                       poisson::(anonymous namespace)::smooth_red_black<double>
+
+    10.94%     0.01%  poisson_cpp_omp  libgomp.so.1.0.0      [.] GOMP_parallel
+            |          
+             --10.93%--GOMP_parallel
+                       |          
+                       |--6.80%--poisson::(anonymous namespace)::smooth_red_black<double>
+                       |          
+                       |--1.24%--gomp_team_start
+                       |          
+                        --0.66%--poisson::(anonymous namespace)::residual_full<double>
+
+     6.27%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007f98629ad010
+            |
+            ---0x7f98629ad010
+               |          
+               |--5.65%--0x7ffd9d228b68
+               |          GOMP_parallel
+               |          |          
+               |           --5.17%--poisson::(anonymous namespace)::smooth_red_black<double>
+               |          
+                --0.62%--__memmove_avx_unaligned_erms
+
+     5.70%     5.70%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::residual_full<double>
+            |          
+             --5.04%--0
+                       |          
+                        --5.03%--gomp_thread_start
+                                  poisson::(anonymous namespace)::residual_full<double>
+
+     5.65%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d228b68
+            |
+            ---0x7ffd9d228b68
+               GOMP_parallel
+               |          
+                --5.17%--poisson::(anonymous namespace)::smooth_red_black<double>
+
+     3.40%     0.00%  poisson_cpp_omp  [unknown]             [.] 0xffffffffa5e00b80
+            |
+            ---0xffffffffa5e00b80
+
+     3.21%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000fff
+            |
+            ---0xfff
+               |          
+                --2.73%--poisson::(anonymous namespace)::solve_mg_impl<double>
+                          |          
+                          |--1.62%--__memset_avx2_unaligned_erms
+                          |          |          
+                          |           --1.60%--0xffffffffa5e00b80
+                          |          
+                           --1.11%--poisson::(anonymous namespace)::mg_cycle<double>
+                                     |          
+                                      --0.75%--__memset_avx2_unaligned_erms
+                                                |          
+                                                 --0.71%--0xffffffffa5e00b80
+
+     2.79%     2.79%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::finite_grid<double>
+            |          
+            |--1.01%--0x7f98821ef010
+            |          0x1
+            |          poisson::(anonymous namespace)::finite_grid<double>
+            |          
+            |--0.89%--0x7f98721cd010
+            |          0x1
+            |          poisson::(anonymous namespace)::finite_grid<double>
+            |          
+             --0.89%--0x7f987a1de010
+                       0x1
+                       poisson::(anonymous namespace)::finite_grid<double>
+
+     2.79%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000001
+            |
+            ---0x1
+               poisson::(anonymous namespace)::finite_grid<double>
+
+     2.74%     2.71%  poisson_cpp_omp  libc.so.6             [.] __memset_avx2_unaligned_erms
+            |          
+             --2.65%--0xfff
+                       poisson::(anonymous namespace)::solve_mg_impl<double>
+                       |          
+                       |--1.60%--__memset_avx2_unaligned_erms
+                       |          0xffffffffa5e00b80
+                       |          
+                        --1.05%--poisson::(anonymous namespace)::mg_cycle<double>
+                                  |          
+                                   --0.74%--__memset_avx2_unaligned_erms
+                                             |          
+                                              --0.71%--0xffffffffa5e00b80
+
+     2.73%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::solve_mg_impl<double>
+            |
+            ---poisson::(anonymous namespace)::solve_mg_impl<double>
+               |          
+               |--1.62%--__memset_avx2_unaligned_erms
+               |          |          
+               |           --1.60%--0xffffffffa5e00b80
+               |          
+                --1.11%--poisson::(anonymous namespace)::mg_cycle<double>
+                          |          
+                           --0.75%--__memset_avx2_unaligned_erms
+                                     |          
+                                      --0.71%--0xffffffffa5e00b80
+
+     2.63%     2.63%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::restrict_full_weighting<double>
+            |          
+             --2.37%--0
+                       |          
+                        --2.35%--gomp_thread_start
+                                  |          
+                                   --2.35%--poisson::(anonymous namespace)::restrict_full_weighting<double>
+
+     2.58%     2.58%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::relative_physical_residual_l2<double>
+            |          
+             --2.30%--0
+                       gomp_thread_start
+                       poisson::relative_physical_residual_l2<double>
+
+     2.19%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007f98609a4010
+            |
+            ---0x7f98609a4010
+               |          
+               |--1.44%--0x7ffd9d228840
+               |          GOMP_parallel
+               |          |          
+               |           --1.27%--poisson::(anonymous namespace)::smooth_red_black<double>
+               |          
+                --0.75%--0x7ffd9d228930
+                          GOMP_parallel
+
+     2.02%     2.02%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::prolong_add<double>
+            |          
+             --1.76%--0
+                       |          
+                        --1.75%--gomp_thread_start
+                                  poisson::(anonymous namespace)::prolong_add<double>
+
+     1.96%     1.95%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::prolong_add<double>
+            |          
+             --1.71%--0
+                       |          
+                        --1.70%--gomp_thread_start
+                                  poisson::(anonymous namespace)::prolong_add<double>
+
+     1.75%     1.75%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::prolong_add<double>
+            |          
+             --1.51%--0
+                       |          
+                        --1.51%--gomp_thread_start
+                                  |          
+                                   --1.51%--poisson::(anonymous namespace)::prolong_add<double>
+
+     1.72%     1.71%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::prolong_add<double>
+            |          
+             --1.50%--0
+                       gomp_thread_start
+                       |          
+                        --1.50%--poisson::(anonymous namespace)::prolong_add<double>
+
+     1.61%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d228840
+            |
+            ---0x7ffd9d228840
+               GOMP_parallel
+               |          
+                --1.27%--poisson::(anonymous namespace)::smooth_red_black<double>
+
+     1.46%     1.24%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_team_barrier_wait_end
+            |          
+             --1.26%--gomp_team_barrier_wait_end
+
+     1.26%     1.24%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_team_start
+            |          
+             --0.53%--0x55a463f65c50
+
+     1.17%     1.12%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::vector
+            |          
+             --1.12%--poisson::make_problem<double>
+                       std::vector<double, std::allocator<double> >::vector
+                       |          
+                        --0.64%--0xffffffffa5e00b80
+
+     1.17%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::make_problem<double>
+            |
+            ---poisson::make_problem<double>
+               std::vector<double, std::allocator<double> >::vector
+               |          
+                --0.64%--0xffffffffa5e00b80
+
+     1.11%     0.04%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::mg_cycle<double>
+            |          
+             --1.08%--poisson::(anonymous namespace)::mg_cycle<double>
+                       |          
+                        --0.75%--__memset_avx2_unaligned_erms
+                                  |          
+                                   --0.71%--0xffffffffa5e00b80
+
+     1.07%     0.87%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_barrier_wait_end
+            |          
+             --0.62%--0
+                       |          
+                        --0.62%--gomp_barrier_wait_end
+
+     1.03%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d228930
+            |
+            ---0x7ffd9d228930
+               GOMP_parallel
+
+     1.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007f98821ef010
+            |
+            ---0x7f98821ef010
+               0x1
+               poisson::(anonymous namespace)::finite_grid<double>
+
+     0.98%     0.76%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::make_problem_impl<double>
+            |          
+             --0.76%--poisson::(anonymous namespace)::make_problem_impl<double>
+
+     0.97%     0.97%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::error_metrics<double>
+            |          
+             --0.86%--0
+                       gomp_thread_start
+                       poisson::error_metrics<double>
+
+     0.89%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007f98721cd010
+            |
+            ---0x7f98721cd010
+               0x1
+               poisson::(anonymous namespace)::finite_grid<double>
+
+     0.89%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007f987a1de010
+            |
+            ---0x7f987a1de010
+               0x1
+               poisson::(anonymous namespace)::finite_grid<double>
+
+     0.85%     0.45%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::sine_exact<double>
+     0.83%     0.55%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::sine_rhs<double>
+     0.82%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a463f65c50
+            |
+            ---0x55a463f65c50
+               |          
+                --0.72%--0x7ffd9d227940
+                          |          
+                           --0.72%--GOMP_parallel
+
+     0.78%     0.78%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::validate_problem<double>
+            |          
+             --0.70%--0
+                       gomp_thread_start
+                       poisson::validate_problem<double>
+
+     0.76%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d227940
+            |
+            ---0x7ffd9d227940
+               |          
+                --0.76%--GOMP_parallel
+
+     0.71%     0.70%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_team_barrier_wait_final
+            |          
+             --0.63%--0
+                       |          
+                        --0.63%--gomp_team_barrier_wait_final
+
+     0.62%     0.62%  poisson_cpp_omp  libc.so.6             [.] __memmove_avx_unaligned_erms
+            |          
+             --0.62%--0
+                       0x7f98629ad010
+                       __memmove_avx_unaligned_erms
+
+     0.61%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590950
+            |
+            ---0x7f988a590950
+
+     0.52%     0.52%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_barrier_wait
+     0.50%     0.50%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b96c
+     0.50%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590972
+     0.47%     0.47%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b957
+     0.47%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590958
+     0.46%     0.46%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9d6
+     0.42%     0.42%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b98c
+     0.42%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590991
+     0.41%     0.41%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9d0
+     0.41%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a5909d4
+     0.36%     0.36%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba15
+     0.36%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590b10
+     0.35%     0.00%  poisson_cpp_omp  [unknown]             [.] 0xffffffffa5e00080
+     0.34%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d227b20
+     0.34%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a46521c660
+     0.33%     0.33%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd79
+     0.33%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590d7d
+     0.31%     0.31%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba2b
+     0.31%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590a2f
+     0.30%     0.30%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b96a
+     0.30%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a59096c
+     0.28%     0.28%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b978
+     0.28%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a59097b
+     0.27%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a5909b7
+     0.23%     0.23%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd5b
+     0.23%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590d60
+     0.22%     0.22%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcdc
+     0.22%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590ce2
+     0.22%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a46476a800
+     0.22%     0.22%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcaf
+     0.22%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590cb7
+     0.21%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d227d00
+     0.20%     0.20%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd6b
+     0.20%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590d71
+     0.20%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a463f66240
+     0.20%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d227960
+     0.20%     0.20%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd28
+     0.20%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590d2c
+     0.20%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a46521a450
+     0.19%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d228660
+     0.17%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007f985a99c010
+     0.17%     0.17%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd3d
+     0.17%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590d45
+     0.16%     0.16%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd81
+     0.16%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d228860
+     0.15%     0.15%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcfa
+     0.15%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590cfd
+     0.15%     0.15%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba77
+     0.15%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590a7a
+     0.14%     0.14%  poisson_cpp_omp  libgomp.so.1.0.0      [.] omp_get_num_threads
+     0.14%     0.14%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd07
+     0.14%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590d0a
+     0.14%     0.14%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b99f
+     0.14%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590a10
+     0.14%     0.14%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006baa5
+     0.14%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590aaa
+     0.13%     0.13%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba92
+     0.13%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590a94
+     0.13%     0.13%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006baf7
+     0.13%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590afb
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcc7
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590ccf
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba59
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590a5f
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba67
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590a6b
+     0.12%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d228ac0
+     0.11%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d227ee0
+     0.11%     0.11%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bac4
+     0.11%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590ac8
+     0.10%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a465212040
+     0.10%     0.10%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd14
+     0.10%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590d17
+     0.10%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d227b40
+     0.09%     0.07%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_init_task
+     0.08%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d228480
+     0.08%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000001000
+     0.08%     0.08%  poisson_cpp_omp  [unknown]             [k] 0xffffffffa5e0115e
+     0.08%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a464f6e810
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bae8
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590aed
+     0.07%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007f985e99b010
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb15
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590c98
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba3d
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590a45
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb8d
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590b93
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb77
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590b7c
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc08
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590c0c
+     0.07%     0.00%  poisson_cpp_omp  [unknown]             [.] 0xffffffffa5e00e30
+     0.07%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d2282a0
+     0.07%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a465170820
+     0.06%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d2280c0
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bad8
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590add
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb4b
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590b4f
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb03
+     0.06%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d227d20
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcea
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590cee
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc18
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590c21
+     0.06%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a463f65ee0
+     0.06%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d227760
+     0.06%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a4651f1830
+     0.05%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007f986019f010
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bba0
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590ba6
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbfa
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590bff
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc5d
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590c60
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb66
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590b6a
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbe7
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590bee
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb2e
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590b32
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbbb
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590bc1
+     0.04%     0.04%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_team_end
+     0.04%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a464214640
+     0.03%     0.03%  poisson_cpp_omp  [unknown]             [k] 0xffffffffa5e001c4
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bda5
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590dae
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590a89
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbd1
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590bd3
+     0.03%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a46521cf70
+     0.03%     0.03%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_new_team
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bdc9
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590dd2
+     0.03%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d227f00
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc32
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590c3b
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc68
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590c6d
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc90
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba86
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bdd6
+     0.02%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a463f667f0
+     0.02%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d2280e0
+     0.02%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a464012630
+     0.02%     0.02%  poisson_cpp_omp  libc.so.6             [.] _int_free
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a46420a020
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a464212430
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bfed
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590ff6
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b97b
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a59097f
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b972
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590976
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc77
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590c7b
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bafb
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590aff
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba33
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a590d90
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcb7
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006c010
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f988a591015
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d2284a0
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d228680
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a464010420
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a463f91620
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a463fe7800
+     0.01%     0.01%  poisson_cpp_omp  libc.so.6             [.] malloc
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a464168800
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a463f8f410
+     0.01%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_fini_work_share
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a463cb74f0
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_resolve_num_threads
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007ffd9d2282c0
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a464008010
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_init_work_share
+     0.00%     0.00%  poisson_cpp_omp  libstdc++.so.6.0.34   [.] operator delete@plt
+     0.00%     0.00%  poisson_cpp_omp  libstdc++.so.6.0.34   [.] operator delete
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_lookup_symbol_x
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] sysmalloc
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a464214f50
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a463f87000
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] check_match
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x42494c4700342e33
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000008922974
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] _int_malloc
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a464012f40
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a463f6ec00
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a463f70e10
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a463f63130
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000001e4f20
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a4641e9810
+     0.00%     0.00%  poisson_cpp_omp  libstdc++.so.6.0.34   [.] malloc@plt
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] omp_get_thread_num
+     0.00%     0.00%  poisson_cpp_omp  libstdc++.so.6.0.34   [.] operator new
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_relocate_object_no_relro
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00007f988a8f1f90
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_relocate_object
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a463f5ad20
+     0.00%     0.00%  poisson_cpp_omp  libstdc++.so.6.0.34   [.] operator delete
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] strcmp
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x747062696c00322e
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000055a463eb9500
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] pthread_create@GLIBC_2.2.5
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] create_thread
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] intel_check_word.constprop.0
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000010401000
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] pthread_attr_init@@GLIBC_2.2.5
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] __GI___tunables_init
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_start_user
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] __rtld_malloc_init_stubs
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] start_thread
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] getenv@plt
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] getenv
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] __ctype_init
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_start
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] clone3
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_init_affinity
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0xffffffffa5e00e70
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _start
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] pthread_setaffinity_np@@GLIBC_2.34
+
+
+# Samples: 21K of event 'cpu_atom/cycles:u/'
+# Event count (approx.): 18430230290
+#
+# Children      Self  Command          Shared Object     Symbol                                                             
+# ........  ........  ...............  ................  ...................................................................
+#
+    83.88%     0.00%  poisson_cpp_omp  [unknown]         [.] 0000000000000000
+            |
+            ---0
+               |          
+                --82.59%--gomp_thread_start
+                          |          
+                          |--58.21%--poisson::(anonymous namespace)::smooth_red_black<double>
+                          |          
+                          |--6.68%--poisson::(anonymous namespace)::residual_full<double>
+                          |          
+                          |--5.06%--poisson::relative_physical_residual_l2<double>
+                          |          
+                          |--2.70%--poisson::(anonymous namespace)::restrict_full_weighting<double>
+                          |          
+                          |--1.78%--poisson::(anonymous namespace)::prolong_add<double>
+                          |          
+                          |--1.68%--poisson::(anonymous namespace)::prolong_add<double>
+                          |          
+                          |--1.63%--poisson::(anonymous namespace)::prolong_add<double>
+                          |          
+                          |--1.56%--poisson::(anonymous namespace)::prolong_add<double>
+                          |          
+                          |--1.03%--poisson::error_metrics<double>
+                          |          
+                           --1.02%--poisson::validate_problem<double>
+
+    82.60%     0.98%  poisson_cpp_omp  libgomp.so.1.0.0  [.] gomp_thread_start
+            |          
+            |--81.61%--gomp_thread_start
+            |          |          
+            |          |--58.21%--poisson::(anonymous namespace)::smooth_red_black<double>
+            |          |          
+            |          |--6.68%--poisson::(anonymous namespace)::residual_full<double>
+            |          |          
+            |          |--5.06%--poisson::relative_physical_residual_l2<double>
+            |          |          
+            |          |--2.70%--poisson::(anonymous namespace)::restrict_full_weighting<double>
+            |          |          
+            |          |--1.78%--poisson::(anonymous namespace)::prolong_add<double>
+            |          |          
+            |          |--1.68%--poisson::(anonymous namespace)::prolong_add<double>
+            |          |          
+            |          |--1.63%--poisson::(anonymous namespace)::prolong_add<double>
+            |          |          
+            |          |--1.56%--poisson::(anonymous namespace)::prolong_add<double>
+            |          |          
+            |          |--1.03%--poisson::error_metrics<double>
+            |          |          
+            |           --1.02%--poisson::validate_problem<double>
+            |          
+             --0.98%--0
+                       |          
+                        --0.97%--gomp_thread_start
+
+    58.33%    58.33%  poisson_cpp_omp  poisson_cpp_omp   [.] poisson::(anonymous namespace)::smooth_red_black<double>
+            |          
+             --58.33%--0
+                       |          
+                        --58.23%--gomp_thread_start
+                                  |          
+                                   --58.21%--poisson::(anonymous namespace)::smooth_red_black<double>
+
+     6.69%     6.69%  poisson_cpp_omp  poisson_cpp_omp   [.] poisson::(anonymous namespace)::residual_full<double>
+            |
+            ---0
+               |          
+                --6.68%--gomp_thread_start
+                          poisson::(anonymous namespace)::residual_full<double>
+
+     5.06%     5.06%  poisson_cpp_omp  poisson_cpp_omp   [.] poisson::relative_physical_residual_l2<double>
+            |
+            ---0
+               gomp_thread_start
+               poisson::relative_physical_residual_l2<double>
+
+     3.14%     3.14%  poisson_cpp_omp  poisson_cpp_omp   [.] poisson::(anonymous namespace)::finite_grid<double>
+            |          
+            |--1.08%--0x7f98821ef010
+            |          0x1
+            |          poisson::(anonymous namespace)::finite_grid<double>
+            |          
+            |--1.04%--0x7f987a1de010
+            |          0x1
+            |          poisson::(anonymous namespace)::finite_grid<double>
+            |          
+             --1.01%--0x7f98721cd010
+                       0x1
+                       poisson::(anonymous namespace)::finite_grid<double>
+
+     3.14%     0.00%  poisson_cpp_omp  [unknown]         [.] 0x0000000000000001
+            |
+            ---0x1
+               poisson::(anonymous namespace)::finite_grid<double>
+
+     2.71%     2.71%  poisson_cpp_omp  poisson_cpp_omp   [.] poisson::(anonymous namespace)::restrict_full_weighting<double>
+            |
+            ---0
+               |          
+                --2.70%--gomp_thread_start
+                          |          
+                           --2.70%--poisson::(anonymous namespace)::restrict_full_weighting<double>
+
+     1.79%     1.79%  poisson_cpp_omp  poisson_cpp_omp   [.] poisson::(anonymous namespace)::prolong_add<double>
+            |
+            ---0
+               |          
+                --1.78%--gomp_thread_start
+                          poisson::(anonymous namespace)::prolong_add<double>
+
+     1.68%     1.68%  poisson_cpp_omp  poisson_cpp_omp   [.] poisson::(anonymous namespace)::prolong_add<double>
+            |
+            ---0
+               |          
+                --1.68%--gomp_thread_start
+                          |          
+                           --1.68%--poisson::(anonymous namespace)::prolong_add<double>
+
+     1.63%     1.63%  poisson_cpp_omp  poisson_cpp_omp   [.] poisson::(anonymous namespace)::prolong_add<double>
+            |
+            ---0
+               |          
+                --1.63%--gomp_thread_start
+                          poisson::(anonymous namespace)::prolong_add<double>
+
+     1.56%     1.56%  poisson_cpp_omp  poisson_cpp_omp   [.] poisson::(anonymous namespace)::prolong_add<double>
+            |          
+             --1.56%--0
+                       |          
+                        --1.56%--gomp_thread_start
+                                  poisson::(anonymous namespace)::prolong_add<double>
+
+     1.08%     0.00%  poisson_cpp_omp  [unknown]         [.] 0x00007f98821ef010
+            |
+            ---0x7f98821ef010
+               0x1
+               poisson::(anonymous namespace)::finite_grid<double>
+
+     1.04%     0.00%  poisson_cpp_omp  [unknown]         [.] 0x00007f987a1de010
+            |
+            ---0x7f987a1de010
+               0x1
+               poisson::(anonymous namespace)::finite_grid<double>
+
+     1.03%     1.03%  poisson_cpp_omp  poisson_cpp_omp   [.] poisson::error_metrics<double>
+            |
+            ---0
+               gomp_thread_start
+               poisson::error_metrics<double>
+
+     1.02%     1.02%  poisson_cpp_omp  poisson_cpp_omp   [.] poisson::validate_problem<double>
+            |
+            ---0
+               gomp_thread_start
+               poisson::validate_problem<double>
+
+     1.01%     0.00%  poisson_cpp_omp  [unknown]         [.] 0x00007f98721cd010
+            |
+            ---0x7f98721cd010
+               0x1
+               poisson::(anonymous namespace)::finite_grid<double>
+
+     0.83%     0.69%  poisson_cpp_omp  poisson_cpp_omp   [.] poisson::(anonymous namespace)::sine_rhs<double>
+            |          
+             --0.64%--poisson::(anonymous namespace)::sine_rhs<double>
+
+     0.79%     0.74%  poisson_cpp_omp  poisson_cpp_omp   [.] poisson::(anonymous namespace)::make_problem_impl<double>
+            |          
+             --0.63%--poisson::(anonymous namespace)::make_problem_impl<double>
+
+     0.67%     0.54%  poisson_cpp_omp  poisson_cpp_omp   [.] poisson::(anonymous namespace)::sine_exact<double>
+     0.60%     0.60%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc6d
+            |
+            ---0x7f988a590c73
+
+     0.60%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c73
+            |
+            ---0x7f988a590c73
+
+     0.44%     0.26%  poisson_cpp_omp  libgomp.so.1.0.0  [.] gomp_barrier_wait_end
+     0.42%     0.30%  poisson_cpp_omp  libgomp.so.1.0.0  [.] gomp_team_barrier_wait_end
+     0.42%     0.42%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc68
+     0.42%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c6d
+     0.40%     0.39%  poisson_cpp_omp  libgomp.so.1.0.0  [.] gomp_team_barrier_wait_final
+     0.33%     0.33%  poisson_cpp_omp  libgomp.so.1.0.0  [.] gomp_barrier_wait
+     0.32%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590950
+     0.31%     0.31%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b96c
+     0.31%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590972
+     0.30%     0.30%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc4d
+     0.30%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c52
+     0.25%     0.23%  poisson_cpp_omp  libgomp.so.1.0.0  [.] omp_get_num_threads
+     0.23%     0.23%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bcdc
+     0.23%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590ce2
+     0.22%     0.22%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc77
+     0.22%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c7b
+     0.21%     0.21%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd7d
+     0.21%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d81
+     0.21%     0.21%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd75
+     0.21%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d79
+     0.20%     0.20%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc73
+     0.20%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c77
+     0.17%     0.17%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b958
+     0.17%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a59095c
+     0.17%     0.00%  poisson_cpp_omp  [unknown]         [.] 0xffffffffa5e00080
+     0.17%     0.17%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd71
+     0.17%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d75
+     0.16%     0.16%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba10
+     0.16%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a15
+     0.14%     0.14%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b9d0
+     0.14%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a5909d4
+     0.13%     0.13%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b991
+     0.13%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590995
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a5909b7
+     0.12%     0.12%  poisson_cpp_omp  [unknown]         [k] 0xffffffffa5e001c4
+     0.11%     0.11%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b957
+     0.11%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590958
+     0.11%     0.11%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b995
+     0.11%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a59099a
+     0.11%     0.11%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b976
+     0.11%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590978
+     0.11%     0.11%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b9c1
+     0.11%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a5909ca
+     0.11%     0.11%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b9d6
+     0.11%     0.11%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b99f
+     0.11%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a10
+     0.10%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c7f
+     0.10%     0.10%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b9b7
+     0.10%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a5909ba
+     0.10%     0.10%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006c015
+     0.10%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a59101a
+     0.10%     0.10%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bcf2
+     0.10%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590cf7
+     0.10%     0.10%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba15
+     0.09%     0.09%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd6b
+     0.09%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d71
+     0.09%     0.09%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b972
+     0.09%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590976
+     0.09%     0.09%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc7b
+     0.09%     0.09%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b98c
+     0.09%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590991
+     0.09%     0.09%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b95c
+     0.09%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590965
+     0.09%     0.09%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b97b
+     0.09%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a59097f
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b9ca
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a5909d0
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b9d5
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a5909d6
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b10
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd79
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d7d
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb10
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b15
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b954
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590955
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b978
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a59097b
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b950
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590954
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b99a
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a59099f
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd28
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d2c
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc88
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c90
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b965
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a59096a
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b96a
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a59096c
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b981
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590987
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd5b
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d60
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd3d
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d45
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b97f
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590981
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b9bc
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a5909c1
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b9ba
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a5909bc
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbc1
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590bc5
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b955
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590957
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc90
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bcfd
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d00
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b9d4
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a5909d5
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc98
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590ca0
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd14
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d17
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bce2
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590cea
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd04
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d07
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006b987
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a59098c
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb6a
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b6e
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006c01a
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a59101e
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb15
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bcd8
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590cdc
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd0f
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d12
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd17
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d1b
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb2e
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b32
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb4f
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b54
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd07
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d0a
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc02
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c05
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd0a
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d0f
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006c010
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a591015
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bcea
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590cee
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc0f
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c14
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb73
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b77
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb32
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b3b
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba3d
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a45
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bca8
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590caf
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd12
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d14
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd45
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d4e
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bcb7
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590cbf
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba59
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a5f
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006baf7
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590afb
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd31
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d39
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb77
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b7c
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bccf
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590cd8
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bcee
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590cf2
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbee
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590bf2
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb89
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b8d
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bba6
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590ba9
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbd1
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590bd3
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bcc3
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590cc7
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd4e
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d57
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd81
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bca0
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590ca8
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd66
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d6b
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bba9
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590baf
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc21
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c25
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbaf
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590bb7
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c98
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb54
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b5d
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc62
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c68
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd1b
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d1f
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd39
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d3d
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb9c
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590ba0
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbc9
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590bd1
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bcfa
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590cfd
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd57
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d5b
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd60
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d66
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb98
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b9c
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc32
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c3b
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb4b
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b4f
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc48
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c4d
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc5d
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c60
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc52
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c57
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb8d
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b93
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb93
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b98
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc18
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c21
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb6e
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b73
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbf2
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590bf6
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd2c
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d31
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc08
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c0c
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbf6
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590bfa
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bcc7
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590ccf
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd1f
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d28
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc3b
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c44
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbfa
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590bff
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbc5
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590bc9
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbff
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c02
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc57
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c5a
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb84
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b89
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbd7
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590bdf
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb26
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b2e
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb20
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b26
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc82
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c88
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bfff
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a591008
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb7c
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b84
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbb7
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590bbb
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb43
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b4b
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bcaf
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590cb7
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bad8
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590add
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba6f
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a74
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc05
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c08
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc44
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c48
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc5a
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c5d
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006badd
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590ae2
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc2a
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c32
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb66
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b6a
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba33
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a39
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006baed
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590af3
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd94
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d9c
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbdf
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590be7
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bcbf
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590cc3
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc60
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c62
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb3b
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b43
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc7f
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c82
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b1b
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba23
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a2b
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bba0
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590ba6
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbe7
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590bee
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba7a
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a7d
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba98
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590aa1
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bae2
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590ae8
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb03
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bae8
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590aed
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bafb
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590aff
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bd00
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590d04
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a1b
+     0.01%     0.01%  poisson_cpp_omp  libgomp.so.1.0.0  [.] omp_get_thread_num
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc25
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c2a
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba5f
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a67
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbbb
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590bc1
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bff6
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590fff
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bac8
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590acc
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba94
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a98
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba67
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a6b
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bac4
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590ac8
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba54
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a59
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc0c
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c0f
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb5d
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b66
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006baaa
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590ab2
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bcf7
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590cfa
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba8c
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a8f
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba92
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a94
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba6b
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a6f
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bb1b
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b20
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bacc
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590ad0
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006baa5
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590aaa
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba4d
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a54
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba45
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a4d
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba86
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a89
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba77
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a7a
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba81
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a86
+     0.01%     0.01%  poisson_cpp_omp  poisson_cpp_omp   [.] poisson::(anonymous namespace)::make_problem_impl<double>
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba2f
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a33
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bfdc
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590fe4
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bdd6
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bad0
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590ad8
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006c01e
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bfed
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590ff6
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bc14
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590c18
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba1b
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a23
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba74
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a77
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006baff
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590b03
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba2b
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a2f
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bfe4
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590fed
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006ba8f
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590a92
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6         [.] 0x000000000006bbd3
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6         [.] 0x00007f988a590bd7
+     0.01%     0.00%  poisson_cpp_omp  [unknown]         [.] 0xffffffffa5e00e30
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6         [.] start_thread
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6         [.] clone3
+     0.00%     0.00%  poisson_cpp_omp  [unknown]         [.] 0xffffffffa5e00b80
+
+
+#
+# (Tip: Treat branches as callchains: perf report --branch-history)
+#
