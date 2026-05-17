@@ -41,6 +41,18 @@ Real default_tol() {
     return Real{1e-10};
 }
 
+template <typename Result>
+[[nodiscard]] double benchmark_compute_time_ms(const Result& result, double fallback_ms) {
+    return result.benchmark_compute_time_ms >= 0.0 ? result.benchmark_compute_time_ms : fallback_ms;
+}
+
+template <typename Result>
+[[nodiscard]] double benchmark_including_graph_time_ms(const Result& result, double fallback_ms) {
+    return result.benchmark_including_graph_time_ms >= 0.0
+        ? result.benchmark_including_graph_time_ms
+        : fallback_ms;
+}
+
 void print_usage(const char* argv0) {
     std::cerr << "Usage: " << argv0
               << " [--dtype float|double] [--solver jacobi|gs|sor|mg] [--case NAME] [--grid-size N]"
@@ -246,13 +258,15 @@ int run_2d(const Options& options) {
         throw std::invalid_argument("unknown solver: " + options.solver_name);
     }
     const auto end = std::chrono::steady_clock::now();
-    const double time_ms =
+    const double wall_time_ms =
         std::chrono::duration<double, std::milli>(end - start).count();
+    const double time_ms = benchmark_compute_time_ms(result, wall_time_ms);
+    const double time_ms_including_graph = benchmark_including_graph_time_ms(result, wall_time_ms);
 
     const auto metrics_problem = poisson::make_problem<double>(options.case_name, options.grid_size);
     const poisson::ErrorMetrics metrics = poisson::metrics(metrics_problem, result.phi);
 
-    std::cout << "solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms\n";
+    std::cout << "solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms,time_ms_including_graph\n";
     std::cout << std::scientific;
     std::cout.precision(6);
     std::cout << solver_name << ",cuda," << options.dtype << "," << problem.interior_n << ','
@@ -260,7 +274,7 @@ int run_2d(const Options& options) {
               << metrics.error_l2 << ',' << metrics.error_linf << ',';
     std::cout << std::fixed;
     std::cout.precision(3);
-    std::cout << time_ms << '\n';
+    std::cout << time_ms << ',' << time_ms_including_graph << '\n';
 
     return 0;
 }
@@ -320,14 +334,16 @@ int run_3d(const Options& options) {
     }
     poisson::cuda::check(cudaDeviceSynchronize(), "cudaDeviceSynchronize", __FILE__, __LINE__);
     const auto end = std::chrono::steady_clock::now();
-    const double time_ms =
+    const double wall_time_ms =
         std::chrono::duration<double, std::milli>(end - start).count();
+    const double time_ms = benchmark_compute_time_ms(result, wall_time_ms);
+    const double time_ms_including_graph = benchmark_including_graph_time_ms(result, wall_time_ms);
 
     const auto metrics_problem =
         poisson::make_problem_3d<double>(options.case_name, options.grid_size);
     const poisson::ErrorMetrics metrics = poisson::metrics(metrics_problem, result.phi);
 
-    std::cout << "solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms\n";
+    std::cout << "solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms,time_ms_including_graph\n";
     std::cout << std::scientific;
     std::cout.precision(6);
     std::cout << solver_name << ",cuda," << options.dtype << "," << problem.interior_n << ','
@@ -335,7 +351,7 @@ int run_3d(const Options& options) {
               << metrics.error_l2 << ',' << metrics.error_linf << ',';
     std::cout << std::fixed;
     std::cout.precision(3);
-    std::cout << time_ms << '\n';
+    std::cout << time_ms << ',' << time_ms_including_graph << '\n';
 
     return 0;
 }

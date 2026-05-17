@@ -187,8 +187,11 @@ The CUDA binary also uses the same solver CLI as the C++ binary, but the work ha
 The runtime solvers print CSV rows in the format
 
 ```text
-solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms
+solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms,time_ms_including_graph
 ```
+
+Here `time_ms` is the solver time without CUDA graph setup/launch overhead, while
+`time_ms_including_graph` includes graph capture, instantiation, and launch overhead.
 
 ## Benchmarking
 
