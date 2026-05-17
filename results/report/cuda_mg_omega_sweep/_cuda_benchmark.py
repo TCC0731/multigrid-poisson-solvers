@@ -10,7 +10,15 @@ from typing import Sequence
 CASES = ("sine", "mixed_sine", "bubble", "exp", "cosine")
 DEFAULT_MARKERS = ("o", "s", "^", "D", "v", "p", "*", "h", "H", "<", ">", "P", "X", "d")
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+
+def find_repo_root() -> Path:
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "CMakeLists.txt").is_file():
+            return parent
+    raise RuntimeError("Unable to locate repository root from CUDA benchmark helper.")
+
+
+REPO_ROOT = find_repo_root()
 DEFAULT_EXECUTABLE = REPO_ROOT / "build" / "poisson_cuda"
 
 
@@ -73,7 +81,7 @@ def run_solver(
         )
     except subprocess.CalledProcessError as exc:
         raise RuntimeError(
-            "CUDA benchmark executable failed.\n"
+            "CUDA solver executable failed.\n"
             f"Command: {' '.join(cmd)}\n"
             f"stdout:\n{exc.stdout}\n"
             f"stderr:\n{exc.stderr}"
