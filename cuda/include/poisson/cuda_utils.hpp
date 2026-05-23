@@ -585,14 +585,17 @@ inline cuda_kernels::ResidualPair* reduce_residual_pairs(
     cuda_kernels::ResidualPair* input,
     cuda_kernels::ResidualPair* output,
     int threads,
-    std::size_t shared_bytes
+    std::size_t shared_bytes,
+    cudaStream_t stream = nullptr
 ) {
     const detail::ScopedNvtxRange range{"cuda::reduce_residual_pairs"};
     while (active_count > 1) {
         const std::size_t next_count = reduction_output_count(active_count);
         cuda_kernels::reduce_residual_pairs_kernel<>
-            <<<static_cast<int>(next_count), threads, shared_bytes>>>(input, output, active_count);
-        check_kernel("reduce_residual_pairs_kernel");
+            <<<static_cast<int>(next_count), threads, shared_bytes, stream>>>(
+                input, output, active_count
+            );
+        check_kernel("reduce_residual_pairs_kernel", stream);
         active_count = next_count;
         std::swap(input, output);
     }
@@ -603,7 +606,8 @@ template <typename Real>
 void ensure_rhs_norm_cached(
     const DeviceGrid2D<Real>& rhs,
     Real h,
-    RelativeResidualWorkspace& workspace
+    RelativeResidualWorkspace& workspace,
+    cudaStream_t stream = nullptr
 ) {
     const detail::ScopedNvtxRange range{"cuda::ensure_rhs_norm_cached"};
     const Real h2 = h * h;
@@ -619,20 +623,23 @@ void ensure_rhs_norm_cached(
         static_cast<std::size_t>(threads) * sizeof(cuda_kernels::ResidualPair);
 
     cuda_kernels::rhs_norm_partial_kernel<Real>
-        <<<blocks, threads, shared_bytes>>>(rhs.data(), rhs.size(), h2, workspace.partial_sums());
-    check_kernel("rhs_norm_partial_kernel");
+        <<<blocks, threads, shared_bytes, stream>>>(
+            rhs.data(), rhs.size(), h2, workspace.partial_sums()
+        );
+    check_kernel("rhs_norm_partial_kernel", stream);
 
     auto* totals = reduce_residual_pairs(
         static_cast<std::size_t>(blocks),
         workspace.partial_sums(),
         workspace.scratch_sums(),
         threads,
-        shared_bytes
+        shared_bytes,
+        stream
     );
 
     cuda_kernels::store_rhs_norm_kernel<>
-        <<<1, 1>>>(totals, workspace.rhs_norm2());
-    check_kernel("store_rhs_norm_kernel");
+        <<<1, 1, 0, stream>>>(totals, workspace.rhs_norm2());
+    check_kernel("store_rhs_norm_kernel", stream);
     workspace.mark_rhs_norm_cached(rhs.size(), static_cast<double>(h2));
 }
 
@@ -640,7 +647,8 @@ template <typename Real>
 void ensure_rhs_norm_cached(
     const DeviceGrid3D<Real>& rhs,
     Real h,
-    RelativeResidualWorkspace3D& workspace
+    RelativeResidualWorkspace3D& workspace,
+    cudaStream_t stream = nullptr
 ) {
     const detail::ScopedNvtxRange range{"cuda::ensure_rhs_norm_cached_3d"};
     const Real h2 = h * h;
@@ -656,20 +664,23 @@ void ensure_rhs_norm_cached(
         static_cast<std::size_t>(threads) * sizeof(cuda_kernels::ResidualPair);
 
     cuda_kernels::rhs_norm_partial_kernel_3d<Real>
-        <<<blocks, threads, shared_bytes>>>(rhs.data(), rhs.size(), h2, workspace.partial_sums());
-    check_kernel("rhs_norm_partial_kernel_3d");
+        <<<blocks, threads, shared_bytes, stream>>>(
+            rhs.data(), rhs.size(), h2, workspace.partial_sums()
+        );
+    check_kernel("rhs_norm_partial_kernel_3d", stream);
 
     auto* totals = reduce_residual_pairs(
         static_cast<std::size_t>(blocks),
         workspace.partial_sums(),
         workspace.scratch_sums(),
         threads,
-        shared_bytes
+        shared_bytes,
+        stream
     );
 
     cuda_kernels::store_rhs_norm_kernel<>
-        <<<1, 1>>>(totals, workspace.rhs_norm2());
-    check_kernel("store_rhs_norm_kernel");
+        <<<1, 1, 0, stream>>>(totals, workspace.rhs_norm2());
+    check_kernel("store_rhs_norm_kernel", stream);
     workspace.mark_rhs_norm_cached(rhs.size(), static_cast<double>(h2));
 }
 
@@ -895,25 +906,36 @@ void run_jacobi_step(
 }
 
 template <typename Real>
-[[nodiscard]] double compute_relative_residual(
+void compute_relative_residual_device(
     const DeviceGrid2D<Real>& phi,
     const DeviceGrid2D<Real>& rhs,
     Real h,
-    RelativeResidualWorkspace& workspace
+    RelativeResidualWorkspace& workspace,
+    cudaStream_t stream = nullptr
 ) {
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
     }
 
-    const detail::ScopedNvtxRange range{"cuda::compute_relative_residual"};
+    const detail::ScopedNvtxRange range{"cuda::compute_relative_residual_device"};
     const std::size_t interior_n = phi.size() - 2;
     const std::size_t total_points = interior_n * interior_n;
     if (total_points == 0) {
-        return 0.0;
+        if (stream == nullptr) {
+            check(cudaMemset(workspace.final_residual(), 0, sizeof(double)), "cudaMemset", __FILE__, __LINE__);
+        } else {
+            check(
+                cudaMemsetAsync(workspace.final_residual(), 0, sizeof(double), stream),
+                "cudaMemsetAsync",
+                __FILE__,
+                __LINE__
+            );
+        }
+        return;
     }
 
     workspace.reserve_for(phi.size());
-    ensure_rhs_norm_cached(rhs, h, workspace);
+    ensure_rhs_norm_cached(rhs, h, workspace, stream);
 
     const int threads = cuda_kernels::kReductionThreads;
     const int blocks = workspace.blocks();
@@ -921,22 +943,33 @@ template <typename Real>
         static_cast<std::size_t>(threads) * sizeof(cuda_kernels::ResidualPair);
 
     cuda_kernels::residual_partial_kernel<Real>
-        <<<blocks, threads, shared_bytes>>>(
+        <<<blocks, threads, shared_bytes, stream>>>(
             phi.data(), rhs.data(), phi.size(), h * h, workspace.partial_sums()
         );
-    check_kernel("residual_partial_kernel");
+    check_kernel("residual_partial_kernel", stream);
 
     auto* totals = reduce_residual_pairs(
         static_cast<std::size_t>(blocks),
         workspace.partial_sums(),
         workspace.scratch_sums(),
         threads,
-        shared_bytes
+        shared_bytes,
+        stream
     );
 
     cuda_kernels::finalize_relative_residual_kernel<>
-        <<<1, 1>>>(totals, workspace.rhs_norm2(), workspace.final_residual());
-    check_kernel("finalize_relative_residual_kernel");
+        <<<1, 1, 0, stream>>>(totals, workspace.rhs_norm2(), workspace.final_residual());
+    check_kernel("finalize_relative_residual_kernel", stream);
+}
+
+template <typename Real>
+[[nodiscard]] double compute_relative_residual(
+    const DeviceGrid2D<Real>& phi,
+    const DeviceGrid2D<Real>& rhs,
+    Real h,
+    RelativeResidualWorkspace& workspace
+) {
+    compute_relative_residual_device(phi, rhs, h, workspace);
 
     std::array<double, 1> host_residual{};
     check(
@@ -954,25 +987,36 @@ template <typename Real>
 }
 
 template <typename Real>
-[[nodiscard]] double compute_relative_residual(
+void compute_relative_residual_device(
     const DeviceGrid3D<Real>& phi,
     const DeviceGrid3D<Real>& rhs,
     Real h,
-    RelativeResidualWorkspace3D& workspace
+    RelativeResidualWorkspace3D& workspace,
+    cudaStream_t stream = nullptr
 ) {
     if (phi.size() != rhs.size()) {
         throw std::invalid_argument("phi and rhs device grid sizes do not match");
     }
 
-    const detail::ScopedNvtxRange range{"cuda::compute_relative_residual_3d"};
+    const detail::ScopedNvtxRange range{"cuda::compute_relative_residual_device_3d"};
     const std::size_t interior_n = phi.size() - 2;
     const std::size_t total_points = interior_n * interior_n * interior_n;
     if (total_points == 0) {
-        return 0.0;
+        if (stream == nullptr) {
+            check(cudaMemset(workspace.final_residual(), 0, sizeof(double)), "cudaMemset", __FILE__, __LINE__);
+        } else {
+            check(
+                cudaMemsetAsync(workspace.final_residual(), 0, sizeof(double), stream),
+                "cudaMemsetAsync",
+                __FILE__,
+                __LINE__
+            );
+        }
+        return;
     }
 
     workspace.reserve_for(phi.size());
-    ensure_rhs_norm_cached(rhs, h, workspace);
+    ensure_rhs_norm_cached(rhs, h, workspace, stream);
 
     const int threads = cuda_kernels::kReductionThreads;
     const int blocks = workspace.blocks();
@@ -980,22 +1024,33 @@ template <typename Real>
         static_cast<std::size_t>(threads) * sizeof(cuda_kernels::ResidualPair);
 
     cuda_kernels::residual_partial_kernel_3d<Real>
-        <<<blocks, threads, shared_bytes>>>(
+        <<<blocks, threads, shared_bytes, stream>>>(
             phi.data(), rhs.data(), phi.size(), h * h, workspace.partial_sums()
         );
-    check_kernel("residual_partial_kernel_3d");
+    check_kernel("residual_partial_kernel_3d", stream);
 
     auto* totals = reduce_residual_pairs(
         static_cast<std::size_t>(blocks),
         workspace.partial_sums(),
         workspace.scratch_sums(),
         threads,
-        shared_bytes
+        shared_bytes,
+        stream
     );
 
     cuda_kernels::finalize_relative_residual_kernel<>
-        <<<1, 1>>>(totals, workspace.rhs_norm2(), workspace.final_residual());
-    check_kernel("finalize_relative_residual_kernel");
+        <<<1, 1, 0, stream>>>(totals, workspace.rhs_norm2(), workspace.final_residual());
+    check_kernel("finalize_relative_residual_kernel", stream);
+}
+
+template <typename Real>
+[[nodiscard]] double compute_relative_residual(
+    const DeviceGrid3D<Real>& phi,
+    const DeviceGrid3D<Real>& rhs,
+    Real h,
+    RelativeResidualWorkspace3D& workspace
+) {
+    compute_relative_residual_device(phi, rhs, h, workspace);
 
     std::array<double, 1> host_residual{};
     check(
