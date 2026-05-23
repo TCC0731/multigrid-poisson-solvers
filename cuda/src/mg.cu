@@ -108,6 +108,24 @@ using MgClock = std::chrono::steady_clock;
     return std::chrono::duration<double, std::milli>(end - start).count();
 }
 
+__global__ void update_mg_loop_state_kernel(
+    const double* residual,
+    double tol,
+    std::size_t max_iter,
+    std::size_t* iteration_count,
+    cudaGraphConditionalHandle handle
+) {
+    if (blockIdx.x != 0 || threadIdx.x != 0) {
+        return;
+    }
+
+    const std::size_t next_iteration = iteration_count[0] + 1;
+    iteration_count[0] = next_iteration;
+    const unsigned int keep_iterating =
+        (next_iteration < max_iter && residual[0] > tol) ? 1U : 0U;
+    cudaGraphSetConditional(handle, keep_iterating);
+}
+
 template <typename Real>
 Real default_sor_omega(std::size_t interior_n) {
     if (interior_n < 1) {
@@ -634,12 +652,46 @@ SolveResult solve_mg_impl(
     cuda::RelativeResidualWorkspace residual_workspace{problem.array_n()};
     const MgClock::time_point graph_timing_start = MgClock::now();
     ScopedCudaStream graph_stream{};
+    cuda::ensure_rhs_norm_cached(rhs, problem.h, residual_workspace);
     ScopedCudaGraph graph{};
+    cudaGraph_t created_graph = nullptr;
+    cuda::check(cudaGraphCreate(&created_graph, 0), "cudaGraphCreate", __FILE__, __LINE__);
+    graph.reset(created_graph);
+    cuda::DeviceBuffer<std::size_t> iteration_count{1};
+    cudaGraphConditionalHandle while_handle{};
+    cuda::check(
+        cudaGraphConditionalHandleCreate(
+            &while_handle, graph.get(), 1, cudaGraphCondAssignDefault
+        ),
+        "cudaGraphConditionalHandleCreate",
+        __FILE__,
+        __LINE__
+    );
+    cudaGraphNode_t conditional_node = nullptr;
+    cudaGraphNodeParams conditional_params{};
+    conditional_params.type = cudaGraphNodeTypeConditional;
+    conditional_params.conditional.handle = while_handle;
+    conditional_params.conditional.type = cudaGraphCondTypeWhile;
+    conditional_params.conditional.size = 1;
+    cuda::check(
+        cudaGraphAddNode(&conditional_node, graph.get(), nullptr, 0, &conditional_params),
+        "cudaGraphAddNode",
+        __FILE__,
+        __LINE__
+    );
+    cudaGraph_t body_graph = conditional_params.conditional.phGraph_out[0];
     {
         const cuda::detail::ScopedNvtxRange capture_range{"mg::graph_capture"};
         cuda::check(
-            cudaStreamBeginCapture(graph_stream.get(), cudaStreamCaptureModeThreadLocal),
-            "cudaStreamBeginCapture",
+            cudaStreamBeginCaptureToGraph(
+                graph_stream.get(),
+                body_graph,
+                nullptr,
+                nullptr,
+                0,
+                cudaStreamCaptureModeRelaxed
+            ),
+            "cudaStreamBeginCaptureToGraph",
             __FILE__,
             __LINE__
         );
@@ -657,23 +709,28 @@ SolveResult solve_mg_impl(
                 0,
                 graph_stream.get()
             );
+            cuda::compute_relative_residual_device(
+                phi, rhs, problem.h, residual_workspace, graph_stream.get()
+            );
+            update_mg_loop_state_kernel<<<1, 1, 0, graph_stream.get()>>>(
+                residual_workspace.final_residual(),
+                static_cast<double>(options.tol),
+                options.max_iter,
+                iteration_count.data(),
+                while_handle
+            );
+            cuda::check_kernel("update_mg_loop_state_kernel", graph_stream.get());
         } catch (...) {
-            cudaGraph_t abandoned_graph = nullptr;
-            (void)cudaStreamEndCapture(graph_stream.get(), &abandoned_graph);
-            if (abandoned_graph != nullptr) {
-                (void)cudaGraphDestroy(abandoned_graph);
-            }
+            (void)cudaStreamEndCapture(graph_stream.get(), nullptr);
             throw;
         }
 
-        cudaGraph_t captured_graph = nullptr;
         cuda::check(
-            cudaStreamEndCapture(graph_stream.get(), &captured_graph),
+            cudaStreamEndCapture(graph_stream.get(), nullptr),
             "cudaStreamEndCapture",
             __FILE__,
             __LINE__
         );
-        graph.reset(captured_graph);
     }
 
     ScopedCudaGraphExec graph_exec{};
@@ -683,46 +740,47 @@ SolveResult solve_mg_impl(
         __FILE__,
         __LINE__
     );
+    iteration_count.zero(graph_stream.get());
+    cuda::check(
+        cudaStreamSynchronize(graph_stream.get()),
+        "cudaStreamSynchronize",
+        __FILE__,
+        __LINE__
+    );
     const MgClock::time_point compute_timing_start = MgClock::now();
+    cuda::check(
+        cudaGraphLaunch(graph_exec.get(), graph_stream.get()),
+        "cudaGraphLaunch",
+        __FILE__,
+        __LINE__
+    );
+    cuda::check(
+        cudaStreamSynchronize(graph_stream.get()),
+        "cudaStreamSynchronize",
+        __FILE__,
+        __LINE__
+    );
 
-    for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
-        const cuda::detail::ScopedNvtxRange iteration_range{"mg::iteration"};
-        cuda::check(
-            cudaGraphLaunch(graph_exec.get(), graph_stream.get()),
-            "cudaGraphLaunch",
-            __FILE__,
-            __LINE__
-        );
-        cuda::check(
-            cudaStreamSynchronize(graph_stream.get()),
-            "cudaStreamSynchronize",
-            __FILE__,
-            __LINE__
-        );
-
-        const double residual =
-            cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
-        if (residual <= static_cast<double>(options.tol)) {
-            auto host_phi = phi.download();
-            const MgClock::time_point solve_end = MgClock::now();
-            return make_solve_result(
-                std::move(host_phi),
-                iteration,
-                static_cast<Real>(residual),
-                elapsed_ms(compute_timing_start, solve_end),
-                elapsed_ms(graph_timing_start, solve_end)
-            );
-        }
-    }
-
-    const double residual =
-        cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
+    std::array<std::size_t, 1> host_iterations{};
+    iteration_count.download(host_iterations.data(), 1);
+    std::array<double, 1> host_residual{};
+    cuda::check(
+        cudaMemcpy(
+            host_residual.data(),
+            residual_workspace.final_residual(),
+            sizeof(double),
+            cudaMemcpyDeviceToHost
+        ),
+        "cudaMemcpyDeviceToHost",
+        __FILE__,
+        __LINE__
+    );
     auto host_phi = phi.download();
     const MgClock::time_point solve_end = MgClock::now();
     return make_solve_result(
         std::move(host_phi),
-        options.max_iter,
-        static_cast<Real>(residual),
+        host_iterations[0],
+        static_cast<Real>(host_residual[0]),
         elapsed_ms(compute_timing_start, solve_end),
         elapsed_ms(graph_timing_start, solve_end)
     );
@@ -747,12 +805,46 @@ SolveResult3D solve_mg_3d_impl(
     cuda::RelativeResidualWorkspace3D residual_workspace{problem.array_n()};
     const MgClock::time_point graph_timing_start = MgClock::now();
     ScopedCudaStream graph_stream{};
+    cuda::ensure_rhs_norm_cached(rhs, problem.h, residual_workspace);
     ScopedCudaGraph graph{};
+    cudaGraph_t created_graph = nullptr;
+    cuda::check(cudaGraphCreate(&created_graph, 0), "cudaGraphCreate", __FILE__, __LINE__);
+    graph.reset(created_graph);
+    cuda::DeviceBuffer<std::size_t> iteration_count{1};
+    cudaGraphConditionalHandle while_handle{};
+    cuda::check(
+        cudaGraphConditionalHandleCreate(
+            &while_handle, graph.get(), 1, cudaGraphCondAssignDefault
+        ),
+        "cudaGraphConditionalHandleCreate",
+        __FILE__,
+        __LINE__
+    );
+    cudaGraphNode_t conditional_node = nullptr;
+    cudaGraphNodeParams conditional_params{};
+    conditional_params.type = cudaGraphNodeTypeConditional;
+    conditional_params.conditional.handle = while_handle;
+    conditional_params.conditional.type = cudaGraphCondTypeWhile;
+    conditional_params.conditional.size = 1;
+    cuda::check(
+        cudaGraphAddNode(&conditional_node, graph.get(), nullptr, 0, &conditional_params),
+        "cudaGraphAddNode",
+        __FILE__,
+        __LINE__
+    );
+    cudaGraph_t body_graph = conditional_params.conditional.phGraph_out[0];
     {
         const cuda::detail::ScopedNvtxRange capture_range{"mg::graph_capture_3d"};
         cuda::check(
-            cudaStreamBeginCapture(graph_stream.get(), cudaStreamCaptureModeThreadLocal),
-            "cudaStreamBeginCapture",
+            cudaStreamBeginCaptureToGraph(
+                graph_stream.get(),
+                body_graph,
+                nullptr,
+                nullptr,
+                0,
+                cudaStreamCaptureModeRelaxed
+            ),
+            "cudaStreamBeginCaptureToGraph",
             __FILE__,
             __LINE__
         );
@@ -770,23 +862,28 @@ SolveResult3D solve_mg_3d_impl(
                 0,
                 graph_stream.get()
             );
+            cuda::compute_relative_residual_device(
+                phi, rhs, problem.h, residual_workspace, graph_stream.get()
+            );
+            update_mg_loop_state_kernel<<<1, 1, 0, graph_stream.get()>>>(
+                residual_workspace.final_residual(),
+                static_cast<double>(options.tol),
+                options.max_iter,
+                iteration_count.data(),
+                while_handle
+            );
+            cuda::check_kernel("update_mg_loop_state_kernel", graph_stream.get());
         } catch (...) {
-            cudaGraph_t abandoned_graph = nullptr;
-            (void)cudaStreamEndCapture(graph_stream.get(), &abandoned_graph);
-            if (abandoned_graph != nullptr) {
-                (void)cudaGraphDestroy(abandoned_graph);
-            }
+            (void)cudaStreamEndCapture(graph_stream.get(), nullptr);
             throw;
         }
 
-        cudaGraph_t captured_graph = nullptr;
         cuda::check(
-            cudaStreamEndCapture(graph_stream.get(), &captured_graph),
+            cudaStreamEndCapture(graph_stream.get(), nullptr),
             "cudaStreamEndCapture",
             __FILE__,
             __LINE__
         );
-        graph.reset(captured_graph);
     }
 
     ScopedCudaGraphExec graph_exec{};
@@ -796,46 +893,47 @@ SolveResult3D solve_mg_3d_impl(
         __FILE__,
         __LINE__
     );
+    iteration_count.zero(graph_stream.get());
+    cuda::check(
+        cudaStreamSynchronize(graph_stream.get()),
+        "cudaStreamSynchronize",
+        __FILE__,
+        __LINE__
+    );
     const MgClock::time_point compute_timing_start = MgClock::now();
+    cuda::check(
+        cudaGraphLaunch(graph_exec.get(), graph_stream.get()),
+        "cudaGraphLaunch",
+        __FILE__,
+        __LINE__
+    );
+    cuda::check(
+        cudaStreamSynchronize(graph_stream.get()),
+        "cudaStreamSynchronize",
+        __FILE__,
+        __LINE__
+    );
 
-    for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
-        const cuda::detail::ScopedNvtxRange iteration_range{"mg::iteration_3d"};
-        cuda::check(
-            cudaGraphLaunch(graph_exec.get(), graph_stream.get()),
-            "cudaGraphLaunch",
-            __FILE__,
-            __LINE__
-        );
-        cuda::check(
-            cudaStreamSynchronize(graph_stream.get()),
-            "cudaStreamSynchronize",
-            __FILE__,
-            __LINE__
-        );
-
-        const double residual =
-            cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
-        if (residual <= static_cast<double>(options.tol)) {
-            auto host_phi = phi.download();
-            const MgClock::time_point solve_end = MgClock::now();
-            return make_solve_result(
-                std::move(host_phi),
-                iteration,
-                static_cast<Real>(residual),
-                elapsed_ms(compute_timing_start, solve_end),
-                elapsed_ms(graph_timing_start, solve_end)
-            );
-        }
-    }
-
-    const double residual =
-        cuda::compute_relative_residual(phi, rhs, problem.h, residual_workspace);
+    std::array<std::size_t, 1> host_iterations{};
+    iteration_count.download(host_iterations.data(), 1);
+    std::array<double, 1> host_residual{};
+    cuda::check(
+        cudaMemcpy(
+            host_residual.data(),
+            residual_workspace.final_residual(),
+            sizeof(double),
+            cudaMemcpyDeviceToHost
+        ),
+        "cudaMemcpyDeviceToHost",
+        __FILE__,
+        __LINE__
+    );
     auto host_phi = phi.download();
     const MgClock::time_point solve_end = MgClock::now();
     return make_solve_result(
         std::move(host_phi),
-        options.max_iter,
-        static_cast<Real>(residual),
+        host_iterations[0],
+        static_cast<Real>(host_residual[0]),
         elapsed_ms(compute_timing_start, solve_end),
         elapsed_ms(graph_timing_start, solve_end)
     );
