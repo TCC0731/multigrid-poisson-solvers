@@ -544,8 +544,9 @@ void mg_cycle(
 
     Grid2D<Real> coarse_rhs = restrict_full_weighting(residual_full(phi, rhs, h));
     Grid2D<Real> coarse_err{coarse_rhs.size()};
+    const std::size_t coarse_n = coarse_rhs.size() - 2;
     mg_cycle(coarse_err, coarse_rhs, Real{2} * h, omega, nu, cycle, coarse_mode, coarse_steps);
-    if (cycle == MGCycle::W) {
+    if (cycle == MGCycle::W && coarse_n > 4) {
         mg_cycle(coarse_err, coarse_rhs, Real{2} * h, omega, nu, cycle, coarse_mode, coarse_steps);
     }
     prolong_add(coarse_err, phi);
@@ -578,8 +579,9 @@ void mg_cycle_3d(
 
     Grid3D<Real> coarse_rhs = restrict_full_weighting_3d(residual_full_3d(phi, rhs, h));
     Grid3D<Real> coarse_err{coarse_rhs.size()};
+    const std::size_t coarse_n = coarse_rhs.size() - 2;
     mg_cycle_3d(coarse_err, coarse_rhs, Real{2} * h, omega, nu, cycle, coarse_mode, coarse_steps);
-    if (cycle == MGCycle::W) {
+    if (cycle == MGCycle::W && coarse_n > 4) {
         mg_cycle_3d(coarse_err, coarse_rhs, Real{2} * h, omega, nu, cycle, coarse_mode, coarse_steps);
     }
     prolong_add_3d(coarse_err, phi);

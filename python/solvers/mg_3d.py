@@ -192,6 +192,7 @@ def _cycle_3d(phi, rhs, h, nu, omega, is_w, coarse_mode, coarse_steps):
     _smooth_rb_3d(phi, rhs, h, omega, nu)
     coarse_rhs = _restrict_full_weighting_3d(_residual_full_3d(phi, rhs, h))
     coarse_err = np.zeros_like(coarse_rhs)
+    coarse_n = coarse_rhs.shape[0] - 2
     _cycle_3d(
         coarse_err,
         coarse_rhs,
@@ -202,7 +203,9 @@ def _cycle_3d(phi, rhs, h, nu, omega, is_w, coarse_mode, coarse_steps):
         coarse_mode,
         coarse_steps,
     )
-    if is_w:
+    if is_w and coarse_n > 4:
+        # W-cycle: repeat the same coarse problem, but only when the next
+        # level is not already the terminal coarse grid.
         _cycle_3d(
             coarse_err,
             coarse_rhs,

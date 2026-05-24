@@ -153,10 +153,10 @@ def _cycle(phi, rhs, h, nu, omega, is_w, coarse_mode, coarse_steps):
     _smooth_rb(phi, rhs, h, omega, nu)
     coarse_rhs = _restrict_full_weighting(_residual_full(phi, rhs, h))
     coarse_err = np.zeros_like(coarse_rhs)
+    coarse_n = coarse_rhs.shape[0] - 2
     _cycle(coarse_err, coarse_rhs, 2.0 * h, nu, omega, is_w, coarse_mode, coarse_steps)
-    if is_w:
+    if is_w and coarse_n > 4:
         # W-cycle: run the same coarse problem a second time, using the first
-        # correction as the initial guess for the second pass.
         _cycle(coarse_err, coarse_rhs, 2.0 * h, nu, omega, is_w, coarse_mode, coarse_steps)
     _prolong_add(coarse_err, phi)
     _smooth_rb(phi, rhs, h, omega, nu)

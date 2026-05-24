@@ -453,6 +453,7 @@ void mg_cycle(
     auto& coarse_error = level.coarse_error;
     {
         const cuda::detail::ScopedNvtxRange coarse_correction_range{"mg::coarse_correction"};
+        const std::size_t coarse_n = coarse_rhs.size() - 2;
         coarse_error.zero(stream);
         mg_cycle<Real>(
             coarse_error,
@@ -467,7 +468,7 @@ void mg_cycle(
             level_index + 1,
             stream
         );
-        if (cycle == MGCycle::W) {
+        if (cycle == MGCycle::W && coarse_n > 4) {
             mg_cycle<Real>(
                 coarse_error,
                 coarse_rhs,
@@ -536,6 +537,7 @@ void mg_cycle_3d(
     auto& coarse_error = level.coarse_error;
     {
         const cuda::detail::ScopedNvtxRange coarse_correction_range{"mg::coarse_correction_3d"};
+        const std::size_t coarse_n = coarse_rhs.size() - 2;
         coarse_error.zero(stream);
         mg_cycle_3d<Real>(
             coarse_error,
@@ -550,7 +552,7 @@ void mg_cycle_3d(
             level_index + 1,
             stream
         );
-        if (cycle == MGCycle::W) {
+        if (cycle == MGCycle::W && coarse_n > 4) {
             mg_cycle_3d<Real>(
                 coarse_error,
                 coarse_rhs,
