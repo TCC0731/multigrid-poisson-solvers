@@ -50,7 +50,7 @@
               \]
               must satisfy \(\eta \le \texttt{tol}\).
         \item Baseline smoothers: Jacobi, red-black Gauss--Seidel, and red-black SOR.
-        \item Multigrid smoothing: red-black SOR with \(\nu = 1 ~ 3\) pre- and post-smoothing steps.
+        \item Multigrid smoothing: red-black SOR with \(\nu\) pre- and post-smoothing steps.
         \item If \(\omega = 1\), the red-black SOR update reduces to red-black Gauss--Seidel.
     \end{itemize}
 
@@ -65,8 +65,23 @@
 \begin{frame}[t]{Multigrid operators}
     \footnotesize
     \begin{itemize}
-        \item Restriction: full-weighting.
-        \item Prolongation: bilinear interpolation in 2D and trilinear interpolation in 3D.
+        \item Restriction: \(r_{2h} = R\,r_h\), where the 2D full-weighting stencil is
+        \[
+            R_{2D} = \frac{1}{16}
+            \begin{bmatrix}
+                1 & 2 & 1 \\
+                2 & 4 & 2 \\
+                1 & 2 & 1
+            \end{bmatrix},
+        \]
+        and the 3D version is the corresponding tensor-product stencil with weights \(w_0 = 2\) and \(w_{\pm1} = 1\).
+        \item Prolongation: \(e_h = P\,e_{2h}\), where 2D uses bilinear interpolation and 3D uses trilinear interpolation; for example,
+        \[
+            e_h(2I+1, 2J) = \frac{1}{2}\bigl(e_{2h}(I, J) + e_{2h}(I+1, J)\bigr),
+            \quad
+            e_h(2I+1, 2J+1) = \frac{1}{4}\sum_{p,q \in \{0,1\}} e_{2h}(I+p, J+q),
+        \]
+        and the 3D case is the analogous tensor-product weighting over 8 coarse neighbors.
         \item Coarsest-grid solve: exact solve by default, with an RB-SOR coarse-solve variant also available.
     \end{itemize}
 \end{frame}
