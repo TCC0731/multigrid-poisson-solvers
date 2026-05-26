@@ -46,11 +46,8 @@ CSV_FIELDS = (
     "residual_l2",
     "error_l2",
     "error_linf",
-    # `time_ms` is compute-only; `time_ms_including_graph` includes graph setup.
     "time_ms",
-    "time_ms_including_graph",
     "time_s",
-    "time_s_including_graph",
     "tol",
     "max_iter",
     "nu",
@@ -157,13 +154,7 @@ def run_case(
                     "error_l2": float(solver_row["error_l2"]),
                     "error_linf": float(solver_row["error_linf"]),
                     "time_ms": float(solver_row["time_ms"]),
-                    "time_ms_including_graph": float(
-                        solver_row.get("time_ms_including_graph", solver_row["time_ms"])
-                    ),
                     "time_s": float(solver_row["time_s"]),
-                    "time_s_including_graph": float(
-                        solver_row.get("time_s_including_graph", solver_row["time_s"])
-                    ),
                     "tol": float(tol),
                     "max_iter": int(max_iter),
                     "nu": int(nu),
@@ -197,7 +188,6 @@ def plot_results(
             "iterations": [],
             "error_l2": [],
             "time_ms": [],
-            "time_ms_including_graph": [],
         }
         for _, mode_label, _, _ in MG_MODE_SPECS
     }
@@ -207,13 +197,10 @@ def plot_results(
         series[mode_label]["iterations"].append(float(row["iterations"]))
         series[mode_label]["error_l2"].append(float(row["error_l2"]))
         series[mode_label]["time_ms"].append(float(row["time_ms"]))
-        series[mode_label]["time_ms_including_graph"].append(
-            float(row.get("time_ms_including_graph", row["time_ms"]))
-        )
 
-    fig, axes = plt.subplots(2, 2, figsize=(15, 11), sharex=True)
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 
-    ax = axes[0, 0]
+    ax = axes[0]
     for _, mode_label, _, _ in MG_MODE_SPECS:
         ax.plot(
             series[mode_label]["omega"],
@@ -226,11 +213,12 @@ def plot_results(
         f"CUDA MG omega sweep - {_case_title(dim, case)}\n"
         f"tol={tol:.0e}, max_iter={max_iter}, grid={grid_size}, nu={nu}"
     )
+    ax.set_xlabel("omega")
     ax.set_ylabel("Iterations")
     ax.grid(True, which="both", linestyle="--", alpha=0.5)
     ax.legend(loc="best", fontsize="small", ncol=2)
 
-    ax = axes[0, 1]
+    ax = axes[1]
     for _, mode_label, _, _ in MG_MODE_SPECS:
         ax.semilogy(
             series[mode_label]["omega"],
@@ -239,12 +227,13 @@ def plot_results(
             linewidth=1.8,
             label=mode_label,
         )
+    ax.set_xlabel("omega")
     ax.set_ylabel("L2 error")
     ax.set_title("L2 error vs omega")
     ax.grid(True, which="both", linestyle="--", alpha=0.5)
     ax.legend(loc="best", fontsize="small", ncol=2)
 
-    ax = axes[1, 0]
+    ax = axes[2]
     for _, mode_label, _, _ in MG_MODE_SPECS:
         ax.plot(
             series[mode_label]["omega"],
@@ -254,31 +243,14 @@ def plot_results(
             label=mode_label,
         )
     ax.set_xlabel("omega")
-    ax.set_ylabel("Compute time (ms)")
-    ax.set_title("Time vs omega (excluding CUDA graph)")
+    ax.set_ylabel("Average time (ms)")
+    ax.set_title("Average solver time vs omega")
     ax.grid(True, which="both", linestyle="--", alpha=0.5)
     ax.legend(loc="best", fontsize="small", ncol=2)
 
-    ax = axes[1, 1]
-    for _, mode_label, _, _ in MG_MODE_SPECS:
-        ax.plot(
-            series[mode_label]["omega"],
-            series[mode_label]["time_ms_including_graph"],
-            marker=markers[mode_label],
-            linewidth=1.8,
-            label=mode_label,
-        )
-    ax.set_xlabel("omega")
-    ax.set_ylabel("Time incl. graph (ms)")
-    ax.set_title("Time vs omega (including CUDA graph)")
-    ax.grid(True, which="both", linestyle="--", alpha=0.5)
-    ax.legend(loc="best", fontsize="small", ncol=2)
-
-    for ax in axes[1, :]:
+    for ax in axes:
         ax.set_xticks(list(OMEGA_VALUES))
         ax.set_xticklabels([f"{omega:.2f}" for omega in OMEGA_VALUES], rotation=45, ha="right")
-    for ax in axes[0, :]:
-        ax.tick_params(labelbottom=False)
 
     fig.tight_layout()
     fig.savefig(output_path, dpi=300)
@@ -308,13 +280,7 @@ def write_results_csv(path: Path, rows: list[dict[str, object]]) -> None:
                     "error_l2": _csv_float(float(row["error_l2"])),
                     "error_linf": _csv_float(float(row["error_linf"])),
                     "time_ms": _csv_float(float(row["time_ms"])),
-                    "time_ms_including_graph": _csv_float(
-                        float(row.get("time_ms_including_graph", row["time_ms"]))
-                    ),
                     "time_s": _csv_float(float(row["time_s"])),
-                    "time_s_including_graph": _csv_float(
-                        float(row.get("time_s_including_graph", row["time_s"]))
-                    ),
                     "tol": _csv_float(float(row["tol"])),
                     "max_iter": int(row["max_iter"]),
                     "nu": int(row["nu"]),

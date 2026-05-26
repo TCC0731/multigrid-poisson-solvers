@@ -163,7 +163,7 @@ Note that standalone `--solver sor` does not read `--omega` from the CLI. The SO
 
 ### OpenMP Runtime Knobs
 
-The OpenMP binary uses the same solver flags as the pure C++ binary, so `--dim`, `--solver`, `--case`, `--tol`, `--max-iter`, `--cycle`, `--nu`, `--omega`, and `--mg-coarse` all behave the same way.
+The OpenMP binary uses the same solver flags as the pure C++ binary, plus `--repeat-runs N` to average the timed solver section. The repeat count defaults to `1`, so a single run behaves exactly like the old binary.
 
 The important OpenMP-specific knobs are environment variables:
 
@@ -175,23 +175,25 @@ If you are comparing runs, keep those values fixed and avoid changing the CPU af
 
 ### CUDA Runtime Knobs
 
-The CUDA binary also uses the same solver CLI as the C++ binary, but the work happens on the GPU.
+The CUDA binary also uses the same solver CLI as the C++ binary, plus `--repeat-runs N`, but the work happens on the GPU.
 
 - `--dim 2|3` switches between the 2D and 3D CUDA code paths.
 - `--dtype float|double` selects the precision. `float` is usually faster; `double` is the conservative choice when you want tighter numerical agreement.
 - `--solver jacobi|gs|sor|mg` selects the kernel family.
 - `--cycle v|w`, `--nu`, `--omega`, and `--mg-coarse` only matter for `--solver mg`.
 - `--solver sor` still uses the internal grid-based relaxation factor and does not take a CLI override for omega.
+- `--repeat-runs N` repeats only the timed solver section `N` times and reports the average `time_ms`.
 - The executable checks that a CUDA device is available before solving, so a missing GPU or driver will fail early.
 
 The runtime solvers print CSV rows in the format
 
 ```text
-solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms,time_ms_including_graph
+solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms
 ```
 
-Here `time_ms` is the solver time without CUDA graph setup/launch overhead, while
-`time_ms_including_graph` includes graph capture, instantiation, and launch overhead.
+Here `time_ms` is the average time across the repeated timed solver runs. For CUDA multigrid,
+the reported time uses the solver's compute-only timing so graph capture and instantiation
+are not counted in `time_ms`.
 
 ## Benchmarking
 
