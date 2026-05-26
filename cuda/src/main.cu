@@ -15,6 +15,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 
 namespace {
 
@@ -28,6 +29,7 @@ struct Options {
     std::size_t dimension{2};
     std::optional<double> tol{};
     std::size_t max_iter{20'000};
+    std::size_t repeat_runs{1};
     std::size_t nu{2};
     std::optional<double> omega{};
     bool omega_is_auto{false};
@@ -46,18 +48,40 @@ template <typename Result>
     return result.benchmark_compute_time_ms >= 0.0 ? result.benchmark_compute_time_ms : fallback_ms;
 }
 
-template <typename Result>
-[[nodiscard]] double benchmark_including_graph_time_ms(const Result& result, double fallback_ms) {
-    return result.benchmark_including_graph_time_ms >= 0.0
-        ? result.benchmark_including_graph_time_ms
-        : fallback_ms;
+template <typename SolveFn>
+[[nodiscard]] auto time_solver_runs(SolveFn&& solve_fn, std::size_t repeat_runs) {
+    if (repeat_runs < 1) {
+        throw std::invalid_argument("repeat-runs must be positive");
+    }
+
+    using Result = std::invoke_result_t<SolveFn&>;
+
+    std::optional<Result> last_result;
+    double total_time_ms = 0.0;
+    for (std::size_t i = 0; i < repeat_runs; ++i) {
+        const auto start = std::chrono::steady_clock::now();
+        last_result = solve_fn();
+        const auto end = std::chrono::steady_clock::now();
+        const double wall_time_ms =
+            std::chrono::duration<double, std::milli>(end - start).count();
+        total_time_ms += benchmark_compute_time_ms(*last_result, wall_time_ms);
+    }
+
+    if (!last_result.has_value()) {
+        throw std::logic_error("solver did not produce any result");
+    }
+
+    return std::pair<Result, double>{
+        std::move(*last_result),
+        total_time_ms / static_cast<double>(repeat_runs),
+    };
 }
 
 void print_usage(const char* argv0) {
     std::cerr << "Usage: " << argv0
               << " [--dtype float|double] [--solver jacobi|gs|sor|mg] [--case NAME] [--grid-size N]"
-                 " [--dim 2|3] [--tol T] [--max-iter N] [--cycle v|w] [--nu N]"
-                 " [--omega auto|VALUE] [--mg-coarse exact|sor]\n";
+                 " [--dim 2|3] [--tol T] [--max-iter N] [--repeat-runs N] [--cycle v|w]"
+                 " [--nu N] [--omega auto|VALUE] [--mg-coarse exact|sor]\n";
     std::cerr << "Dtypes: float, double\n";
     std::cerr << "Solvers: jacobi, gs, sor, mg\n";
     std::cerr << "Cases: sine, mixed_sine, bubble, exp, cosine\n";
@@ -185,6 +209,18 @@ Options parse_args(int argc, char** argv) {
             continue;
         }
 
+        if (arg == "--repeat-runs") {
+            if (i + 1 >= argc) {
+                throw std::invalid_argument("--repeat-runs requires a value");
+            }
+            const long long parsed = std::stoll(argv[++i]);
+            if (parsed < 1) {
+                throw std::invalid_argument("repeat-runs must be positive");
+            }
+            options.repeat_runs = static_cast<std::size_t>(parsed);
+            continue;
+        }
+
         throw std::invalid_argument("unknown argument: " + std::string(arg));
     }
 
@@ -235,38 +271,38 @@ int run_2d(const Options& options) {
     }
 
     std::string solver_name = options.solver_name;
-    poisson::SolveResult result{};
 
-    const auto start = std::chrono::steady_clock::now();
-    if (options.solver_name == "jacobi") {
-        result = poisson::solve_jacobi<Real>(problem, solve_options);
-    } else if (options.solver_name == "gs") {
-        result = poisson::solve_gs<Real>(problem, solve_options);
-    } else if (options.solver_name == "sor") {
-        result = poisson::solve_sor<Real>(problem, solve_options);
-    } else if (options.solver_name == "mg") {
-        if (options.mg_coarse_name == "exact") {
-            result = poisson::solve_mg_exact<Real>(problem, mg_options);
-            solver_name = "mg_exact";
-        } else if (options.mg_coarse_name == "sor") {
-            result = poisson::solve_mg_sor<Real>(problem, mg_options);
-            solver_name = "mg_sor";
-        } else {
+    const auto solve_once = [&]() -> poisson::SolveResult {
+        if (options.solver_name == "jacobi") {
+            return poisson::solve_jacobi<Real>(problem, solve_options);
+        }
+        if (options.solver_name == "gs") {
+            return poisson::solve_gs<Real>(problem, solve_options);
+        }
+        if (options.solver_name == "sor") {
+            return poisson::solve_sor<Real>(problem, solve_options);
+        }
+        if (options.solver_name == "mg") {
+            if (options.mg_coarse_name == "exact") {
+                solver_name = "mg_exact";
+                return poisson::solve_mg_exact<Real>(problem, mg_options);
+            }
+            if (options.mg_coarse_name == "sor") {
+                solver_name = "mg_sor";
+                return poisson::solve_mg_sor<Real>(problem, mg_options);
+            }
             throw std::invalid_argument("mg-coarse must be exact or sor");
         }
-    } else {
         throw std::invalid_argument("unknown solver: " + options.solver_name);
-    }
-    const auto end = std::chrono::steady_clock::now();
-    const double wall_time_ms =
-        std::chrono::duration<double, std::milli>(end - start).count();
-    const double time_ms = benchmark_compute_time_ms(result, wall_time_ms);
-    const double time_ms_including_graph = benchmark_including_graph_time_ms(result, wall_time_ms);
+    };
+    const auto timed_run = time_solver_runs(solve_once, options.repeat_runs);
+    const auto& result = timed_run.first;
+    const double time_ms = timed_run.second;
 
     const auto metrics_problem = poisson::make_problem<double>(options.case_name, options.grid_size);
     const poisson::ErrorMetrics metrics = poisson::metrics(metrics_problem, result.phi);
 
-    std::cout << "solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms,time_ms_including_graph\n";
+    std::cout << "solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms\n";
     std::cout << std::scientific;
     std::cout.precision(6);
     std::cout << solver_name << ",cuda," << options.dtype << "," << problem.interior_n << ','
@@ -274,7 +310,7 @@ int run_2d(const Options& options) {
               << metrics.error_l2 << ',' << metrics.error_linf << ',';
     std::cout << std::fixed;
     std::cout.precision(3);
-    std::cout << time_ms << ',' << time_ms_including_graph << '\n';
+    std::cout << time_ms << '\n';
 
     return 0;
 }
@@ -310,40 +346,40 @@ int run_3d(const Options& options) {
     }
 
     std::string solver_name = options.solver_name;
-    poisson::SolveResult3D result{};
 
-    const auto start = std::chrono::steady_clock::now();
-    if (options.solver_name == "jacobi") {
-        result = poisson::solve_jacobi<Real>(problem, solve_options);
-    } else if (options.solver_name == "gs") {
-        result = poisson::solve_gs<Real>(problem, solve_options);
-    } else if (options.solver_name == "sor") {
-        result = poisson::solve_sor<Real>(problem, solve_options);
-    } else if (options.solver_name == "mg") {
-        if (options.mg_coarse_name == "exact") {
-            result = poisson::solve_mg_exact<Real>(problem, mg_options);
-            solver_name = "mg_exact";
-        } else if (options.mg_coarse_name == "sor") {
-            result = poisson::solve_mg_sor<Real>(problem, mg_options);
-            solver_name = "mg_sor";
-        } else {
+    const auto solve_once = [&]() -> poisson::SolveResult3D {
+        if (options.solver_name == "jacobi") {
+            return poisson::solve_jacobi<Real>(problem, solve_options);
+        }
+        if (options.solver_name == "gs") {
+            return poisson::solve_gs<Real>(problem, solve_options);
+        }
+        if (options.solver_name == "sor") {
+            return poisson::solve_sor<Real>(problem, solve_options);
+        }
+        if (options.solver_name == "mg") {
+            if (options.mg_coarse_name == "exact") {
+                solver_name = "mg_exact";
+                return poisson::solve_mg_exact<Real>(problem, mg_options);
+            }
+            if (options.mg_coarse_name == "sor") {
+                solver_name = "mg_sor";
+                return poisson::solve_mg_sor<Real>(problem, mg_options);
+            }
             throw std::invalid_argument("mg-coarse must be exact or sor");
         }
-    } else {
         throw std::invalid_argument("unknown solver: " + options.solver_name);
-    }
+    };
+    const auto timed_run = time_solver_runs(solve_once, options.repeat_runs);
+    const auto& result = timed_run.first;
+    const double time_ms = timed_run.second;
     poisson::cuda::check(cudaDeviceSynchronize(), "cudaDeviceSynchronize", __FILE__, __LINE__);
-    const auto end = std::chrono::steady_clock::now();
-    const double wall_time_ms =
-        std::chrono::duration<double, std::milli>(end - start).count();
-    const double time_ms = benchmark_compute_time_ms(result, wall_time_ms);
-    const double time_ms_including_graph = benchmark_including_graph_time_ms(result, wall_time_ms);
 
     const auto metrics_problem =
         poisson::make_problem_3d<double>(options.case_name, options.grid_size);
     const poisson::ErrorMetrics metrics = poisson::metrics(metrics_problem, result.phi);
 
-    std::cout << "solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms,time_ms_including_graph\n";
+    std::cout << "solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms\n";
     std::cout << std::scientific;
     std::cout.precision(6);
     std::cout << solver_name << ",cuda," << options.dtype << "," << problem.interior_n << ','
@@ -351,7 +387,7 @@ int run_3d(const Options& options) {
               << metrics.error_l2 << ',' << metrics.error_linf << ',';
     std::cout << std::fixed;
     std::cout.precision(3);
-    std::cout << time_ms << ',' << time_ms_including_graph << '\n';
+    std::cout << time_ms << '\n';
 
     return 0;
 }

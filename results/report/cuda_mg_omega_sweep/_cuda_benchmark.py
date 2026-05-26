@@ -98,9 +98,6 @@ def run_solver(
 
     row = rows[0]
     time_ms = float(row["time_ms"])
-    time_ms_including_graph = float(
-        row.get("time_ms_including_graph", row.get("time_ms_including_graph_ms", row["time_ms"]))
-    )
     return {
         "solver": row["solver"],
         "backend": row["backend"],
@@ -113,6 +110,4 @@ def run_solver(
         "error_linf": float(row["error_linf"]),
         "time_ms": time_ms,
         "time_s": time_ms / 1000.0,
-        "time_ms_including_graph": time_ms_including_graph,
-        "time_s_including_graph": time_ms_including_graph / 1000.0,
     }
