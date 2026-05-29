@@ -1,0 +1,10 @@
+dimension,case,solver,backend,dtype,grid_size,iterations,error_l2,error_linf,time_ms,time_s,converged,source
+2,cosine,RB SOR,cuda,double,63,300,1.861234e-05,3.615085e-05,7.732000e+00,7.732000e-03,true,wrapper
+2,cosine,RB SOR,cuda,double,95,450,8.274537e-06,1.608250e-05,9.598000e+00,9.598000e-03,true,wrapper
+2,cosine,RB SOR,cuda,double,127,550,4.654896e-06,9.044184e-06,1.135000e+01,1.135000e-02,true,wrapper
+2,cosine,RB SOR,cuda,double,159,700,2.979272e-06,5.790270e-06,1.274200e+01,1.274200e-02,true,wrapper
+2,cosine,RB SOR,cuda,double,191,850,2.068991e-06,4.021334e-06,1.507600e+01,1.507600e-02,true,wrapper
+2,cosine,RB SOR,cuda,double,255,1150,1.163837e-06,2.262062e-06,1.977300e+01,1.977300e-02,true,wrapper
+2,cosine,RB SOR,cuda,double,319,1450,7.448642e-07,1.447659e-06,2.467900e+01,2.467900e-02,true,wrapper
+2,cosine,RB SOR,cuda,double,383,1750,5.172700e-07,1.005378e-06,3.163900e+01,3.163900e-02,true,wrapper
+2,cosine,RB SOR,cuda,double,511,2400,2.909662e-07,5.655292e-07,5.044300e+01,5.044300e-02,true,wrapper
