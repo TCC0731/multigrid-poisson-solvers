@@ -144,6 +144,7 @@ export OMP_PLACES=cores
 
 ```bash
 ./build/poisson_cuda --dim 3 --solver mg --case sine -n 31 --tol 1e-8 --max-iter 100
+./build/poisson_cuda --dim 3 --solver mg --case sine -n 31 --tol 1e-8 --max-iter 100 --dump-phi
 ```
 
 ### Multigrid Parameters
@@ -155,7 +156,7 @@ The `--cycle`, `--nu`, `--omega`, and `--mg-coarse` flags only affect `--solver 
 | `--cycle v|w` | Select a V-cycle or W-cycle. | Default `v`. `w` does extra coarse-grid work per cycle. |
 | `--nu N` | Number of red-black smoothing steps used in each smoothing pass. | Default `2`. The value is applied before restriction and after prolongation. |
 | `--omega auto|VALUE` | Relaxation factor for MG smoothing and MG coarse-grid SOR. | Default `1.0` unless `auto` is requested. `auto` uses the classical grid-dependent estimate `2 / (1 + sin(pi / (n + 1)))`. Manual values should stay in the open interval `(0, 2]`. |
-| `--mg-coarse exact|sor` | Coarsest-level solve strategy. | Default `exact`. `exact` solves the coarsest grid directly; `sor` uses a fixed number of coarse SOR steps (currently 16 in this codebase). |
+| `--mg-coarse exact|sor` | Coarsest-level solve strategy. | Default `exact`. `exact` solves the coarsest grid directly; `sor` uses red-black SOR on the coarsest grid. |
 | `--tol T` | Residual stopping threshold. | Default `1e-10` for double precision and `1e-6` for float. Smaller values increase work and usually improve accuracy. |
 | `--max-iter N` | Maximum number of solver cycles. | Default `20000`. Prevents long runs when the requested tolerance is hard to reach. |
 
@@ -175,7 +176,7 @@ If you are comparing runs, keep those values fixed and avoid changing the CPU af
 
 ### CUDA Runtime Knobs
 
-The CUDA binary also uses the same solver CLI as the C++ binary, plus `--repeat-runs N`, but the work happens on the GPU.
+The CUDA binary also uses the same solver CLI as the C++ binary, plus `--repeat-runs N`, `--dump-phi [PATH]`, and `--coarse-steps N`, but the work happens on the GPU.
 
 - `--dim 2|3` switches between the 2D and 3D CUDA code paths.
 - `--dtype float|double` selects the precision. `float` is usually faster; `double` is the conservative choice when you want tighter numerical agreement.
@@ -183,6 +184,8 @@ The CUDA binary also uses the same solver CLI as the C++ binary, plus `--repeat-
 - `--cycle v|w`, `--nu`, `--omega`, and `--mg-coarse` only matter for `--solver mg`.
 - `--solver sor` still uses the internal grid-based relaxation factor and does not take a CLI override for omega.
 - `--repeat-runs N` repeats only the timed solver section `N` times and reports the average `time_ms`.
+- `--dump-phi [PATH]` writes the final solution grid to a binary file after the solve completes. If `PATH` is omitted, the binary is named `phi_cuda_<dim>d_<solver>_<case>_n<grid>_<dtype>.bin` in the current directory.
+- `--coarse-steps N` sets the number of red-black SOR steps used on the coarsest grid when `--mg-coarse sor` is selected. The default is `16`.
 - The executable checks that a CUDA device is available before solving, so a missing GPU or driver will fail early.
 
 The runtime solvers print CSV rows in the format
@@ -194,6 +197,9 @@ solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_m
 Here `time_ms` is the average time across the repeated timed solver runs. For CUDA multigrid,
 the reported time uses the solver's compute-only timing so graph capture and instantiation
 are not counted in `time_ms`.
+
+When `--dump-phi` is enabled, the binary file starts with a small metadata header and then
+stores the grid values in row-major order as `double`s.
 
 ## Benchmarking
 

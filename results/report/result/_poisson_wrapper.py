@@ -366,15 +366,16 @@ class PoissonResult(PoissonRequest):
     @classmethod
     def from_row_dict(cls, row: Mapping[str, str]) -> "PoissonResult":
         solver = _normalize_solver(row["solver"])
+        backend = _normalize_backend(row["backend"])
         mg_coarse = _normalize_token(row["mg_coarse"]) or None
         coarse_steps = _parse_optional_positive_int(row.get("coarse_steps"), "coarse_steps")
-        if solver == "mg" and mg_coarse == "sor":
+        if solver == "mg" and mg_coarse == "sor" and backend == "cuda":
             coarse_steps_value = 16 if coarse_steps is None else coarse_steps
         else:
             coarse_steps_value = None
 
         request = PoissonRequest(
-            backend=_normalize_backend(row["backend"]),
+            backend=backend,
             dim=_parse_required_int(row["dim"], "dim"),
             dtype=_normalize_dtype(row["dtype"]),
             solver=solver,
@@ -436,7 +437,9 @@ def build_request(
         omega_value = _normalize_omega(omega)
         mg_coarse_value = _normalize_mg_coarse(mg_coarse)
         coarse_steps_value = (
-            _resolve_coarse_steps(coarse_steps) if mg_coarse_value == "sor" else None
+            _resolve_coarse_steps(coarse_steps)
+            if mg_coarse_value == "sor" and backend == "cuda"
+            else None
         )
     else:
         cycle_value = None
@@ -522,7 +525,7 @@ def _build_command(request: PoissonRequest, executable: Path) -> list[str]:
                 request.mg_coarse or "exact",
             ]
         )
-        if request.mg_coarse == "sor":
+        if request.mg_coarse == "sor" and request.backend == "cuda":
             cmd.extend(
                 [
                     "--coarse-steps",
