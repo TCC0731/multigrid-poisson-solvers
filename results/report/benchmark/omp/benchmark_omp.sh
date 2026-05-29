@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
 BENCHMARK_BIN="${OMP_BENCHMARK_BIN:-$REPO_ROOT/build/poisson_benchmark_omp}"
 OUTPUT_ROOT="${OMP_BENCHMARK_OUTPUT_ROOT:-$SCRIPT_DIR}"
-THREADS_SPEC="${THREADS_LIST:-1 2 4 7 8 14 16 28 32 56 64 112}"
+THREADS_SPEC="${THREADS_LIST:-1 2 4 8 12 16}"
 DIMS_SPEC="${DIMS_LIST:-2 3}"
 
 if [[ ${1-} == "-h" || ${1-} == "--help" ]]; then
@@ -99,7 +99,8 @@ run_one() {
   OMP_NUM_THREADS="$threads" "$BENCHMARK_BIN" \
     "${EXTRA_ARGS[@]}" \
     --dim "$dim" \
-    --output "$output_base"
+    --output "$output_base" \
+    --repeat-runs 10
 }
 
 for dim in "${DIMS[@]}"; do
@@ -107,3 +108,8 @@ for dim in "${DIMS[@]}"; do
     run_one "$dim" "$threads"
   done
 done
+
+python3 "$SCRIPT_DIR/extract_fastest_threads.py" \
+  --input-root "$OUTPUT_ROOT" \
+  --output-root "$OUTPUT_ROOT" \
+  --dims "${DIMS[@]}"
