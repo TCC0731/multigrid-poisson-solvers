@@ -5,7 +5,8 @@ This module keeps the public surface small:
 * build a normalized request from Python-friendly arguments
 * resolve the native CUDA/OpenMP executable
 * run the solver only on cache miss
-* persist the full result table in a single sorted CSV
+* persist the full result table in the shared cache, and optionally mirror it
+  to a caller-provided CSV
 
 The cache key is parameter-based only. If the native binaries change, clear the
 CSV manually.
@@ -69,7 +70,8 @@ def _find_repo_root() -> Path:
 
 REPO_ROOT = _find_repo_root()
 RESULT_DIR = Path(__file__).resolve().parent
-DEFAULT_CACHE_CSV = RESULT_DIR / "solver_results.csv"
+SHARED_CACHE_CSV = RESULT_DIR / "solver_results.csv"
+DEFAULT_CACHE_CSV = SHARED_CACHE_CSV
 DEFAULT_CUDA_EXECUTABLE = REPO_ROOT / "build" / "poisson_cuda"
 DEFAULT_OMP_EXECUTABLE = REPO_ROOT / "build" / "poisson_cpp_omp"
 
@@ -658,6 +660,46 @@ def _write_cache(cache_csv: Path, records: dict[tuple[object, ...], PoissonResul
         raise
 
 
+def _resolve_cache_paths(cache_csv: Path | str | None) -> tuple[Path, ...]:
+    paths = [SHARED_CACHE_CSV]
+    if cache_csv is not None:
+        extra_path = Path(cache_csv).expanduser().resolve()
+        if extra_path != SHARED_CACHE_CSV:
+            paths.append(extra_path)
+    return tuple(paths)
+
+
+def _load_cache_bundle(
+    cache_paths: tuple[Path, ...],
+) -> tuple[
+    dict[tuple[object, ...], PoissonResult],
+    dict[Path, dict[tuple[object, ...], PoissonResult]],
+]:
+    merged_records: dict[tuple[object, ...], PoissonResult] = {}
+    loaded_records: dict[Path, dict[tuple[object, ...], PoissonResult]] = {}
+    for path in cache_paths:
+        path_records = load_cache(path)
+        loaded_records[path] = path_records
+        for key, result in path_records.items():
+            merged_records.setdefault(key, result)
+    return merged_records, loaded_records
+
+
+def _cache_bundle_needs_sync(
+    merged_records: dict[tuple[object, ...], PoissonResult],
+    loaded_records: Mapping[Path, dict[tuple[object, ...], PoissonResult]],
+) -> bool:
+    return any(path_records != merged_records for path_records in loaded_records.values())
+
+
+def _sync_cache_bundle(
+    cache_paths: tuple[Path, ...],
+    records: dict[tuple[object, ...], PoissonResult],
+) -> None:
+    for path in cache_paths:
+        _write_cache(path, records)
+
+
 def run_or_load(
     *,
     request: PoissonRequest | None = None,
@@ -702,17 +744,20 @@ def run_or_load(
     elif backend is not None:
         raise TypeError("pass either request or keyword parameters, not both")
 
-    cache_path = Path(cache_csv).expanduser() if cache_csv is not None else DEFAULT_CACHE_CSV
-    records = load_cache(cache_path)
+    # Keep the shared cache authoritative, and mirror any caller-specific cache.
+    cache_paths = _resolve_cache_paths(cache_csv)
+    records, loaded_records = _load_cache_bundle(cache_paths)
 
     cached = records.get(request.cache_key())
     if cached is not None:
+        if _cache_bundle_needs_sync(records, loaded_records):
+            _sync_cache_bundle(cache_paths, records)
         return cached
 
     executable_path = resolve_executable(request.backend, executable)
     result = _run_solver(request, executable_path)
     records[result.cache_key()] = result
-    _write_cache(cache_path, records)
+    _sync_cache_bundle(cache_paths, records)
     return result
 
 
@@ -733,6 +778,7 @@ __all__ = [
     "PoissonResult",
     "REPO_ROOT",
     "RESULT_DIR",
+    "SHARED_CACHE_CSV",
     "SOLVERS",
     "build_request",
     "load_cache",

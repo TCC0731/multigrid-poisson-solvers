@@ -15,8 +15,17 @@
 - [`_poisson_wrapper.py`](./_poisson_wrapper.py)
   - 核心 wrapper 實作
   - 提供 request 建立、執行、快取讀寫、結果回傳
+- [`omp_thread_scaling/run_and_plot.py`](./omp_thread_scaling/run_and_plot.py)
+  - OpenMP thread-scaling 報表腳本
+  - 預設用 `OMP_NUM_THREADS=1,2,4,6,8,12,16` 收集 SOR 與 MG V/W exact / SOR 的結果
+  - 輸出 combined CSV、每個 dimension 的 CSV，以及對應的 thread-scaling 圖
+- [`cuda_mg_phi_plots/run_and_plot.py`](./cuda_mg_phi_plots/run_and_plot.py)
+  - CUDA MG V/W SOR 的 phi 視覺化腳本
+  - 預設跑 `2D=4095`、`3D=383`，並輸出 `exact / MG / difference` 三聯圖
+  - 3D 只取 `z=0.5` 截面，結果會分別寫到 `dumps/`、`plots/`，並打包成 `phi_results.pkl`
 - `solver_results.csv`
-  - wrapper 自動產生的快取檔
+  - wrapper 自動產生的共用快取檔，供所有報告腳本共用
+  - 如果呼叫 `run_or_load(..., cache_csv=...)`，同一份結果也會同步寫到你指定的路徑
   - 若 native binary 重新編譯或 solver 邏輯有變，建議手動清掉再重跑
 
 ## 公開 API
@@ -45,6 +54,8 @@
 這是主要入口。
 
 如果快取裡已經有完全相同的參數組合，就直接回傳快取結果；如果沒有，就呼叫 native solver，讀取 stdout 輸出的 CSV，然後把新結果寫進快取檔。
+
+預設會先讀寫 `results/report/result/solver_results.csv` 這份共用快取；如果你另外傳入 `cache_csv`，wrapper 也會把同一份結果鏡像到那個路徑，方便各個 benchmark script 保留自己的本地 cache。
 
 範例：
 
