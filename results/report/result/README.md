@@ -37,6 +37,7 @@
 - `max_iter`: 正整數
 - `repeat_runs`: 重複執行次數，預設 `25`
 - `cycle` / `nu` / `omega` / `mg_coarse`: 只在 `solver="mg"` 時使用
+- `coarse_steps`: 只在 `solver="mg"` 且 `mg_coarse="sor"` 時使用，預設 `16`
 - `omp_num_threads`: 只在 `backend="omp"` 時使用
 
 ### `run_or_load(...)`
@@ -80,6 +81,7 @@ print(result.iterations)
   - `nu`
   - `omega`
   - `mg_coarse`
+  - `coarse_steps`
   - `omp_num_threads`
 - 計算結果
   - `iterations`
@@ -107,6 +109,7 @@ results/report/result/solver_results.csv
 - 不同 grid size
 - 不同 `repeat_runs`
 - MG 的 `cycle`、`nu`、`omega`、`mg_coarse`
+- MG 的 `coarse_steps` 也會納入 cache key，但只在 `mg_coarse="sor"` 時生效
 - OpenMP 的 `omp_num_threads`
 
 如果參數完全相同，wrapper 會直接讀 CSV，不會重跑 solver。
