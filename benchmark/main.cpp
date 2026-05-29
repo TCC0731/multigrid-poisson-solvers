@@ -29,6 +29,7 @@ struct Options {
     poisson::benchmark::Suite suite{poisson::benchmark::Suite::All};
     std::size_t dimension{2};
     std::size_t max_grid_size{0};
+    poisson::benchmark::BenchmarkTiming timing{};
     std::filesystem::path output_base_path{};
     bool has_output{false};
 };
@@ -36,10 +37,14 @@ struct Options {
 void print_usage(const char* argv0) {
     std::cerr << "Usage: " << argv0
               << " [--suite all|solver_comparison|mg_compare] [--dim 2|3]"
-                 " [--max-grid-size N] [--output BASE]\n";
+                 " [--max-grid-size N] [--warmup-runs N] [--timed-runs N]"
+                 " [--repeat-runs N]"
+                 " [--output BASE]\n";
     std::cerr << "When BASE is provided, the program writes BASE.csv and BASE_all.csv.\n";
     std::cerr << "Default suite: all (runs solver_comparison + mg_compare)\n";
     std::cerr << "Default dimension: 2\n";
+    std::cerr << "Default warmup runs: " << poisson::benchmark::detail::kWarmupRuns << '\n';
+    std::cerr << "Default timed runs: " << poisson::benchmark::detail::kTimedRuns << '\n';
     std::cerr << "Backend label: " << kBackendLabel << '\n';
 }
 
@@ -83,6 +88,30 @@ Options parse_args(int argc, char** argv) {
                 throw std::invalid_argument("max-grid-size must be positive");
             }
             options.max_grid_size = static_cast<std::size_t>(parsed);
+            continue;
+        }
+
+        if (arg == "--warmup-runs") {
+            if (i + 1 >= argc) {
+                throw std::invalid_argument("--warmup-runs requires a value");
+            }
+            const long long parsed = std::stoll(argv[++i]);
+            if (parsed < 0) {
+                throw std::invalid_argument("warmup-runs must be non-negative");
+            }
+            options.timing.warmup_runs = static_cast<std::size_t>(parsed);
+            continue;
+        }
+
+        if (arg == "--timed-runs" || arg == "--repeat-runs") {
+            if (i + 1 >= argc) {
+                throw std::invalid_argument("--timed-runs requires a value");
+            }
+            const long long parsed = std::stoll(argv[++i]);
+            if (parsed < 1) {
+                throw std::invalid_argument("timed-runs must be positive");
+            }
+            options.timing.timed_runs = static_cast<std::size_t>(parsed);
             continue;
         }
 
@@ -149,7 +178,8 @@ int main(int argc, char** argv) {
             options.suite,
             kBackendLabel,
             options.dimension,
-            options.max_grid_size
+            options.max_grid_size,
+            options.timing
         );
 
         if (options.has_output) {
