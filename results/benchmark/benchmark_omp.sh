@@ -22,3 +22,6 @@ exec "$REPO_ROOT/build/poisson_benchmark_omp" --dim 3 \
 
 
 #./build/poisson_benchmark_cuda --output ./results/benchmark/cuda/benchmark_cuda_v8
+
+#./build/poisson_benchmark_cuda --output ./results/benchmark/cuda/benchmark_cuda_v24
+#./build/poisson_benchmark_cuda --dim 3 --output ./results/benchmark/cuda_3d/benchmark_cuda_3d_v13
