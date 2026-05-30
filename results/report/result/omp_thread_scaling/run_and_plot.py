@@ -37,7 +37,7 @@ if str(RESULT_ROOT) not in sys.path:
     sys.path.insert(0, str(RESULT_ROOT))
 
 from _poisson_wrapper import run_or_load
-from _report_common import csv_float, load_pyplot, positive_float, positive_int, write_rows_csv
+from _report_common import csv_float, finalize_figure_header, load_pyplot, positive_float, positive_int, write_rows_csv
 
 
 DEFAULT_CASE = "sine"
@@ -404,21 +404,17 @@ def _plot_dimension(
             ax.set_ylim(0.0, upper * 1.08)
 
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(
-        handles,
-        labels,
-        loc="upper center",
-        bbox_to_anchor=(0.5, 1.08),
+    finalize_figure_header(
+        fig,
+        title=(
+            f"OMP thread scaling - {dim}D {case}, grid={grid_size}\n"
+            f"tol={tol:.0e}, repeat_runs={repeat_runs}"
+        ),
+        handles=handles,
+        labels=labels,
         ncol=3,
-        frameon=False,
-        borderaxespad=0.0,
+        tight_top=0.80,
     )
-    fig.suptitle(
-        f"OMP thread scaling - {dim}D {case}, grid={grid_size}\n"
-        f"tol={tol:.0e}, repeat_runs={repeat_runs}",
-        y=0.92,
-    )
-    fig.tight_layout(rect=(0, 0, 1, 0.80))
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close(fig)

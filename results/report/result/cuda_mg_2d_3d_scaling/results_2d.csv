@@ -1,0 +1,13 @@
+dimension,case,mode,mode_key,cycle,mg_coarse,omega,nu,solver,backend,dtype,grid_size,cells,iterations,residual_l2,error_l2,error_linf,time_ms,time_s,time_per_cell_us,throughput_cells_per_s,tol,max_iter,repeat_runs,converged,source
+2,cosine,MG V exact,mg_v_exact,v,exact,1.25,3,mg,cuda,double,127,16129,6,2.836440e-10,4.654896e-06,9.044184e-06,9.820000e-01,9.820000e-04,6.088412e-02,1.642464e+07,1.000000e-09,150,5,true,wrapper
+2,cosine,MG V exact,mg_v_exact,v,exact,1.25,3,mg,cuda,double,255,65025,7,1.565705e-11,1.163837e-06,2.262062e-06,1.352000e+00,1.352000e-03,2.079200e-02,4.809541e+07,1.000000e-09,150,5,true,wrapper
+2,cosine,MG V exact,mg_v_exact,v,exact,1.25,3,mg,cuda,double,511,261121,7,5.336785e-11,2.909662e-07,5.655295e-07,2.504000e+00,2.504000e-03,9.589424e-03,1.042815e+08,1.000000e-09,150,5,true,wrapper
+2,cosine,MG V exact,mg_v_exact,v,exact,1.25,3,mg,cuda,double,1023,1046529,7,1.645287e-10,7.274200e-08,1.413846e-07,6.256000e+00,6.256000e-03,5.977856e-03,1.672840e+08,1.000000e-09,150,5,true,wrapper
+2,cosine,MG V exact,mg_v_exact,v,exact,1.25,3,mg,cuda,double,2047,4190209,7,4.872604e-10,1.818553e-08,3.534634e-08,2.353500e+01,2.353500e-02,5.616665e-03,1.780416e+08,1.000000e-09,150,5,true,wrapper
+2,cosine,MG V exact,mg_v_exact,v,exact,1.25,3,mg,cuda,double,4095,16769025,8,3.862726e-10,4.546387e-09,8.836614e-09,1.503920e+02,1.503920e-01,8.968440e-03,1.115021e+08,1.000000e-09,150,5,true,wrapper
+2,sine,MG V exact,mg_v_exact,v,exact,1.25,3,mg,cuda,double,127,16129,4,1.963370e-10,2.510045e-05,5.020090e-05,7.220000e-01,7.220000e-04,4.476409e-02,2.233934e+07,1.000000e-09,150,5,true,wrapper
+2,sine,MG V exact,mg_v_exact,v,exact,1.25,3,mg,cuda,double,255,65025,4,2.387709e-10,6.274967e-06,1.254993e-05,1.079000e+00,1.079000e-03,1.659362e-02,6.026413e+07,1.000000e-09,150,5,true,wrapper
+2,sine,MG V exact,mg_v_exact,v,exact,1.25,3,mg,cuda,double,511,261121,4,2.600678e-10,1.568728e-06,3.137453e-06,1.990000e+00,1.990000e-03,7.620988e-03,1.312166e+08,1.000000e-09,150,5,true,wrapper
+2,sine,MG V exact,mg_v_exact,v,exact,1.25,3,mg,cuda,double,1023,1046529,4,2.713145e-10,3.921770e-07,7.843501e-07,5.996000e+00,5.996000e-03,5.729416e-03,1.745379e+08,1.000000e-09,150,5,true,wrapper
+2,sine,MG V exact,mg_v_exact,v,exact,1.25,3,mg,cuda,double,2047,4190209,4,2.974561e-10,9.803966e-08,1.960755e-07,2.001100e+01,2.001100e-02,4.775657e-03,2.093953e+08,1.000000e-09,150,5,true,wrapper
+2,sine,MG V exact,mg_v_exact,v,exact,1.25,3,mg,cuda,double,4095,16769025,4,5.079855e-10,2.450536e-08,4.900689e-08,1.011280e+02,1.011280e-01,6.030643e-03,1.658198e+08,1.000000e-09,150,5,true,wrapper

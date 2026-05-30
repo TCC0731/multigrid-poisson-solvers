@@ -19,10 +19,26 @@
   - OpenMP thread-scaling 報表腳本
   - 預設用 `OMP_NUM_THREADS=1,2,4,6,8,12,16` 收集 SOR 與 MG V/W exact / SOR 的結果
   - 輸出 combined CSV、每個 dimension 的 CSV，以及對應的 thread-scaling 圖
+- [`omp_residual_history/run_and_save.py`](./omp_residual_history/run_and_save.py)
+  - OpenMP residual-history 收集腳本
+  - 會跑 SOR、MG V-SOR、MG W-SOR，先把每條 residual history 存進 `residual_history.pkl`
+  - 預設 grid size 是 2D SOR=`512`、2D MG=`511`、3D 全部模式=`127`
+  - 2D 的 MG 仍然保留 odd interior grid size，這是 nested-grid coarsening 的必要條件
+- [`omp_residual_history/plot_from_pkl.py`](./omp_residual_history/plot_from_pkl.py)
+  - 讀取 `residual_history.pkl` 並繪製 residual-history 圖
+  - 會輸出 `residual_history.png`，方便你反覆換版式而不用重跑 solver
 - [`cuda_mg_phi_plots/run_and_plot.py`](./cuda_mg_phi_plots/run_and_plot.py)
   - CUDA MG V/W SOR 的 phi 視覺化腳本
   - 預設跑 `sine` 和 `mixed_sine`，使用 `2D=4095`、`3D=383`，並輸出 `exact / MG / difference` 三聯圖
   - 3D 只取 `z=0.5` 截面，結果會分別寫到 `dumps/`、`plots/`，並打包成 `phi_results.pkl`
+- [`cuda_mg_2d_3d_scaling/run_and_plot.py`](./cuda_mg_2d_3d_scaling/run_and_plot.py)
+  - CUDA MG 的 2D vs 3D scaling 報表腳本
+  - 預設比較 `2D=127,255,511,1023,2047,4095` 與 `3D=31,63,127,255`
+  - 輸出 combined CSV、每個 dimension 的 CSV，以及 `runtime / time-per-cell / throughput` 三聯圖
+- [`cuda_gpu_scaling/run_and_plot.py`](./cuda_gpu_scaling/run_and_plot.py)
+  - CUDA GPU scaling 與 speedup 報表腳本
+  - 預設同時收 `OMP_NUM_THREADS=1,2,4,6,8,12,16` 與 CUDA 的結果，並挑出 OpenMP best thread 當對照組
+  - 輸出 raw CSV、summary CSV、每個 dimension 的 CSV，以及 `runtime / speedup / throughput` 圖
 - [`omega_sweep/run_and_plot.py`](./omega_sweep/run_and_plot.py)
   - CUDA MG convergence 的 `omega` 掃描腳本
   - 預設使用 `2D=4095`、`3D=383`，掃描 `omega=1.00 ~ 1.50`，步長 `0.05`

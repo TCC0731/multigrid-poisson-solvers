@@ -55,6 +55,40 @@ def load_pyplot():
     return plt
 
 
+def finalize_figure_header(
+    fig,
+    *,
+    title: str,
+    handles: Sequence[object],
+    labels: Sequence[str],
+    ncol: int,
+    legend_y: float = 0.875,
+    title_y: float = 0.985,
+    tight_top: float = 0.80,
+    legend_kwargs: Mapping[str, object] | None = None,
+) -> None:
+    """Place a figure legend and title in separate header bands.
+
+    Figure-level legends are not handled by ``tight_layout()``, so callers need
+    to reserve explicit top space and keep the legend below the title.
+    """
+
+    if handles and labels:
+        options: dict[str, object] = {"frameon": False, "borderaxespad": 0.0}
+        if legend_kwargs:
+            options.update(legend_kwargs)
+        fig.legend(
+            handles,
+            labels,
+            loc="upper center",
+            bbox_to_anchor=(0.5, legend_y),
+            ncol=ncol,
+            **options,
+        )
+    fig.suptitle(title, y=title_y)
+    fig.tight_layout(rect=(0, 0, 1, tight_top))
+
+
 def power_law_fit_curve(
     x_values: Sequence[float],
     y_values: Sequence[float],

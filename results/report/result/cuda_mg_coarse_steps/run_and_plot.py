@@ -20,7 +20,7 @@ if str(RESULT_ROOT) not in sys.path:
     sys.path.insert(0, str(RESULT_ROOT))
 
 from _poisson_wrapper import resolve_executable, run_or_load
-from _report_common import csv_float, load_pyplot, normalize_choices, positive_float, positive_int, write_rows_csv
+from _report_common import csv_float, finalize_figure_header, load_pyplot, normalize_choices, positive_float, positive_int, write_rows_csv
 
 
 DEFAULT_BACKEND = "cuda"
@@ -288,21 +288,16 @@ def plot_case(
         ax.grid(True, which="both", linestyle="--", alpha=0.45)
 
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(
-        handles,
-        labels,
-        loc="upper center",
-        bbox_to_anchor=(0.5, 1.08),
+    finalize_figure_header(
+        fig,
+        title=(
+            f"CUDA MG coarse_steps - {dim}D {case}\n"
+            f"grid={grid_size}, nu={nu}, omega={omega:.2f}, tol={tol:.0e}, max_iter={max_iter}"
+        ),
+        handles=handles,
+        labels=labels,
         ncol=2,
-        frameon=False,
-        borderaxespad=0.0,
     )
-    fig.suptitle(
-        f"CUDA MG coarse_steps - {dim}D {case}\n"
-        f"grid={grid_size}, nu={nu}, omega={omega:.2f}, tol={tol:.0e}, max_iter={max_iter}",
-        y=0.92,
-    )
-    fig.tight_layout(rect=(0, 0, 1, 0.82))
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
