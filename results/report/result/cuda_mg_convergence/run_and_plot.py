@@ -38,10 +38,10 @@ DEFAULT_DIMS = (2, 3)
 DEFAULT_BACKEND = "cuda"
 DEFAULT_DTYPE = "double"
 DEFAULT_OMEGA = 1.25
-DEFAULT_NU = 4
+DEFAULT_NU = 3
 DEFAULT_TOL = 1e-9
 DEFAULT_MAX_ITER = 15
-DEFAULT_REPEAT_RUNS = 5
+DEFAULT_REPEAT_RUNS = 50
 DEFAULT_SOURCE_ROOT = REPO_ROOT / "results" / "example" / "cuda_mg_omega_sweep"
 TARGET_GRID_RANGES = {2: (127, 4095), 3: (32, 383)}
 CSV_COLUMNS = (
@@ -83,9 +83,9 @@ class ModeSpec:
 
 MODE_SPECS = (
     ModeSpec("V-exact", "v_exact", "v", "exact", "#1f77b4", "o", "-"),
-    ModeSpec("V-SOR", "v_sor", "v", "sor", "#ff7f0e", "s", "--"),
-    ModeSpec("W-exact", "w_exact", "w", "exact", "#2ca02c", "^", "-"),
-    ModeSpec("W-SOR", "w_sor", "w", "sor", "#d62728", "D", "--"),
+    ModeSpec("V-SOR", "v_sor", "v", "sor", "#1f77b4", "s", "--"),
+    ModeSpec("W-exact", "w_exact", "w", "exact", "#d62728", "o", "-"),
+    ModeSpec("W-SOR", "w_sor", "w", "sor", "#d62728", "s", "--"),
 )
 MODE_SPECS_BY_KEY = {spec.mode_key: spec for spec in MODE_SPECS}
 
@@ -345,7 +345,7 @@ def plot_case(
     for row in rows:
         series_by_label[MODE_SPECS_BY_KEY[str(row["mode_key"])].label].append(row)
 
-    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+    fig, axes = plt.subplots(1, 3, figsize=(12.8, 4))
     panels = (
         ("error_l2", "error_l2", "L2 error"),
         ("iterations", "iter", "Iterations"),
@@ -355,6 +355,7 @@ def plot_case(
     legend_labels: list[str] = []
 
     for ax_idx, (ax, (metric_key, ylabel, title)) in enumerate(zip(axes, panels)):
+        use_fit = metric_key != "iterations"
         fit_orders: list[tuple[ModeSpec, float]] = []
         for spec in MODE_SPECS:
             series = sorted(series_by_label[spec.label], key=lambda row: int(row["grid_size"]))
@@ -362,7 +363,8 @@ def plot_case(
                 continue
             x = [int(row["grid_size"]) for row in series]
             y = [float(row[metric_key]) for row in series]
-            (main_line,) = ax.loglog(
+            plot_fn = ax.loglog if metric_key != "iterations" else ax.semilogx
+            (main_line,) = plot_fn(
                 x,
                 y,
                 marker=spec.marker,
@@ -374,23 +376,27 @@ def plot_case(
             if spec.label not in legend_labels:
                 legend_handles.append(main_line)
                 legend_labels.append(spec.label)
-            fit = power_law_fit_curve(x, y)
-            if fit is not None:
-                fit_x, fit_y, slope = fit
-                ax.loglog(
-                    fit_x,
-                    fit_y,
-                    color=spec.color,
-                    linestyle="--",
-                    linewidth=1.5,
-                    alpha=0.85,
-                    label="_nolegend_",
-                )
-                fit_orders.append((spec, slope))
+            if use_fit:
+                fit = power_law_fit_curve(x, y)
+                if fit is not None:
+                    fit_x, fit_y, slope = fit
+                    ax.loglog(
+                        fit_x,
+                        fit_y,
+                        color=spec.color,
+                        linestyle="--",
+                        linewidth=1.5,
+                        alpha=0.85,
+                        label="_nolegend_",
+                    )
+                    fit_orders.append((spec, slope))
         ax.set_title(title)
         ax.set_xlabel("grid size")
         ax.set_ylabel(ylabel)
         ax.grid(True, which="both", linestyle="--", alpha=0.45)
+
+        if metric_key == "iterations":
+            ax.set_ylim(0, 10)
 
         if fit_orders:
             fit_text = "\n".join(
@@ -446,11 +452,10 @@ def plot_case(
         bbox=dict(boxstyle="round,pad=0.15", facecolor="white", edgecolor="none", alpha=0.72),
     )
     fig.suptitle(
-        f"CUDA MG convergence - {dim}D {case}\n"
-        f"nu={nu}, omega={omega:.2f}, tol={tol:.0e}, max_iter={max_iter}",
+        f"CUDA MG convergence - {dim}D {case}\n",
         y=0.99,
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.91))
+    fig.tight_layout(rect=(0, 0, 1, 1.05))
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close(fig)

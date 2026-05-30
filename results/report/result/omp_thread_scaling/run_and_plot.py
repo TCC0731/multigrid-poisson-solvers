@@ -21,7 +21,7 @@ Output files are written next to this script:
 
 * ``results_all.csv`` for the combined table
 * ``results_2d.csv`` / ``results_3d.csv`` for per-dimension tables
-* ``plots_2d.png`` / ``plots_3d.png`` for the thread-scaling figures
+* ``plots_2d.png`` / ``plots_3d.png`` for runtime, speedup, and efficiency
 """
 
 import argparse
@@ -53,6 +53,7 @@ DEFAULT_MG_MAX_ITER = 150
 DEFAULT_OMEGA = 1.25
 DEFAULT_NU = 3
 DEFAULT_COARSE_STEPS = 16
+IDEAL_SPEEDUP_THREAD_LIMIT = 4
 CSV_COLUMNS = (
     "dimension",
     "case",
@@ -103,17 +104,17 @@ MODE_SPECS = (
         label="SOR",
         mode_key="sor",
         solver="sor",
-        color="#1f77b4",
-        marker="o",
-        linestyle="-",
+        color="#2ca02c",
+        marker="^",
+        linestyle=":",
         max_iter=DEFAULT_SOR_MAX_ITER,
     ),
     ModeSpec(
         label="MG V exact",
         mode_key="mg_v_exact",
         solver="mg",
-        color="#ff7f0e",
-        marker="s",
+        color="#1f77b4",
+        marker="o",
         linestyle="-",
         cycle="v",
         mg_coarse="exact",
@@ -125,8 +126,8 @@ MODE_SPECS = (
         label="MG V SOR",
         mode_key="mg_v_sor",
         solver="mg",
-        color="#2ca02c",
-        marker="^",
+        color="#1f77b4",
+        marker="s",
         linestyle="--",
         cycle="v",
         mg_coarse="sor",
@@ -139,7 +140,7 @@ MODE_SPECS = (
         mode_key="mg_w_exact",
         solver="mg",
         color="#d62728",
-        marker="D",
+        marker="o",
         linestyle="-",
         cycle="w",
         mg_coarse="exact",
@@ -151,8 +152,8 @@ MODE_SPECS = (
         label="MG W SOR",
         mode_key="mg_w_sor",
         solver="mg",
-        color="#9467bd",
-        marker="P",
+        color="#d62728",
+        marker="s",
         linestyle="--",
         cycle="w",
         mg_coarse="sor",
@@ -161,7 +162,60 @@ MODE_SPECS = (
         max_iter=DEFAULT_MG_MAX_ITER,
     ),
 )
-MODE_SPECS_BY_KEY = {spec.mode_key: spec for spec in MODE_SPECS}
+
+
+def _series_by_mode(rows: Iterable[Mapping[str, object]]) -> dict[str, list[dict[str, object]]]:
+    series_by_mode: dict[str, list[dict[str, object]]] = {spec.mode_key: [] for spec in MODE_SPECS}
+    for row in rows:
+        series_by_mode[str(row["mode_key"])].append(dict(row))
+    return series_by_mode
+
+
+def _plot_mode_series(
+    ax,
+    *,
+    series_by_mode: Mapping[str, list[dict[str, object]]],
+    metric_key: str,
+) -> None:
+    for spec in MODE_SPECS:
+        series = sorted(series_by_mode[spec.mode_key], key=lambda row: int(row["omp_num_threads"]))
+        if not series:
+            continue
+        x = [int(row["omp_num_threads"]) for row in series]
+        y = [float(row[metric_key]) for row in series]
+        ax.plot(
+            x,
+            y,
+            marker=spec.marker,
+            linestyle=spec.linestyle,
+            color=spec.color,
+            linewidth=1.9,
+            label=spec.label,
+        )
+
+
+def _finalize_thread_scaling_figure(
+    fig,
+    *,
+    title: str,
+    handles: list[object],
+    labels: list[str],
+) -> None:
+    finalize_figure_header(
+        fig,
+        title=title,
+        handles=handles,
+        labels=labels,
+        ncol=max(1, len(handles)),
+        legend_y=0.94,
+        title_y=0.985,
+        tight_top=1,
+        legend_kwargs={
+            "fontsize": 9.0,
+            "columnspacing": 1.2,
+            "handletextpad": 0.6,
+        },
+    )
 
 
 def _unique_positive_ints(values: Iterable[object], *, name: str) -> tuple[int, ...]:
@@ -340,7 +394,7 @@ def _group_rows(rows: Iterable[Mapping[str, object]]) -> dict[int, list[dict[str
     return grouped
 
 
-def _plot_dimension(
+def _plot_runtime_and_speedup(
     *,
     dim: int,
     case: str,
@@ -351,47 +405,34 @@ def _plot_dimension(
     output_path: Path,
 ) -> None:
     plt = load_pyplot()
+    series_by_mode = _series_by_mode(rows)
 
-    series_by_mode: dict[str, list[dict[str, object]]] = {spec.mode_key: [] for spec in MODE_SPECS}
-    for row in rows:
-        series_by_mode[str(row["mode_key"])].append(row)
-
-    fig, axes = plt.subplots(1, 2, figsize=(16, 5))
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4))
     panels = (
         ("time_ms", "Runtime (ms)", "log"),
         ("speedup", "Speedup vs 1 thread", "linear"),
+        ("efficiency", "Efficiency", "linear"),
     )
 
     thread_values = sorted({int(row["omp_num_threads"]) for row in rows})
 
     for ax, (metric_key, ylabel, scale) in zip(axes, panels):
-        for spec in MODE_SPECS:
-            series = sorted(series_by_mode[spec.mode_key], key=lambda row: int(row["omp_num_threads"]))
-            if not series:
-                continue
-            x = [int(row["omp_num_threads"]) for row in series]
-            y = [float(row[metric_key]) for row in series]
-            ax.plot(
-                x,
-                y,
-                marker=spec.marker,
-                linestyle=spec.linestyle,
-                color=spec.color,
-                linewidth=1.9,
-                label=spec.label,
-            )
+        _plot_mode_series(ax, series_by_mode=series_by_mode, metric_key=metric_key)
 
         if metric_key == "speedup":
-            ideal_x = thread_values
-            ideal_y = ideal_x
+            ideal_end = min(IDEAL_SPEEDUP_THREAD_LIMIT, thread_values[-1])
+            ideal_x = [1, ideal_end]
+            ideal_y = [1, ideal_end]
             ax.plot(
                 ideal_x,
                 ideal_y,
                 color="#666666",
                 linestyle=":",
                 linewidth=1.5,
-                label="Ideal",
+                label="_nolegend_",
             )
+        elif metric_key == "efficiency":
+            ax.axhline(1.0, color="#666666", linestyle=":", linewidth=1.5, label="_nolegend_")
 
         ax.set_xlabel("OMP threads")
         ax.set_ylabel(ylabel)
@@ -399,26 +440,24 @@ def _plot_dimension(
         ax.grid(True, linestyle="--", alpha=0.45)
         if scale == "log":
             ax.set_yscale("log")
-        if metric_key == "speedup":
-            upper = max(max(thread_values), max(float(row["speedup"]) for row in rows))
+        if metric_key in {"speedup", "efficiency"}:
+            upper = max(IDEAL_SPEEDUP_THREAD_LIMIT, max(float(row["speedup"]) for row in rows))
+            if metric_key == "efficiency":
+                upper = max(1.0, max(float(row["efficiency"]) for row in rows))
             ax.set_ylim(0.0, upper * 1.08)
 
     handles, labels = axes[0].get_legend_handles_labels()
-    finalize_figure_header(
+    _finalize_thread_scaling_figure(
         fig,
         title=(
             f"OMP thread scaling - {dim}D {case}, grid={grid_size}\n"
-            f"tol={tol:.0e}, repeat_runs={repeat_runs}"
         ),
         handles=handles,
         labels=labels,
-        ncol=3,
-        tight_top=0.80,
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
-
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Build OMP thread-scaling tables and plots.")
@@ -486,15 +525,17 @@ def main() -> None:
     for dim in sorted(grouped):
         dim_rows = sorted(grouped[dim], key=_row_key)
         write_rows_csv(output_dir / f"results_{dim}d.csv", _format_rows(dim_rows), columns=CSV_COLUMNS)
-        _plot_dimension(
+        runtime_path = output_dir / f"plots_{dim}d.png"
+        _plot_runtime_and_speedup(
             dim=dim,
             case=case,
             grid_size=_grid_size_for_dim(dim, grid_size_2d, grid_size_3d),
             rows=dim_rows,
             tol=tol,
             repeat_runs=repeat_runs,
-            output_path=output_dir / f"plots_{dim}d.png",
+            output_path=runtime_path,
         )
+        print(f"Wrote {runtime_path}")
 
     print(f"Wrote {output_dir / 'results_all.csv'}")
     print(f"Cases: {case}")

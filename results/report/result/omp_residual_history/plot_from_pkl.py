@@ -148,7 +148,7 @@ def main() -> None:
     fig, axes = plt.subplots(
         len(dims),
         2,
-        figsize=(16.8, 4.4 * len(dims)),
+        figsize=(10.5, 3 * len(dims)),
         sharey=True,
         squeeze=False,
     )
@@ -183,13 +183,13 @@ def main() -> None:
     finalize_figure_header(
         fig,
         title=(
-            f"OMP residual history - case={case}, tol={tol:.0e}, "
-            f"OMP_NUM_THREADS={omp_num_threads}, repeat_runs={repeat_runs}"
+            f"OpenMP residual history - case={case}"
         ),
         handles=handles,
         labels=legend_labels,
         ncol=max(1, len(MODE_SPECS)),
-        tight_top=0.86,
+        legend_y=0.95,
+        tight_top=0.95,
     )
 
     args.output_path.parent.mkdir(parents=True, exist_ok=True)
