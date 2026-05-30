@@ -54,16 +54,28 @@ def _mode_sort_key(mode_key: str) -> int:
     return len(MODE_SPECS)
 
 
-def _plot_dimension(
+def _plot_solver_panel(
     *,
     ax,
     dim: int,
     case: str,
+    solver: str,
     records: list[dict[str, object]],
     y_min: float,
     y_max: float,
+    legend_handles_by_label: dict[str, object],
 ) -> None:
-    panel_records = sorted(records, key=lambda row: _mode_sort_key(str(row["mode_key"])))
+    panel_records = [
+        record
+        for record in records
+        if (spec := MODE_SPECS_BY_KEY.get(str(record["mode_key"]))) is not None
+        and spec.solver == solver
+    ]
+    panel_records = sorted(panel_records, key=lambda row: _mode_sort_key(str(row["mode_key"])))
+    if not panel_records:
+        ax.set_visible(False)
+        return
+
     for row in panel_records:
         mode_key = str(row["mode_key"])
         spec = MODE_SPECS_BY_KEY.get(mode_key)
@@ -74,7 +86,7 @@ def _plot_dimension(
             continue
         x_values = list(range(len(history)))
         markevery = max(1, len(history) // 12)
-        ax.plot(
+        line = ax.plot(
             x_values,
             history,
             color=spec.color,
@@ -84,15 +96,17 @@ def _plot_dimension(
             markersize=4.0,
             linewidth=1.8,
             label=spec.label,
-        )
+        )[0]
+        if spec.label not in legend_handles_by_label:
+            legend_handles_by_label[spec.label] = line
 
     ax.set_yscale("log")
     ax.set_ylim(y_min * 0.8, y_max * 1.2)
-    ax.set_xlim(left=0)
+    panel_x_max = max(len(record["history"]) - 1 for record in panel_records)
+    ax.set_xlim(0, max(1, panel_x_max))
     ax.grid(True, which="both", linestyle="--", alpha=0.45)
     ax.set_xlabel("Iteration")
-    ax.set_ylabel("Residual L2")
-    ax.set_title(f"{dim}D {case}, {_grid_summary(panel_records)}")
+    ax.set_title(f"{dim}D {case}, {'SOR' if solver == 'sor' else 'MG'}, {_grid_summary(panel_records)}")
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -131,26 +145,41 @@ def main() -> None:
     y_min = min(all_positive)
     y_max = max(all_positive)
     plt = load_pyplot()
-    fig, axes = plt.subplots(1, len(dims), figsize=(8.2 * len(dims), 5.2), sharey=True, squeeze=False)
-    axes_row = axes[0]
+    fig, axes = plt.subplots(
+        len(dims),
+        2,
+        figsize=(16.8, 4.4 * len(dims)),
+        sharey=True,
+        squeeze=False,
+    )
+    legend_handles_by_label: dict[str, object] = {}
 
-    for ax, dim in zip(axes_row, dims):
+    for row_idx, dim in enumerate(dims):
         dim_records = [record for record in records if int(record["dimension"]) == dim]
         if not dim_records:
-            ax.set_visible(False)
+            for ax in axes[row_idx]:
+                ax.set_visible(False)
             continue
-        _plot_dimension(
-            ax=ax,
-            dim=dim,
-            case=case,
-            records=dim_records,
-            y_min=y_min,
-            y_max=y_max,
-        )
-        panel_x_max = max(len(record["history"]) - 1 for record in dim_records)
-        ax.set_xlim(0, panel_x_max)
 
-    handles, labels = axes_row[0].get_legend_handles_labels()
+        for col_idx, solver in enumerate(("sor", "mg")):
+            ax = axes[row_idx][col_idx]
+            _plot_solver_panel(
+                ax=ax,
+                dim=dim,
+                case=case,
+                solver=solver,
+                records=dim_records,
+                y_min=y_min,
+                y_max=y_max,
+                legend_handles_by_label=legend_handles_by_label,
+            )
+            if col_idx == 0:
+                ax.set_ylabel("Residual L2")
+            else:
+                ax.tick_params(labelleft=False)
+
+    legend_labels = [spec.label for spec in MODE_SPECS if spec.label in legend_handles_by_label]
+    handles = [legend_handles_by_label[label] for label in legend_labels]
     finalize_figure_header(
         fig,
         title=(
@@ -158,9 +187,9 @@ def main() -> None:
             f"OMP_NUM_THREADS={omp_num_threads}, repeat_runs={repeat_runs}"
         ),
         handles=handles,
-        labels=labels,
+        labels=legend_labels,
         ncol=max(1, len(MODE_SPECS)),
-        tight_top=0.80,
+        tight_top=0.86,
     )
 
     args.output_path.parent.mkdir(parents=True, exist_ok=True)
