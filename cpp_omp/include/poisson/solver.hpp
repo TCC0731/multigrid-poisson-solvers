@@ -4,6 +4,7 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "poisson/problem.hpp"
 
@@ -13,6 +14,7 @@ template <typename Real>
 struct SolveOptions {
     Real tol{Real{1e-10}};
     std::size_t max_iter{10'000};
+    std::vector<Real>* residual_history{nullptr};
 };
 
 struct SolveResult {

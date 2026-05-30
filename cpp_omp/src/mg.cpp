@@ -653,6 +653,13 @@ SolveResult solve_mg_impl(
 
     const Real omega = effective_mg_omega(problem, options);
     Grid2D<Real> phi = problem.phi0;
+    auto* residual_history = options.residual_history;
+    Real res{};
+
+    if (residual_history != nullptr) {
+        res = relative_physical_residual_l2(problem, phi);
+        residual_history->push_back(res);
+    }
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
         mg_cycle(
@@ -666,7 +673,10 @@ SolveResult solve_mg_impl(
             options.coarse_steps
         );
 
-        const Real res = relative_physical_residual_l2(problem, phi);
+        res = relative_physical_residual_l2(problem, phi);
+        if (residual_history != nullptr) {
+            residual_history->push_back(res);
+        }
         if (res <= options.tol) {
             return make_solve_result(std::move(phi), iteration, res);
         }
@@ -675,7 +685,7 @@ SolveResult solve_mg_impl(
     return make_solve_result(
         std::move(phi),
         options.max_iter,
-        relative_physical_residual_l2(problem, phi)
+        res
     );
 }
 
@@ -687,6 +697,13 @@ SolveResult3D solve_mg_3d_impl(
 
     const Real omega = effective_mg_omega(problem, options);
     Grid3D<Real> phi = problem.phi0;
+    auto* residual_history = options.residual_history;
+    Real res{};
+
+    if (residual_history != nullptr) {
+        res = relative_physical_residual_l2(problem, phi);
+        residual_history->push_back(res);
+    }
 
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
         mg_cycle_3d(
@@ -700,7 +717,10 @@ SolveResult3D solve_mg_3d_impl(
             options.coarse_steps
         );
 
-        const Real res = relative_physical_residual_l2(problem, phi);
+        res = relative_physical_residual_l2(problem, phi);
+        if (residual_history != nullptr) {
+            residual_history->push_back(res);
+        }
         if (res <= options.tol) {
             return make_solve_result(std::move(phi), iteration, res);
         }
@@ -709,7 +729,7 @@ SolveResult3D solve_mg_3d_impl(
     return make_solve_result(
         std::move(phi),
         options.max_iter,
-        relative_physical_residual_l2(problem, phi)
+        res
     );
 }
 

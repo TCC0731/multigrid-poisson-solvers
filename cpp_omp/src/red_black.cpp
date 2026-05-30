@@ -43,6 +43,14 @@ SolveResult solve_red_black_impl(
     const Real h2 = problem.h * problem.h;
     const std::size_t array_n = problem.array_n();
     const std::size_t interior_end = array_n - 1;
+    auto* residual_history = options.residual_history;
+    Real res{};
+
+    if (residual_history != nullptr) {
+        res = relative_physical_residual_l2(problem, phi);
+        residual_history->push_back(res);
+    }
+
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
         for (std::size_t color = 0; color < 2; ++color) {
 #ifdef _OPENMP
@@ -67,7 +75,10 @@ SolveResult solve_red_black_impl(
             }
         }
 
-        const Real res = relative_physical_residual_l2(problem, phi);
+        res = relative_physical_residual_l2(problem, phi);
+        if (residual_history != nullptr) {
+            residual_history->push_back(res);
+        }
         if (res <= options.tol) {
             return make_solve_result(std::move(phi), iteration, res);
         }
@@ -76,7 +87,7 @@ SolveResult solve_red_black_impl(
     return make_solve_result(
         std::move(phi),
         options.max_iter,
-        relative_physical_residual_l2(problem, phi)
+        res
     );
 }
 
@@ -110,6 +121,14 @@ SolveResult3D solve_red_black_3d_impl(
     const Real h2 = problem.h * problem.h;
     const std::size_t array_n = problem.array_n();
     const std::size_t interior_end = array_n - 1;
+    auto* residual_history = options.residual_history;
+    Real res{};
+
+    if (residual_history != nullptr) {
+        res = relative_physical_residual_l2(problem, phi);
+        residual_history->push_back(res);
+    }
+
     for (std::size_t iteration = 1; iteration <= options.max_iter; ++iteration) {
         for (std::size_t color = 0; color < 2; ++color) {
 #ifdef _OPENMP
@@ -138,7 +157,10 @@ SolveResult3D solve_red_black_3d_impl(
             }
         }
 
-        const Real res = relative_physical_residual_l2(problem, phi);
+        res = relative_physical_residual_l2(problem, phi);
+        if (residual_history != nullptr) {
+            residual_history->push_back(res);
+        }
         if (res <= options.tol) {
             return make_solve_result(std::move(phi), iteration, res);
         }
@@ -147,7 +169,7 @@ SolveResult3D solve_red_black_3d_impl(
     return make_solve_result(
         std::move(phi),
         options.max_iter,
-        relative_physical_residual_l2(problem, phi)
+        res
     );
 }
 
