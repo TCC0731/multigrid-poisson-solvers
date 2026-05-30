@@ -164,7 +164,7 @@ Note that standalone `--solver sor` does not read `--omega` from the CLI. The SO
 
 ### OpenMP Runtime Knobs
 
-The OpenMP binary uses the same solver flags as the pure C++ binary, plus `--repeat-runs N` to average the timed solver section. The repeat count defaults to `1`, so a single run behaves exactly like the old binary.
+The OpenMP binary uses the same solver flags as the pure C++ binary, plus `--repeat-runs N` to average the timed solver section and `--residual-history [PATH]` to write the iteration-by-iteration relative residual to a CSV file for `--solver sor` and `--solver mg`. The CSV has two columns: `iteration` and `residual_l2`. If `PATH` is omitted, the binary writes `residual_history_<dim>d_<solver>_<case>_n<grid>_<dtype>.csv` in the current directory. The repeat count defaults to `1`, so a single run behaves exactly like the old binary.
 
 The important OpenMP-specific knobs are environment variables:
 
