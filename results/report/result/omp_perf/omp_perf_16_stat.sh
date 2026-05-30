@@ -8,8 +8,8 @@ RESULT_DIR="$SCRIPT_DIR"
 # Keep the run configurable, but default to the same 16-thread 3D MG case used
 # by the existing perf-record profile.
 THREADS="${OMP_PERF_THREADS:-16}"
-DIM="${OMP_PERF_DIM:-3}"
-GRID_SIZE="${OMP_PERF_GRID_SIZE:-383}"
+DIM="${OMP_PERF_DIM:-2}"
+GRID_SIZE="${OMP_PERF_GRID_SIZE:-2047}"
 SOLVER="${OMP_PERF_SOLVER:-mg}"
 CASE_NAME="${OMP_PERF_CASE:-sine}"
 CYCLE="${OMP_PERF_CYCLE:-w}"
@@ -23,7 +23,7 @@ STAT_EVENTS="${OMP_PERF_STAT_EVENTS:-cycles,instructions,cache-misses,LLC-load-m
 STAT_REPEATS="${OMP_PERF_STAT_REPEATS:-1}"
 
 BENCHMARK_BIN="${OMP_PERF_BIN:-$REPO_ROOT/build/poisson_cpp_omp}"
-PREFIX="omp_perf_${THREADS}"
+PREFIX="omp_perf_${THREADS}_2D_2047"
 DATA_FILE="$RESULT_DIR/${PREFIX}.data"
 REPORT_FILE="$RESULT_DIR/${PREFIX}_report.txt"
 ANNOTATE_FILE="$RESULT_DIR/${PREFIX}_annotate.txt"

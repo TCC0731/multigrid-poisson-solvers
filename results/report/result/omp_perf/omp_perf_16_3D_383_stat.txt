@@ -1,0 +1,22 @@
+# started on Sun May 31 02:00:54 2026
+
+
+ Performance counter stats for '/home/TSC0731/multigrid-poisson-solvers/build/poisson_cpp_omp --dim 3 --solver mg --case sine -n 383 --cycle w --nu 3 --mg-coarse sor --repeat-runs 1':
+
+    50,524,224,620      cpu_core/cycles:u/                                                    
+    82,125,148,290      cpu_atom/cycles:u/                                                      (87.68%)
+    61,523,572,934      cpu_core/instructions:u/                                              
+    71,796,767,579      cpu_atom/instructions:u/                                                (87.68%)
+       567,492,016      cpu_core/cache-misses:u/                                              
+       713,021,163      cpu_atom/cache-misses:u/                                                (87.68%)
+       130,257,288      cpu_core/LLC-load-misses:u/                                           
+            16,295      cpu_atom/LLC-load-misses:u/                                             (87.68%)
+   <not supported>      cpu_core/stalled-cycles-backend:u/                                      
+   <not supported>      cpu_atom/stalled-cycles-backend:u/                                      
+
+       3.690961682 seconds time elapsed
+
+      25.996360000 seconds user
+       1.841574000 seconds sys
+
+
