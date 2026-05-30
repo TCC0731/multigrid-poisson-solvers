@@ -79,6 +79,32 @@
     \end{block}
 \end{frame}
 
+\begin{frame}[t]{Solver overview}
+    \footnotesize
+    \begin{columns}[T,onlytextwidth]
+        \column{0.48\textwidth}
+        \begin{block}{Implemented solvers}
+            \begin{itemize}
+                \item Red-black SOR baseline.
+                \item Multigrid Poisson solver in 2D and 3D.
+                \item Both V-cycle and W-cycle variants.
+                \item Coarsest-grid solve with SOR or exact/direct solve.
+            \end{itemize}
+        \end{block}
+
+        \column{0.48\textwidth}
+        \begin{block}{Implemented support}
+            \begin{itemize}
+                \item Python backend.
+                \item OpenMP CPU backend.
+                \item CUDA GPU backend.
+                \item Full-weighting restriction and bilinear/trilinear prolongation.
+                \item Manufactured-solution Dirichlet boundary setup.
+            \end{itemize}
+        \end{block}
+    \end{columns}
+\end{frame}
+
 \begin{frame}[t]{Multigrid operators}
     \footnotesize
     \begin{itemize}
@@ -107,6 +133,35 @@
     \end{itemize}
 \end{frame}
 
+\begin{frame}[t]{Coarsest-grid Solver Design}
+    \footnotesize
+    \begin{block}{Why the bottom level matters}
+        \begin{itemize}
+            \item The coarsest solve closes the multigrid hierarchy.
+            \item A weak bottom-level solve can leak error back to the fine grid after prolongation.
+            \item The choice affects both robustness and time-to-solution.
+        \end{itemize}
+    \end{block}
+
+    \begin{columns}[T,onlytextwidth]
+        \column{0.48\textwidth}
+        \begin{block}{Our implementation}
+            \begin{itemize}
+                \item Default: exact/direct solve on the coarsest grid.
+                \item Optional: RB-SOR coarse solve for comparison or fallback.
+            \end{itemize}
+        \end{block}
+
+        \column{0.48\textwidth}
+        \begin{block}{Trade-off}
+            \begin{itemize}
+                \item RB-SOR keeps the code path simple and is easy to benchmark.
+                \item Exact/direct gives the strongest bottom-level correction when the coarse system is tiny.
+            \end{itemize}
+        \end{block}
+    \end{columns}
+\end{frame}
+
 \begin{frame}[t]{Multigrid workflow}
     \footnotesize
     \begin{block}{One V-cycle}
@@ -121,8 +176,10 @@
     \end{block}
 
     \[
-        \text{pre-smooth} \;\rightarrow\; \text{residual} \;\rightarrow\; \text{restrict} \;\rightarrow\;
-        \text{correction} \;\rightarrow\; \text{update} \;\rightarrow\; \text{post-smooth}
+        \begin{aligned}
+            \text{pre-smooth} & \rightarrow \text{compute residual }(r_h) \rightarrow \text{restrict }(r_{2h}=Rr_h)                                                                         \\
+                              & \rightarrow \text{coarse solve }(A_{2h}e_{2h}=r_{2h}) \rightarrow \text{prolongate/update }(\phi \leftarrow \phi + P e_{2h}) \rightarrow \text{post-smooth}
+        \end{aligned}
     \]
 \end{frame}
 
@@ -137,8 +194,10 @@
     \end{block}
 
     \[
-        \text{pre-smooth} \;\rightarrow\; \text{residual} \;\rightarrow\; \text{restrict} \;\rightarrow\;
-        \text{coarse cycle} \times 2 \;\rightarrow\; \text{update} \;\rightarrow\; \text{post-smooth}
+        \begin{aligned}
+            \text{pre-smooth} & \rightarrow \text{compute residual }(r_h) \rightarrow \text{restrict }(r_{2h}=Rr_h)                                                            \\
+                              & \rightarrow \text{coarse cycle} \times 2 \rightarrow \text{prolongate/update }(\phi \leftarrow \phi + P e_{2h}) \rightarrow \text{post-smooth}
+        \end{aligned}
     \]
 
     \begin{block}{V-cycle vs W-cycle}
