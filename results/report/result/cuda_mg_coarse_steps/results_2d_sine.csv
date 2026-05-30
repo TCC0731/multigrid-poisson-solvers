@@ -1,0 +1,15 @@
+dimension,case,mode,mode_key,cycle,coarse,coarse_steps,omega,solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms,time_s,tol,max_iter,nu,converged,source
+2,sine,V-SOR,v_sor,v,sor,1,1.25,mg,cuda,double,4095,8,5.117297e-10,2.443865e-08,4.887708e-08,1.388330e+02,1.388330e-01,1.000000e-09,15,3,true,wrapper
+2,sine,V-SOR,v_sor,v,sor,2,1.25,mg,cuda,double,4095,5,4.119755e-10,2.450099e-08,4.900153e-08,9.605100e+01,9.605100e-02,1.000000e-09,15,3,true,wrapper
+2,sine,V-SOR,v_sor,v,sor,4,1.25,mg,cuda,double,4095,4,5.810509e-10,2.448142e-08,4.895870e-08,8.577700e+01,8.577700e-02,1.000000e-09,15,3,true,wrapper
+2,sine,V-SOR,v_sor,v,sor,6,1.25,mg,cuda,double,4095,4,5.079319e-10,2.450548e-08,4.900718e-08,8.658400e+01,8.658400e-02,1.000000e-09,15,3,true,wrapper
+2,sine,V-SOR,v_sor,v,sor,8,1.25,mg,cuda,double,4095,4,5.077812e-10,2.450540e-08,4.900702e-08,8.837300e+01,8.837300e-02,1.000000e-09,15,3,true,wrapper
+2,sine,V-SOR,v_sor,v,sor,12,1.25,mg,cuda,double,4095,4,5.080795e-10,2.450534e-08,4.900689e-08,8.636900e+01,8.636900e-02,1.000000e-09,15,3,true,wrapper
+2,sine,V-SOR,v_sor,v,sor,16,1.25,mg,cuda,double,4095,4,5.078831e-10,2.450536e-08,4.900691e-08,1.008420e+02,1.008420e-01,1.000000e-09,15,3,true,wrapper
+2,sine,W-SOR,w_sor,w,sor,1,1.25,mg,cuda,double,4095,3,7.793807e-10,2.451222e-08,4.902453e-08,1.216330e+02,1.216330e-01,1.000000e-09,15,3,true,wrapper
+2,sine,W-SOR,w_sor,w,sor,2,1.25,mg,cuda,double,4095,3,7.797532e-10,2.451224e-08,4.902453e-08,1.272060e+02,1.272060e-01,1.000000e-09,15,3,true,wrapper
+2,sine,W-SOR,w_sor,w,sor,4,1.25,mg,cuda,double,4095,3,7.795350e-10,2.451221e-08,4.902449e-08,1.270960e+02,1.270960e-01,1.000000e-09,15,3,true,wrapper
+2,sine,W-SOR,w_sor,w,sor,6,1.25,mg,cuda,double,4095,3,7.795410e-10,2.451216e-08,4.902440e-08,1.289440e+02,1.289440e-01,1.000000e-09,15,3,true,wrapper
+2,sine,W-SOR,w_sor,w,sor,8,1.25,mg,cuda,double,4095,3,7.793896e-10,2.451220e-08,4.902446e-08,1.304000e+02,1.304000e-01,1.000000e-09,15,3,true,wrapper
+2,sine,W-SOR,w_sor,w,sor,12,1.25,mg,cuda,double,4095,3,7.795068e-10,2.451222e-08,4.902448e-08,1.311600e+02,1.311600e-01,1.000000e-09,15,3,true,wrapper
+2,sine,W-SOR,w_sor,w,sor,16,1.25,mg,cuda,double,4095,3,7.795009e-10,2.451218e-08,4.902443e-08,1.343270e+02,1.343270e-01,1.000000e-09,15,3,true,wrapper

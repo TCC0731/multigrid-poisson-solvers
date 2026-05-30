@@ -21,8 +21,16 @@
   - 輸出 combined CSV、每個 dimension 的 CSV，以及對應的 thread-scaling 圖
 - [`cuda_mg_phi_plots/run_and_plot.py`](./cuda_mg_phi_plots/run_and_plot.py)
   - CUDA MG V/W SOR 的 phi 視覺化腳本
-  - 預設跑 `2D=4095`、`3D=383`，並輸出 `exact / MG / difference` 三聯圖
+  - 預設跑 `sine` 和 `mixed_sine`，使用 `2D=4095`、`3D=383`，並輸出 `exact / MG / difference` 三聯圖
   - 3D 只取 `z=0.5` 截面，結果會分別寫到 `dumps/`、`plots/`，並打包成 `phi_results.pkl`
+- [`omega_sweep/run_and_plot.py`](./omega_sweep/run_and_plot.py)
+  - CUDA MG convergence 的 `omega` 掃描腳本
+  - 預設使用 `2D=4095`、`3D=383`，掃描 `omega=1.00 ~ 1.50`，步長 `0.05`
+  - 會產生每個 `dimension + case` 的 CSV 與三聯圖，方便比較 `V/W` cycle 與 `exact/SOR` coarse solve
+- [`nu_sweep/run_and_plot.py`](./nu_sweep/run_and_plot.py)
+  - CUDA MG convergence 的 `nu` 掃描腳本
+  - 預設使用 `2D=4095`、`3D=383`，掃描 `nu=1 ~ 5`
+  - 同樣會輸出每個 `dimension + case` 的 CSV 與三聯圖，並保留固定 `omega` 參考值
 - `solver_results.csv`
   - wrapper 自動產生的共用快取檔，供所有報告腳本共用
   - 如果呼叫 `run_or_load(..., cache_csv=...)`，同一份結果也會同步寫到你指定的路徑
