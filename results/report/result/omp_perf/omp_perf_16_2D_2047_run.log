@@ -1,0 +1,4 @@
+solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms
+mg_sor,cpp20_omp,double,2047,2,7.097826e-11,9.804501e-08,1.960900e-07,436.236
+[ perf record: Woken up 424 times to write data ]
+[ perf record: Captured and wrote 117.774 MB /home/TSC0731/multigrid-poisson-solvers/results/report/result/omp_perf/omp_perf_16_2D_2047.data (14874 samples) ]
