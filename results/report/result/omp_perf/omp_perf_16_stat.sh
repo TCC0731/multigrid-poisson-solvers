@@ -5,8 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 RESULT_DIR="$SCRIPT_DIR"
 
-# Default to the 16-thread 3D MG run used in the report, but keep the script
-# configurable via environment variables so it can be reused for other cases.
+# Keep the run configurable, but default to the same 16-thread 3D MG case used
+# by the existing perf-record profile.
 THREADS="${OMP_PERF_THREADS:-16}"
 DIM="${OMP_PERF_DIM:-3}"
 GRID_SIZE="${OMP_PERF_GRID_SIZE:-383}"
@@ -17,11 +17,19 @@ NU="${OMP_PERF_NU:-3}"
 MG_COARSE="${OMP_PERF_MG_COARSE:-sor}"
 REPEAT_RUNS="${OMP_PERF_REPEAT_RUNS:-1}"
 
+# perf stat is the counter-based pass. Keep the events configurable so the same
+# script can be reused if the host exposes a slightly different event name set.
+STAT_EVENTS="${OMP_PERF_STAT_EVENTS:-cycles,instructions,cache-misses,LLC-load-misses,stalled-cycles-backend}"
+STAT_REPEATS="${OMP_PERF_STAT_REPEATS:-1}"
+
 BENCHMARK_BIN="${OMP_PERF_BIN:-$REPO_ROOT/build/poisson_cpp_omp}"
-DATA_FILE="$RESULT_DIR/omp_perf_${THREADS}.data"
-REPORT_FILE="$RESULT_DIR/omp_perf_${THREADS}_report.txt"
-ANNOTATE_FILE="$RESULT_DIR/omp_perf_${THREADS}_annotate.txt"
-RUN_LOG_FILE="$RESULT_DIR/omp_perf_${THREADS}_run.log"
+PREFIX="omp_perf_${THREADS}"
+DATA_FILE="$RESULT_DIR/${PREFIX}.data"
+REPORT_FILE="$RESULT_DIR/${PREFIX}_report.txt"
+ANNOTATE_FILE="$RESULT_DIR/${PREFIX}_annotate.txt"
+STAT_FILE="$RESULT_DIR/${PREFIX}_stat.txt"
+RUN_LOG_FILE="$RESULT_DIR/${PREFIX}_run.log"
+STAT_RUN_LOG_FILE="$RESULT_DIR/${PREFIX}_stat_run.log"
 
 mkdir -p "$RESULT_DIR"
 
@@ -35,6 +43,17 @@ if [[ ! -x "$BENCHMARK_BIN" ]]; then
   exit 1
 fi
 
+RUN_ARGS=(
+  --dim "$DIM"
+  --solver "$SOLVER"
+  --case "$CASE_NAME"
+  -n "$GRID_SIZE"
+  --cycle "$CYCLE"
+  --nu "$NU"
+  --mg-coarse "$MG_COARSE"
+  --repeat-runs "$REPEAT_RUNS"
+)
+
 printf 'Benchmark binary: %s\n' "$BENCHMARK_BIN" >&2
 printf 'Output directory: %s\n' "$RESULT_DIR" >&2
 printf 'OMP_NUM_THREADS=%s OMP_PROC_BIND=%s OMP_PLACES=%s OMP_DYNAMIC=%s\n' \
@@ -44,7 +63,11 @@ printf 'Problem: %sD grid=%s solver=%s case=%s cycle=%s nu=%s coarse=%s repeat-r
 printf 'perf.data: %s\n' "$DATA_FILE" >&2
 printf 'perf report text: %s\n' "$REPORT_FILE" >&2
 printf 'perf annotate text: %s\n' "$ANNOTATE_FILE" >&2
-printf 'run log: %s\n' "$RUN_LOG_FILE" >&2
+printf 'perf stat text: %s\n' "$STAT_FILE" >&2
+printf 'record run log: %s\n' "$RUN_LOG_FILE" >&2
+printf 'stat run log: %s\n' "$STAT_RUN_LOG_FILE" >&2
+printf 'perf stat events: %s\n' "$STAT_EVENTS" >&2
+printf 'perf stat repeats: %s\n' "$STAT_REPEATS" >&2
 
 perf record \
   -o "$DATA_FILE" \
@@ -52,14 +75,7 @@ perf record \
   --call-graph dwarf \
   -- \
   "$BENCHMARK_BIN" \
-  --dim "$DIM" \
-  --solver "$SOLVER" \
-  --case "$CASE_NAME" \
-  -n "$GRID_SIZE" \
-  --cycle "$CYCLE" \
-  --nu "$NU" \
-  --mg-coarse "$MG_COARSE" \
-  --repeat-runs "$REPEAT_RUNS" \
+  "${RUN_ARGS[@]}" \
   >"$RUN_LOG_FILE" 2>&1
 
 perf report \
@@ -67,8 +83,19 @@ perf report \
   --stdio \
   >"$REPORT_FILE"
 
-# perf annotate needs debug info and good symbolization. Keep the report even if
-# annotation is unavailable on the current build or host.
+# perf annotate needs debug info and a symbolized build. Keep the main report
+# even if annotation is unavailable on the current host.
 if ! perf annotate -i "$DATA_FILE" --stdio >"$ANNOTATE_FILE"; then
   printf 'warning: perf annotate failed; see %s for the main report\n' "$REPORT_FILE" >&2
 fi
+
+# Counter-based pass: this is the key addition for validating bandwidth and
+# backend stalls.
+perf stat \
+  -o "$STAT_FILE" \
+  -r "$STAT_REPEATS" \
+  -e "$STAT_EVENTS" \
+  -- \
+  "$BENCHMARK_BIN" \
+  "${RUN_ARGS[@]}" \
+  >"$STAT_RUN_LOG_FILE" 2>&1
