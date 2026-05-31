@@ -22,7 +22,6 @@ This folder contains the report generator for the I experiment:
 
 ## Outputs
 
-- `wrapper_cache.csv`
 - `results_raw_all.csv`
 - `results_all.csv`
 - `results_raw_2d.csv`

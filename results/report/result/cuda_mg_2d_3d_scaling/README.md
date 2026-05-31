@@ -22,7 +22,6 @@ This folder contains the report generator for the G experiment:
 
 ## Outputs
 
-- `wrapper_cache.csv`
 - `results_all.csv`
 - `results_2d.csv`
 - `results_3d.csv`

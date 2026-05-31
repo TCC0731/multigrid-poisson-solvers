@@ -116,7 +116,6 @@ def _row_from_wrapper(
         nu=DEFAULT_NU,
         omega=DEFAULT_OMEGA,
         mg_coarse=DEFAULT_MG_COARSE,
-        cache_csv=output_dir / "wrapper_cache.csv",
     )
 
     cells = cells_for_grid_size(dim, grid_size)

@@ -182,7 +182,6 @@ def _build_raw_row(
         "nu": DEFAULT_NU,
         "omega": DEFAULT_OMEGA,
         "mg_coarse": DEFAULT_MG_COARSE,
-        "cache_csv": output_dir / "wrapper_cache.csv",
     }
     if backend == DEFAULT_BACKEND_OMP:
         kwargs["omp_num_threads"] = omp_num_threads
