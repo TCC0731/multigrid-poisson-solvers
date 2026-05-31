@@ -180,6 +180,12 @@ struct BenchmarkRow {
     double std_time_including_graph_ms{0.0};
 };
 
+// Mirror the solver binaries: warm up first, then average repeated timed runs.
+struct BenchmarkTiming {
+    std::size_t warmup_runs{detail::kWarmupRuns};
+    std::size_t timed_runs{detail::kTimedRuns};
+};
+
 [[nodiscard]] inline TimingStats summarize_samples(const std::vector<double>& samples) {
     double mean = 0.0;
     for (const double sample : samples) {
@@ -215,39 +221,51 @@ template <typename WarmupSolverFn, typename TimedSolverFn>
 [[nodiscard]] auto time_solver(
     WarmupSolverFn&& warmup_solver,
     TimedSolverFn&& timed_solver,
-    std::size_t warmup_runs,
-    std::size_t timed_runs
+    const BenchmarkTiming& timing
 ) {
-    if (timed_runs < 1) {
+    if (timing.timed_runs < 1) {
         throw std::invalid_argument("timed_runs must be positive");
     }
 
-    for (std::size_t i = 0; i < warmup_runs; ++i) {
+    for (std::size_t i = 0; i < timing.warmup_runs; ++i) {
         (void)warmup_solver();
     }
 
     std::vector<double> samples;
-    samples.reserve(timed_runs);
+    samples.reserve(timing.timed_runs);
     std::vector<double> including_graph_samples;
-    including_graph_samples.reserve(timed_runs);
+    including_graph_samples.reserve(timing.timed_runs);
     using Result = std::invoke_result_t<TimedSolverFn&>;
     std::optional<Result> last_result;
+    double total_benchmark_time_ms = 0.0;
+    double total_including_graph_time_ms = 0.0;
 
-    for (std::size_t i = 0; i < timed_runs; ++i) {
+    for (std::size_t i = 0; i < timing.timed_runs; ++i) {
         const auto start = std::chrono::steady_clock::now();
         last_result = timed_solver();
         const auto end = std::chrono::steady_clock::now();
         const double full_sample_ms =
             std::chrono::duration<double, std::milli>(end - start).count();
-        samples.push_back(benchmark_sample_time_ms(*last_result, full_sample_ms));
-        including_graph_samples.push_back(including_graph_sample_time_ms(*last_result, full_sample_ms));
+        const double benchmark_time_ms = benchmark_sample_time_ms(*last_result, full_sample_ms);
+        const double including_graph_time_ms =
+            including_graph_sample_time_ms(*last_result, full_sample_ms);
+        samples.push_back(benchmark_time_ms);
+        including_graph_samples.push_back(including_graph_time_ms);
+        total_benchmark_time_ms += benchmark_time_ms;
+        total_including_graph_time_ms += including_graph_time_ms;
     }
+
+    TimingStats benchmark_stats = summarize_samples(samples);
+    TimingStats including_graph_stats = summarize_samples(including_graph_samples);
+    benchmark_stats.mean_ms = total_benchmark_time_ms / static_cast<double>(timing.timed_runs);
+    including_graph_stats.mean_ms =
+        total_including_graph_time_ms / static_cast<double>(timing.timed_runs);
 
     return std::pair<Result, SolverTimingStats>{
         std::move(*last_result),
         SolverTimingStats{
-            summarize_samples(samples),
-            summarize_samples(including_graph_samples),
+            benchmark_stats,
+            including_graph_stats,
         },
     };
 }
@@ -263,6 +281,7 @@ template <typename Real, typename WarmupSolverFn, typename TimedSolverFn>
     std::string_view cycle,
     std::string_view omega,
     std::string_view nu,
+    const BenchmarkTiming& timing,
     WarmupSolverFn&& warmup_solver_fn,
     TimedSolverFn&& timed_solver_fn
 ) {
@@ -274,9 +293,7 @@ template <typename Real, typename WarmupSolverFn, typename TimedSolverFn>
         return timed_solver_fn(problem);
     };
 
-    const auto [result, stats] = time_solver(
-        warmup_solver, timed_solver, detail::kWarmupRuns, detail::kTimedRuns
-    );
+    const auto [result, stats] = time_solver(warmup_solver, timed_solver, timing);
     const auto metrics_problem = poisson::make_problem<double>(poisson::Case2D::Sine, grid_size);
     const auto metrics = poisson::metrics(metrics_problem, result.phi);
 
@@ -289,8 +306,8 @@ template <typename Real, typename WarmupSolverFn, typename TimedSolverFn>
         grid_size,
         max_iter,
         static_cast<double>(tol),
-        detail::kWarmupRuns,
-        detail::kTimedRuns,
+        timing.warmup_runs,
+        timing.timed_runs,
         std::string(cycle),
         std::string(omega),
         std::string(nu),
@@ -317,6 +334,7 @@ template <typename Real, typename WarmupSolverFn, typename TimedSolverFn>
     std::string_view cycle,
     std::string_view omega,
     std::string_view nu,
+    const BenchmarkTiming& timing,
     WarmupSolverFn&& warmup_solver_fn,
     TimedSolverFn&& timed_solver_fn
 ) {
@@ -328,9 +346,7 @@ template <typename Real, typename WarmupSolverFn, typename TimedSolverFn>
         return timed_solver_fn(problem);
     };
 
-    const auto [result, stats] = time_solver(
-        warmup_solver, timed_solver, detail::kWarmupRuns, detail::kTimedRuns
-    );
+    const auto [result, stats] = time_solver(warmup_solver, timed_solver, timing);
     const auto metrics_problem = poisson::make_problem_3d<double>(poisson::Case3D::Sine, grid_size);
     const auto metrics = poisson::metrics(metrics_problem, result.phi);
 
@@ -343,8 +359,8 @@ template <typename Real, typename WarmupSolverFn, typename TimedSolverFn>
         grid_size,
         max_iter,
         static_cast<double>(tol),
-        detail::kWarmupRuns,
-        detail::kTimedRuns,
+        timing.warmup_runs,
+        timing.timed_runs,
         std::string(cycle),
         std::string(omega),
         std::string(nu),
@@ -373,6 +389,7 @@ void append_mg_rows(
     const poisson::MGOptions<Real>& warmup_opts,
     const poisson::MGOptions<Real>& timed_opts,
     std::size_t max_grid_size,
+    const BenchmarkTiming& timing,
     SolverFn&& solve_fn
 ) {
     for (const std::size_t grid_size : detail::kMgSizes) {
@@ -389,6 +406,7 @@ void append_mg_rows(
             cycle,
             omega,
             nu,
+            timing,
             [&](const auto& problem) {
                 return solve_fn(problem, warmup_opts);
             },
@@ -413,6 +431,7 @@ void append_mg_rows_3d(
     const poisson::MGOptions<Real>& warmup_opts,
     const poisson::MGOptions<Real>& timed_opts,
     std::size_t max_grid_size,
+    const BenchmarkTiming& timing,
     SolverFn&& solve_fn
 ) {
     for (const std::size_t grid_size : detail::kMgSizes3D) {
@@ -429,6 +448,7 @@ void append_mg_rows_3d(
             cycle,
             omega,
             nu,
+            timing,
             [&](const auto& problem) {
                 return solve_fn(problem, warmup_opts);
             },
@@ -443,7 +463,8 @@ void append_mg_rows_3d(
 template <typename Real>
 [[nodiscard]] std::vector<BenchmarkRow> make_solver_comparison_rows(
     std::string_view backend,
-    std::size_t max_grid_size = 0
+    std::size_t max_grid_size = 0,
+    const BenchmarkTiming& timing = BenchmarkTiming{}
 ) {
     std::vector<BenchmarkRow> rows;
     rows.reserve(14);
@@ -470,6 +491,7 @@ template <typename Real>
             "",
             "",
             "",
+            timing,
             [&](const auto& problem) {
                 return poisson::solve_jacobi<Real>(problem, jacobi_warmup_opts);
             },
@@ -493,6 +515,7 @@ template <typename Real>
             "",
             "",
             "",
+            timing,
             [&](const auto& problem) {
                 return poisson::solve_gs<Real>(problem, gs_warmup_opts);
             },
@@ -516,6 +539,7 @@ template <typename Real>
             "",
             "",
             "",
+            timing,
             [&](const auto& problem) {
                 return poisson::solve_sor<Real>(problem, sor_warmup_opts);
             },
@@ -531,7 +555,8 @@ template <typename Real>
 template <typename Real>
 [[nodiscard]] std::vector<BenchmarkRow> make_mg_compare_rows(
     std::string_view backend,
-    std::size_t max_grid_size = 0
+    std::size_t max_grid_size = 0,
+    const BenchmarkTiming& timing = BenchmarkTiming{}
 ) {
     std::vector<BenchmarkRow> rows;
     rows.reserve(36);
@@ -586,6 +611,7 @@ template <typename Real>
         mg_v_warmup_opts,
         mg_v_opts,
         max_grid_size,
+        timing,
         [&](const auto& problem, const auto& options) {
             return poisson::solve_mg_exact<Real>(problem, options);
         }
@@ -602,6 +628,7 @@ template <typename Real>
         mg_v_warmup_opts,
         mg_v_opts,
         max_grid_size,
+        timing,
         [&](const auto& problem, const auto& options) {
             return poisson::solve_mg_sor<Real>(problem, options);
         }
@@ -618,6 +645,7 @@ template <typename Real>
         mg_w_warmup_opts,
         mg_w_opts,
         max_grid_size,
+        timing,
         [&](const auto& problem, const auto& options) {
             return poisson::solve_mg_exact<Real>(problem, options);
         }
@@ -634,6 +662,7 @@ template <typename Real>
         mg_w_warmup_opts,
         mg_w_opts,
         max_grid_size,
+        timing,
         [&](const auto& problem, const auto& options) {
             return poisson::solve_mg_sor<Real>(problem, options);
         }
@@ -646,7 +675,8 @@ template <typename Real>
 template <typename Real>
 [[nodiscard]] std::vector<BenchmarkRow> make_solver_comparison_rows_3d(
     std::string_view backend,
-    std::size_t max_grid_size = 0
+    std::size_t max_grid_size = 0,
+    const BenchmarkTiming& timing = BenchmarkTiming{}
 ) {
     std::vector<BenchmarkRow> rows;
     rows.reserve(13);
@@ -673,6 +703,7 @@ template <typename Real>
             "",
             "",
             "",
+            timing,
             [&](const auto& problem) {
                 return poisson::solve_jacobi<Real>(problem, jacobi_warmup_opts);
             },
@@ -696,6 +727,7 @@ template <typename Real>
             "",
             "",
             "",
+            timing,
             [&](const auto& problem) {
                 return poisson::solve_gs<Real>(problem, gs_warmup_opts);
             },
@@ -719,6 +751,7 @@ template <typename Real>
             "",
             "",
             "",
+            timing,
             [&](const auto& problem) {
                 return poisson::solve_sor<Real>(problem, sor_warmup_opts);
             },
@@ -734,7 +767,8 @@ template <typename Real>
 template <typename Real>
 [[nodiscard]] std::vector<BenchmarkRow> make_mg_compare_rows_3d(
     std::string_view backend,
-    std::size_t max_grid_size = 0
+    std::size_t max_grid_size = 0,
+    const BenchmarkTiming& timing = BenchmarkTiming{}
 ) {
     std::vector<BenchmarkRow> rows;
     rows.reserve(24);
@@ -789,6 +823,7 @@ template <typename Real>
         mg_v_warmup_opts,
         mg_v_opts,
         max_grid_size,
+        timing,
         [&](const auto& problem, const auto& options) {
             return poisson::solve_mg_exact<Real>(problem, options);
         }
@@ -805,6 +840,7 @@ template <typename Real>
         mg_v_warmup_opts,
         mg_v_opts,
         max_grid_size,
+        timing,
         [&](const auto& problem, const auto& options) {
             return poisson::solve_mg_sor<Real>(problem, options);
         }
@@ -821,6 +857,7 @@ template <typename Real>
         mg_w_warmup_opts,
         mg_w_opts,
         max_grid_size,
+        timing,
         [&](const auto& problem, const auto& options) {
             return poisson::solve_mg_exact<Real>(problem, options);
         }
@@ -837,6 +874,7 @@ template <typename Real>
         mg_w_warmup_opts,
         mg_w_opts,
         max_grid_size,
+        timing,
         [&](const auto& problem, const auto& options) {
             return poisson::solve_mg_sor<Real>(problem, options);
         }
@@ -851,19 +889,22 @@ template <typename Real>
     Suite suite,
     std::string_view backend,
     std::size_t dimension = 2,
-    std::size_t max_grid_size = 0
+    std::size_t max_grid_size = 0,
+    const BenchmarkTiming& timing = BenchmarkTiming{}
 ) {
     std::vector<BenchmarkRow> rows;
 
     if (dimension == 3) {
 #ifdef POISSON_ENABLE_3D
         if (suite == Suite::SolverComparison || suite == Suite::All) {
-            const auto solver_rows = make_solver_comparison_rows_3d<Real>(backend, max_grid_size);
+            const auto solver_rows = make_solver_comparison_rows_3d<Real>(
+                backend, max_grid_size, timing
+            );
             rows.insert(rows.end(), solver_rows.begin(), solver_rows.end());
         }
 
         if (suite == Suite::MgCompare || suite == Suite::All) {
-            const auto mg_rows = make_mg_compare_rows_3d<Real>(backend, max_grid_size);
+            const auto mg_rows = make_mg_compare_rows_3d<Real>(backend, max_grid_size, timing);
             rows.insert(rows.end(), mg_rows.begin(), mg_rows.end());
         }
 
@@ -878,12 +919,13 @@ template <typename Real>
     }
 
     if (suite == Suite::SolverComparison || suite == Suite::All) {
-        const auto solver_rows = make_solver_comparison_rows<Real>(backend, max_grid_size);
+        const auto solver_rows =
+            make_solver_comparison_rows<Real>(backend, max_grid_size, timing);
         rows.insert(rows.end(), solver_rows.begin(), solver_rows.end());
     }
 
     if (suite == Suite::MgCompare || suite == Suite::All) {
-        const auto mg_rows = make_mg_compare_rows<Real>(backend, max_grid_size);
+        const auto mg_rows = make_mg_compare_rows<Real>(backend, max_grid_size, timing);
         rows.insert(rows.end(), mg_rows.begin(), mg_rows.end());
     }
 

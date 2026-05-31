@@ -26,3 +26,5 @@ dist/
 
 .codex
 skills/
+*.bin
+*.pkl

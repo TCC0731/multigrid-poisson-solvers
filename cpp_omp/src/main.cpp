@@ -7,14 +7,18 @@
 #include "poisson/validation.hpp"
 
 #include <chrono>
+#include <fstream>
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
+#include <limits>
 #include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -36,6 +40,8 @@ struct Options {
     std::size_t nu{2};
     std::optional<double> omega{};
     bool omega_is_auto{false};
+    bool dump_residual_history{false};
+    std::optional<std::string> residual_history_path{};
 };
 
 template <typename Real>
@@ -44,6 +50,43 @@ Real default_tol() {
         return Real{1e-6};
     }
     return Real{1e-10};
+}
+
+[[nodiscard]] std::string make_residual_history_filename(
+    const Options& options, std::string_view solver_name
+) {
+    std::string filename{"residual_history_"};
+    filename += std::to_string(options.dimension);
+    filename += "d_";
+    filename += solver_name;
+    filename += '_';
+    filename += options.case_name;
+    filename += "_n";
+    filename += std::to_string(options.grid_size);
+    filename += '_';
+    filename += options.dtype;
+    filename += ".csv";
+    return filename;
+}
+
+template <typename Real>
+void write_residual_history_csv(
+    const std::vector<Real>& residual_history, const std::string& path
+) {
+    std::ofstream out(path);
+    if (!out) {
+        throw std::runtime_error("failed to open residual history file: " + path);
+    }
+
+    out << "iteration,residual_l2\n";
+    out << std::scientific << std::setprecision(std::numeric_limits<Real>::max_digits10);
+    for (std::size_t iteration = 0; iteration < residual_history.size(); ++iteration) {
+        out << iteration << ',' << residual_history[iteration] << '\n';
+    }
+
+    if (!out) {
+        throw std::runtime_error("failed to write residual history file: " + path);
+    }
 }
 
 template <typename SolveFn>
@@ -77,7 +120,8 @@ void print_usage(const char* argv0) {
     std::cerr << "Usage: " << argv0
               << " [--dim 2|3] [--dtype float|double] [--solver NAME] [--case NAME] [--grid-size N]"
                  " [--tol T] [--max-iter N] [--cycle v|w] [--nu N]"
-                 " [--repeat-runs N] [--omega auto|VALUE] [--mg-coarse exact|sor]\n";
+                 " [--repeat-runs N] [--omega auto|VALUE] [--mg-coarse exact|sor]"
+                 " [--residual-history [PATH]]\n";
     std::cerr << "Dimensions: 2, 3 (default: 2)\n";
     std::cerr << "Dtypes: float, double\n";
     std::cerr << "Solvers: jacobi, gs, sor, mg\n";
@@ -218,6 +262,18 @@ Options parse_args(int argc, char** argv) {
             continue;
         }
 
+        if (arg == "--residual-history") {
+            options.dump_residual_history = true;
+            if (i + 1 < argc) {
+                const std::string_view maybe_path{argv[i + 1]};
+                if (!maybe_path.empty() && maybe_path.front() != '-') {
+                    options.residual_history_path = std::string(maybe_path);
+                    ++i;
+                }
+            }
+            continue;
+        }
+
         throw std::invalid_argument("unknown argument: " + std::string(arg));
     }
 
@@ -254,7 +310,7 @@ int run_2d(const Options& options) {
         ? static_cast<Real>(*options.tol)
         : default_tol<Real>();
 
-    const SolveOpts solve_options{tol, options.max_iter};
+    SolveOpts solve_options{tol, options.max_iter};
     const poisson::MGCycle mg_cycle =
         options.cycle_name == "w" ? poisson::MGCycle::W : poisson::MGCycle::V;
     MgOpts mg_options{tol, options.max_iter, options.nu, mg_cycle, 16};
@@ -265,12 +321,27 @@ int run_2d(const Options& options) {
     }
 
     std::string solver_name = options.solver_name;
+    std::vector<Real> residual_history;
+    if (options.dump_residual_history) {
+        if (options.solver_name != "sor" && options.solver_name != "mg") {
+            throw std::invalid_argument("residual-history is only supported for sor and mg");
+        }
+        residual_history.reserve(options.max_iter + 1);
+        if (options.solver_name == "sor") {
+            solve_options.residual_history = &residual_history;
+        } else {
+            mg_options.residual_history = &residual_history;
+        }
+    }
 
 #ifdef _OPENMP
     omp_set_dynamic(0);
 #endif
 
     const auto solve_once = [&]() -> poisson::SolveResult {
+        if (options.dump_residual_history) {
+            residual_history.clear();
+        }
         if (options.solver_name == "jacobi") {
             return poisson::solve_jacobi<Real>(problem, solve_options);
         }
@@ -296,6 +367,13 @@ int run_2d(const Options& options) {
     const auto timed_run = time_solver_runs(solve_once, options.repeat_runs);
     const auto& result = timed_run.first;
     const double time_ms = timed_run.second;
+
+    if (options.dump_residual_history) {
+        const std::string residual_history_path = options.residual_history_path.has_value()
+            ? *options.residual_history_path
+            : make_residual_history_filename(options, solver_name);
+        write_residual_history_csv(residual_history, residual_history_path);
+    }
 
     const auto metrics_problem = poisson::make_problem<double>(options.case_name, options.grid_size);
     const poisson::ErrorMetrics metrics = poisson::metrics(metrics_problem, result.phi);
@@ -330,7 +408,7 @@ int run_3d(const Options& options) {
         ? static_cast<Real>(*options.tol)
         : default_tol<Real>();
 
-    const SolveOpts solve_options{tol, options.max_iter};
+    SolveOpts solve_options{tol, options.max_iter};
     const poisson::MGCycle mg_cycle =
         options.cycle_name == "w" ? poisson::MGCycle::W : poisson::MGCycle::V;
     MgOpts mg_options{tol, options.max_iter, options.nu, mg_cycle, 16};
@@ -341,12 +419,27 @@ int run_3d(const Options& options) {
     }
 
     std::string solver_name = options.solver_name;
+    std::vector<Real> residual_history;
+    if (options.dump_residual_history) {
+        if (options.solver_name != "sor" && options.solver_name != "mg") {
+            throw std::invalid_argument("residual-history is only supported for sor and mg");
+        }
+        residual_history.reserve(options.max_iter + 1);
+        if (options.solver_name == "sor") {
+            solve_options.residual_history = &residual_history;
+        } else {
+            mg_options.residual_history = &residual_history;
+        }
+    }
 
 #ifdef _OPENMP
     omp_set_dynamic(0);
 #endif
 
     const auto solve_once = [&]() -> poisson::SolveResult3D {
+        if (options.dump_residual_history) {
+            residual_history.clear();
+        }
         if (options.solver_name == "jacobi") {
             return poisson::solve_jacobi<Real>(problem, solve_options);
         }
@@ -372,6 +465,13 @@ int run_3d(const Options& options) {
     const auto timed_run = time_solver_runs(solve_once, options.repeat_runs);
     const auto& result = timed_run.first;
     const double time_ms = timed_run.second;
+
+    if (options.dump_residual_history) {
+        const std::string residual_history_path = options.residual_history_path.has_value()
+            ? *options.residual_history_path
+            : make_residual_history_filename(options, solver_name);
+        write_residual_history_csv(residual_history, residual_history_path);
+    }
 
     const auto metrics_problem = poisson::make_problem_3d<double>(options.case_name, options.grid_size);
     const poisson::ErrorMetrics metrics = poisson::metrics(metrics_problem, result.phi);

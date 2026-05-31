@@ -1,0 +1,418 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usepackage{amsmath,amssymb}
+\usepackage{listings}
+
+\usepackage{style}
+\input{userdefined}
+
+% Resolve figures whether the deck is compiled from report/ or repo root.
+\graphicspath{%
+    {../results/report/cuda_mg_phi_plots/plots/}%
+    {../results/report/cuda_mg_convergence/}%
+    {../results/report/cuda_gpu_scaling/}%
+    {../results/report/cuda_mg_2d_3d_scaling/}%
+    {../results/report/cuda_mg_sor_time_fit/}%
+    {../results/report/omp_residual_history/}%
+    {../results/report/omp_thread_scaling/}%
+    {../results/report/}%
+    {results/report/cuda_mg_phi_plots/plots/}%
+    {results/report/cuda_mg_convergence/}%
+    {results/report/cuda_gpu_scaling/}%
+    {results/report/cuda_mg_2d_3d_scaling/}%
+    {results/report/cuda_mg_sor_time_fit/}%
+    {results/report/omp_residual_history/}%
+    {results/report/omp_thread_scaling/}%
+    {results/report/}%
+}
+
+\title[CUDA/OpenMP MG Poisson 2D/3D]{CUDA and OpenMP Multigrid Solvers\\for the Poisson Equation in 2D and 3D}
+
+\newcommand{\frametitlesub}[2]{#1: #2}
+
+\begin{document}
+
+\begingroup
+\AtBeginSection[]{}
+\section{Problem Formulation}
+\input{titlepage}
+
+\begin{frame}[t]{\frametitlesub{Governing equation and discretization}{Continuous and discrete model}}
+    \footnotesize
+    \begin{block}{Continuous model}
+        We solve the positive-definite Poisson problem with Dirichlet boundary conditions:
+        \[
+            \mathcal{L}\phi = f, \qquad \mathcal{L} = -\nabla^2,
+        \]
+        on \(\Omega = [0,1]^d\), with \(d \in \{2,3\}\).
+    \end{block}
+
+    \begin{block}{Discrete model}
+        \[
+            h = \frac{1}{n+1}, \qquad \phi_0\vert_{\text{interior}} = 0, \qquad
+            \phi\vert_{\partial\Omega} = \phi_{\text{exact}}\vert_{\partial\Omega}.
+        \]
+        The initial guess is zero in the interior, while boundary values are fixed by the manufactured solution.
+        The code uses the standard 5-point stencil in 2D and 7-point stencil in 3D.
+    \end{block}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Governing equation and discretization}{Discrete operator and boundary conditions}}
+    \footnotesize
+    \begin{block}{Dimensionless discrete operator}
+        The interior unknowns satisfy
+        \[
+            A_h \phi_h = h^2 f_h, \qquad r_h = h^2 f_h - A_h \phi_h.
+        \]
+        In 2D, the standard 5-point stencil is
+        \[
+            (A_h \phi)_{i,j} = 4\phi_{i,j} - \phi_{i-1,j} - \phi_{i+1,j} - \phi_{i,j-1} - \phi_{i,j+1},
+        \]
+        and in 3D the 7-point stencil replaces \(4\) by \(6\) and includes the six axis-aligned neighbors.
+    \end{block}
+
+    \begin{itemize}
+        \item Dirichlet boundary data are taken from the manufactured solution; sine gives homogeneous Dirichlet data, while cosine gives inhomogeneous Dirichlet data.
+        \item The arrays store \(n\) interior points per axis plus one boundary layer on each side, so the total size is \(n+2\).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Algorithms and backends}{Solver and backend support}}
+    \footnotesize
+    \begin{columns}[T,onlytextwidth]
+        \column{0.48\textwidth}
+        \begin{block}{Implemented solvers}
+            \begin{itemize}
+                \item Red-black SOR baseline.
+                \item Multigrid Poisson solver in 2D and 3D.
+                \item Both V-cycle and W-cycle variants.
+                \item Coarsest-grid solve with SOR or exact/direct solve.
+            \end{itemize}
+        \end{block}
+
+        \column{0.48\textwidth}
+        \begin{block}{Implemented support}
+            \begin{itemize}
+                \item Python backend.
+                \item OpenMP CPU backend.
+                \item CUDA GPU backend.
+                \item Full-weighting restriction and bilinear/trilinear prolongation.
+                \item Manufactured-solution Dirichlet boundary setup.
+            \end{itemize}
+        \end{block}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Algorithms and backends}{Stopping criterion and smoother setup}}
+    \footnotesize
+    \begin{itemize}
+        \item Convergence criterion: the relative scaled residual
+              \[
+                  \eta = \frac{\|h^2 f - A_h\phi\|_2}{\|h^2 f\|_2}
+              \]
+              where \(A_h\) is the dimensionless finite-difference stencil approximating \(h^2(-\nabla^2)\),
+              must satisfy \(\eta \le \texttt{tol}\).
+        \item Baseline smoothers: red-black SOR.
+        \item Multigrid smoothing: red-black SOR with \(\nu\) pre- and post-smoothing steps.
+        \item If \(\omega = 1\), the red-black SOR update reduces to red-black Gauss--Seidel.
+    \end{itemize}
+
+    \begin{block}{Automatic SOR weight}
+        When \(\omega\) is left on auto, the code uses
+        \[
+            \omega_{\mathrm{auto}} = \frac{2}{1 + \sin\!\bigl(\pi/(n+1)\bigr)}.
+        \]
+        Here \(n\) is the number of interior points per axis on the current grid level.
+    \end{block}
+\end{frame}
+\endgroup
+
+\section{Multigrid Method}
+\begin{frame}[t]{\frametitlesub{Transfer operators and cycles}{Restriction and prolongation}}
+    \footnotesize
+    \begin{itemize}
+        \item Restriction: \(r_{2h} = R\,r_h\), where the 2D full-weighting stencil is
+              \[
+                  R_{2D} = \frac{1}{16}
+                  \begin{bmatrix}
+                      1 & 2 & 1 \\
+                      2 & 4 & 2 \\
+                      1 & 2 & 1
+                  \end{bmatrix},
+              \]
+              and the 3D version is the corresponding tensor-product stencil
+              \[
+                  (Rr)_{I,J,K} = \frac{1}{64}\sum_{a,b,c=-1}^{1} w_a w_b w_c\, r_{2I+a,\,2J+b,\,2K+c},
+                  \qquad w_0 = 2,\; w_{\pm1} = 1.
+              \]
+        \item Prolongation: \(e_h = P\,e_{2h}\), where 2D uses bilinear interpolation and 3D uses trilinear interpolation; for example,
+              \[
+                  e_h(2I+1, 2J) = \frac{1}{2}\bigl(e_{2h}(I, J) + e_{2h}(I+1, J)\bigr),
+                  \quad
+                  e_h(2I+1, 2J+1) = \frac{1}{4}\sum_{p,q \in \{0,1\}} e_{2h}(I+p, J+q),
+              \]
+              and the 3D case uses the analogous tensor-product trilinear interpolation, involving 2, 4, or 8 coarse-grid neighbors depending on the fine-grid point location.
+        \item Coarsest-grid solve: exact solve by default, with an RB-SOR coarse-solve variant also available.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Transfer operators and cycles}{V-cycle workflow}}
+    \footnotesize
+    \begin{block}{One V-cycle}
+        \begin{itemize}
+            \item Pre-smooth on the current grid to damp high-frequency error.
+            \item Compute the residual \(r_h = h^2 f - A_h \phi\), where \(A_h\) is the dimensionless discrete Poisson stencil.
+            \item Restrict the residual to the coarse grid: \(r_{2h} = R\,r_h\).
+            \item Solve the coarse-grid error equation recursively, \(A_{2h} e_{2h} = r_{2h}\).
+            \item Prolongate the correction and update the solution: \(\phi \leftarrow \phi + P\,e_{2h}\).
+            \item Post-smooth and repeat until the relative scaled residual satisfies \(\eta \le \texttt{tol}\).
+        \end{itemize}
+    \end{block}
+
+    \[
+        \begin{aligned}
+            \text{pre-smooth} & \rightarrow \text{compute residual }(r_h) \rightarrow \text{restrict }(r_{2h}=Rr_h)                                                                         \\
+                              & \rightarrow \text{coarse solve }(A_{2h}e_{2h}=r_{2h}) \rightarrow \text{prolongate/update }(\phi \leftarrow \phi + P e_{2h}) \rightarrow \text{post-smooth}
+        \end{aligned}
+    \]
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Transfer operators and cycles}{W-cycle and grid hierarchy}}
+    \footnotesize
+    \begin{block}{W-cycle}
+        \begin{itemize}
+            \item Start like a V-cycle: pre-smooth, form the residual, and restrict to the next coarser grid.
+            \item Call the coarse level twice before coming back up to the fine grid.
+            \item The repeated coarse visit reduces the remaining low-frequency error, but it also increases the per-cycle cost.
+        \end{itemize}
+    \end{block}
+
+    \[
+        \begin{aligned}
+            \text{pre-smooth} & \rightarrow \text{compute residual }(r_h) \rightarrow \text{restrict }(r_{2h}=Rr_h)                                                            \\
+                              & \rightarrow \text{coarse cycle} \times 2 \rightarrow \text{prolongate/update }(\phi \leftarrow \phi + P e_{2h}) \rightarrow \text{post-smooth}
+        \end{aligned}
+    \]
+
+    \begin{block}{MG-compatible grid sizes}
+        \begin{itemize}
+            \item \texttt{--grid-size} is the number of interior points per axis, so the full array size is \texttt{grid-size + 2}.
+            \item Nested coarsening uses \(n_c = (n_f - 1)/2\), and the recursion stops when \(n \le 4\).
+            \item Valid families: \(2^a - 1\), \(3 \cdot 2^a - 1\), and \(5 \cdot 2^a - 1\).
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Coarse-grid solve and cost}{Coarse-grid solver design}}
+    \footnotesize
+    \begin{block}{Why the bottom level matters}
+        \begin{itemize}
+            \item The coarsest solve closes the multigrid hierarchy.
+            \item A weak bottom-level solve can leak error back to the fine grid after prolongation.
+            \item The choice affects both robustness and time-to-solution.
+        \end{itemize}
+    \end{block}
+
+    \begin{columns}[T,onlytextwidth]
+        \column{0.48\textwidth}
+        \begin{block}{Our implementation}
+            \begin{itemize}
+                \item Default: exact/direct solve on the coarsest grid.
+                \item Optional: RB-SOR coarse solve for comparison or fallback.
+            \end{itemize}
+        \end{block}
+
+        \column{0.48\textwidth}
+        \begin{block}{Trade-off}
+            \begin{itemize}
+                \item RB-SOR keeps the code path simple and is easy to benchmark.
+                \item Exact/direct gives the strongest bottom-level correction when the coarse system is tiny.
+            \end{itemize}
+        \end{block}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Coarse-grid solve and cost}{V- and W-cycle work estimates}}
+    \footnotesize
+    \setlength{\abovedisplayskip}{4pt}
+    \setlength{\belowdisplayskip}{4pt}
+    \setlength{\abovedisplayshortskip}{2pt}
+    \setlength{\belowdisplayshortskip}{2pt}
+    \begin{block}{Coarse-grid scaling}
+        Assume the fine-grid work is \(N\). One level down:
+        \[
+            2D: N \rightarrow N/4, \qquad 3D: N \rightarrow N/8
+        \]
+    \end{block}
+
+    \begin{columns}[T,onlytextwidth]
+        \column{0.475\textwidth}
+        \begin{block}{V-cycle}
+            \[
+                \begin{aligned}
+                    T_V      & \sim N + \frac{N}{2^d} + \frac{N}{2^{2d}} + \cdots   \\
+                    T_V^{2D} & \sim \frac{4}{3}N, \qquad T_V^{3D} \sim \frac{8}{7}N
+                \end{aligned}
+            \]
+        \end{block}
+
+        \column{0.475\textwidth}
+        \begin{block}{W-cycle}
+            \[
+                \begin{aligned}
+                    T_W      & \sim N + 2\frac{N}{2^d} + 4\frac{N}{2^{2d}} + \cdots \\
+                    T_W^{2D} & \sim 2N, \qquad T_W^{3D} \sim \frac{4}{3}N
+                \end{aligned}
+            \]
+        \end{block}
+    \end{columns}
+
+    \begin{block}{W / V ratio and takeaway}
+        \(2D: T_W/T_V = 3/2 \approx 50\%, \quad 3D: T_W/T_V = 7/6 \approx 17\%\).
+        3D shrinks faster, so the extra W-cycle coarse-grid work matters less than in 2D.
+    \end{block}
+\end{frame}
+
+\section{CUDA Multigrid Results}
+\begin{frame}[t]{\frametitlesub{Mixed-sine test cases}{2D mixed-sine solution}}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{phi_2d_v_sor_mixed_sine_n4095_nu3_w1p25_cs16.png}
+
+    \vspace{0.35em}
+    {\footnotesize CUDA MG V-SOR on the manufactured solution \(\phi_{\rm exact}(x,y)=\sin(2\pi x)\sin(3\pi y)\) with \(\nu = 3\) and \(\omega = 1.25\).}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Mixed-sine test cases}{3D mixed-sine solution}}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{phi_3d_v_sor_mixed_sine_n383_nu3_w1p25_cs16.png}
+
+    \vspace{0.35em}
+    {\footnotesize CUDA MG V-SOR on the manufactured solution \(\phi_{\rm exact}(x,y,z)=\sin(2\pi x)\sin(3\pi y)\sin(4\pi z)\) with \(\nu = 3\) and \(\omega = 1.25\).}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Convergence analysis}{L2 error convergence}}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_l2_error_sine.png}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Convergence analysis}{Iteration and time vs exact solve}}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_iter_time_sine.png}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Convergence analysis}{Iteration-and-time fit}}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_iter_time_fit_last10_sine.png}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Parameter sweeps}{Iteration and time vs \(\nu\)}}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{nu_sweep/plots_2d_3d_iter_time_sine.png}
+
+    \vspace{0.35em}
+    {\footnotesize 2D/3D iteration-and-time sweep over \(\nu\) on the sine manufactured-solution case.}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Parameter sweeps}{Iteration and time vs \(\omega\)}}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{omega_sweep/plots_2d_3d_iter_time_sine.png}
+
+    \vspace{0.35em}
+    {\footnotesize 2D/3D iteration-and-time sweep over \(\omega\) on the sine manufactured-solution case.}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Parameter sweeps}{Iteration and time vs coarse steps}}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{cuda_mg_coarse_steps/plots_2d_3d_iter_time_sine.png}
+
+    \vspace{0.35em}
+    {\footnotesize 2D/3D coarse-step sweep on the sine manufactured-solution case.}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Performance scaling}{CUDA scaling}}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_sine.png}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Performance scaling}{2D vs 3D scaling}}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_sine.png}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Performance scaling}{Multigrid vs SOR runtime}}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_mg_sor_time_fit_sine.png}
+\end{frame}
+
+\section{OpenMP Performance}
+\begin{frame}[t]{\frametitlesub{Empirical results}{Residual history (OpenMP)}}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{residual_history.png}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Empirical results}{OpenMP thread scaling}}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d.png}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Bottleneck analysis}{OpenMP bottleneck analysis}}
+    \footnotesize
+    \begin{columns}[T,onlytextwidth]
+        \column{0.475\textwidth}
+        \begin{block}{Topdown, L1, and cache evidence}
+            \begin{itemize}
+                \item The OpenMP solver is backend-bound, not compute-bound.
+                \item \texttt{topdown-be-bound} is 57.7\% in 2D and 58.2\% in 3D.
+                \item \texttt{topdown-mem-bound} rises from 43.7\% in 2D to 49.3\% in 3D.
+                \item L1D miss rate more than doubles, from 1.5\% in 2D to 3.2\% in 3D.
+                \item The 3D LLC load miss rate is 89.4\%, much higher than the 2D value of 26.4\%.
+            \end{itemize}
+        \end{block}
+
+        \column{0.475\textwidth}
+        \begin{block}{Profile takeaway}
+            \begin{itemize}
+                \item The hot kernel is \texttt{smooth\_red\_black} / \texttt{smooth\_red\_black\_3d}.
+                \item \texttt{perf annotate} shows the inner loop dominated by grid-value loads and \texttt{rhs} fetches.
+                \item The kernel has low arithmetic intensity and spends most of its time waiting on memory.
+                \item Conclusion: poor OpenMP thread scaling is mainly caused by memory bandwidth and cache pressure.
+            \end{itemize}
+        \end{block}
+    \end{columns}
+\end{frame}
+
+\section{Conclusions}
+\begin{frame}[t]{\frametitlesub{Conclusions}{Conclusions and takeaways}}
+    \footnotesize
+    \begin{block}{What we learned}
+        \begin{itemize}
+            \item The CUDA multigrid solver converges reliably in both 2D and 3D on manufactured-solution tests.
+            \item The \(\nu\) and \(\omega\) sweeps show that solver time is sensitive to smoother tuning, especially in 2D.
+            \item Compared with SOR, multigrid gives the better overall time-to-solution story as the grid grows.
+            \item The OpenMP backend flattens because the hot smoothing kernel is memory-bound rather than compute-bound.
+        \end{itemize}
+    \end{block}
+
+    \begin{block}{Bottom line}
+        Multigrid is the right algorithmic direction here, CUDA gives the strongest performance path, and the remaining CPU scaling limit is mainly a memory-bandwidth problem.
+    \end{block}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Conclusions}{References}}
+    \footnotesize
+    \begin{itemize}
+        \item Numerical Recipes, 3rd ed., Section 20.6, \emph{Multigrid Methods for Boundary Value Problems}.
+        \item Achi Brandt and Oren E. Livne, \emph{Multigrid Techniques: 1984 Guide with Applications to Fluid Dynamics, Revised Edition} (SIAM, 2011). \url{https://epubs.siam.org/doi/book/10.1137/1.9781611970753}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[plain]
+    \vfill
+    \centering
+    {\Huge \textbf{Q\&A}\par}
+    \vspace{1em}
+    {\large Thank you\par}
+    \vfill
+\end{frame}
+
+\end{document}

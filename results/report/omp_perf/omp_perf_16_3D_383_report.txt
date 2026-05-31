@@ -1,0 +1,2095 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 41K of event 'cpu_core/cycles:u/'
+# Event count (approx.): 49396531871
+#
+# Children      Self  Command          Shared Object         Symbol                                                                                                                                                 
+# ........  ........  ...............  ....................  .......................................................................................................................................................
+#
+    82.81%     0.06%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_thread_start
+            |          
+             --82.75%--gomp_thread_start
+                       |          
+                       |--55.18%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                       |          
+                       |--9.40%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                       |          |          
+                       |          |--4.47%--poisson::(anonymous namespace)::sine_rhs_3d<double>
+                       |          |          
+                       |           --4.31%--poisson::(anonymous namespace)::sine_exact_3d<double>
+                       |          
+                       |--5.73%--poisson::(anonymous namespace)::residual_full_3d<double>
+                       |          
+                       |--3.03%--poisson::relative_physical_residual_l2<double>
+                       |          |          
+                       |           --0.61%--poisson::Grid3D<double>::unchecked (inlined)
+                       |          
+                       |--2.88%--poisson::(anonymous namespace)::prolong_add_3d<double>
+                       |          
+                       |--2.43%--poisson::(anonymous namespace)::restrict_full_weighting_3d<double>
+                       |          
+                       |--2.34%--poisson::(anonymous namespace)::finite_grid<double>
+                       |          |          
+                       |           --1.30%--std::isfinite (inlined)
+                       |          
+                       |--0.74%--poisson::error_metrics<double>
+                       |          
+                        --0.72%--poisson::validate_problem<double>
+
+    82.81%     0.00%  poisson_cpp_omp  libc.so.6             [.] clone3
+            |          
+             --82.81%--clone3
+                       |          
+                        --82.81%--start_thread
+                                  |          
+                                   --82.81%--gomp_thread_start
+                                             |          
+                                             |--55.18%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                                             |          
+                                             |--9.40%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                                             |          |          
+                                             |          |--4.47%--poisson::(anonymous namespace)::sine_rhs_3d<double>
+                                             |          |          
+                                             |           --4.31%--poisson::(anonymous namespace)::sine_exact_3d<double>
+                                             |          
+                                             |--5.73%--poisson::(anonymous namespace)::residual_full_3d<double>
+                                             |          
+                                             |--3.03%--poisson::relative_physical_residual_l2<double>
+                                             |          |          
+                                             |           --0.61%--poisson::Grid3D<double>::unchecked (inlined)
+                                             |          
+                                             |--2.88%--poisson::(anonymous namespace)::prolong_add_3d<double>
+                                             |          
+                                             |--2.43%--poisson::(anonymous namespace)::restrict_full_weighting_3d<double>
+                                             |          
+                                             |--2.34%--poisson::(anonymous namespace)::finite_grid<double>
+                                             |          |          
+                                             |           --1.30%--std::isfinite (inlined)
+                                             |          
+                                             |--0.74%--poisson::error_metrics<double>
+                                             |          
+                                              --0.72%--poisson::validate_problem<double>
+
+    82.81%     0.00%  poisson_cpp_omp  libc.so.6             [.] start_thread
+            |          
+             --82.81%--start_thread
+                       |          
+                        --82.81%--gomp_thread_start
+                                  |          
+                                  |--55.18%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                                  |          
+                                  |--9.40%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                                  |          |          
+                                  |          |--4.47%--poisson::(anonymous namespace)::sine_rhs_3d<double>
+                                  |          |          
+                                  |           --4.31%--poisson::(anonymous namespace)::sine_exact_3d<double>
+                                  |          
+                                  |--5.73%--poisson::(anonymous namespace)::residual_full_3d<double>
+                                  |          
+                                  |--3.03%--poisson::relative_physical_residual_l2<double>
+                                  |          |          
+                                  |           --0.61%--poisson::Grid3D<double>::unchecked (inlined)
+                                  |          
+                                  |--2.88%--poisson::(anonymous namespace)::prolong_add_3d<double>
+                                  |          
+                                  |--2.43%--poisson::(anonymous namespace)::restrict_full_weighting_3d<double>
+                                  |          
+                                  |--2.34%--poisson::(anonymous namespace)::finite_grid<double>
+                                  |          |          
+                                  |           --1.30%--std::isfinite (inlined)
+                                  |          
+                                  |--0.74%--poisson::error_metrics<double>
+                                  |          
+                                   --0.72%--poisson::validate_problem<double>
+
+    62.27%    62.27%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::smooth_red_black_3d<double>
+            |          
+            |--55.18%--clone3
+            |          start_thread
+            |          gomp_thread_start
+            |          poisson::(anonymous namespace)::smooth_red_black_3d<double>
+            |          
+             --7.07%--_start
+                       __libc_start_main@@GLIBC_2.34
+                       __libc_start_call_main
+                       main
+                       run<double> (inlined)
+                       run_3d<double> (inlined)
+                       time_solver_runs<const (anonymous namespace)::run_3d<double>(const Options&)::<lambda()>&> (inlined)
+                       main
+                       poisson::solve_mg_sor<double>
+                       poisson::(anonymous namespace)::solve_mg_3d_impl<double>
+                       poisson::(anonymous namespace)::mg_cycle_3d<double>
+                       |          
+                       |--5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                       |          GOMP_parallel
+                       |          poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                       |          
+                        --1.16%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+                                  |          
+                                   --1.08%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                                             GOMP_parallel
+                                             poisson::(anonymous namespace)::smooth_red_black_3d<double>
+
+    11.09%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] _start
+            |
+            ---_start
+               __libc_start_main@@GLIBC_2.34
+               __libc_start_call_main
+               main
+               run<double> (inlined)
+               |          
+               |--10.40%--run_3d<double> (inlined)
+               |          |          
+               |          |--9.48%--time_solver_runs<const (anonymous namespace)::run_3d<double>(const Options&)::<lambda()>&> (inlined)
+               |          |          main
+               |          |          poisson::solve_mg_sor<double>
+               |          |          |          
+               |          |           --9.03%--poisson::(anonymous namespace)::solve_mg_3d_impl<double>
+               |          |                     |          
+               |          |                      --8.70%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          |                                |          
+               |          |                                |--5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                |          GOMP_parallel
+               |          |                                |          |          
+               |          |                                |           --5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                |          
+               |          |                                 --2.76%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          |                                           |          
+               |          |                                           |--1.17%--GOMP_parallel
+               |          |                                           |          |          
+               |          |                                           |           --0.68%--poisson::(anonymous namespace)::residual_full_3d<double>
+               |          |                                           |          
+               |          |                                           |--1.08%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                           |          GOMP_parallel
+               |          |                                           |          poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                           |          
+               |          |                                            --0.50%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          |          
+               |           --0.66%--poisson::make_problem_3d<double>
+               |                     |          
+               |                      --0.64%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+               |                                GOMP_parallel
+               |                                |          
+               |                                 --0.64%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+               |          
+                --0.69%--main
+                          poisson::make_problem_3d<double>
+                          |          
+                           --0.66%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                                     GOMP_parallel
+                                     |          
+                                      --0.66%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+
+    11.09%     0.00%  poisson_cpp_omp  libc.so.6             [.] __libc_start_main@@GLIBC_2.34
+            |
+            ---__libc_start_main@@GLIBC_2.34
+               __libc_start_call_main
+               main
+               run<double> (inlined)
+               |          
+               |--10.40%--run_3d<double> (inlined)
+               |          |          
+               |          |--9.48%--time_solver_runs<const (anonymous namespace)::run_3d<double>(const Options&)::<lambda()>&> (inlined)
+               |          |          main
+               |          |          poisson::solve_mg_sor<double>
+               |          |          |          
+               |          |           --9.03%--poisson::(anonymous namespace)::solve_mg_3d_impl<double>
+               |          |                     |          
+               |          |                      --8.70%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          |                                |          
+               |          |                                |--5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                |          GOMP_parallel
+               |          |                                |          |          
+               |          |                                |           --5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                |          
+               |          |                                 --2.76%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          |                                           |          
+               |          |                                           |--1.17%--GOMP_parallel
+               |          |                                           |          |          
+               |          |                                           |           --0.68%--poisson::(anonymous namespace)::residual_full_3d<double>
+               |          |                                           |          
+               |          |                                           |--1.08%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                           |          GOMP_parallel
+               |          |                                           |          poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                           |          
+               |          |                                            --0.50%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          |          
+               |           --0.66%--poisson::make_problem_3d<double>
+               |                     |          
+               |                      --0.64%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+               |                                GOMP_parallel
+               |                                |          
+               |                                 --0.64%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+               |          
+                --0.69%--main
+                          poisson::make_problem_3d<double>
+                          |          
+                           --0.66%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                                     GOMP_parallel
+                                     |          
+                                      --0.66%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+
+    11.09%     0.00%  poisson_cpp_omp  libc.so.6             [.] __libc_start_call_main
+            |
+            ---__libc_start_call_main
+               main
+               run<double> (inlined)
+               |          
+               |--10.40%--run_3d<double> (inlined)
+               |          |          
+               |          |--9.48%--time_solver_runs<const (anonymous namespace)::run_3d<double>(const Options&)::<lambda()>&> (inlined)
+               |          |          main
+               |          |          poisson::solve_mg_sor<double>
+               |          |          |          
+               |          |           --9.03%--poisson::(anonymous namespace)::solve_mg_3d_impl<double>
+               |          |                     |          
+               |          |                      --8.70%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          |                                |          
+               |          |                                |--5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                |          GOMP_parallel
+               |          |                                |          |          
+               |          |                                |           --5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                |          
+               |          |                                 --2.76%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          |                                           |          
+               |          |                                           |--1.17%--GOMP_parallel
+               |          |                                           |          |          
+               |          |                                           |           --0.68%--poisson::(anonymous namespace)::residual_full_3d<double>
+               |          |                                           |          
+               |          |                                           |--1.08%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                           |          GOMP_parallel
+               |          |                                           |          poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                           |          
+               |          |                                            --0.50%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          |          
+               |           --0.66%--poisson::make_problem_3d<double>
+               |                     |          
+               |                      --0.64%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+               |                                GOMP_parallel
+               |                                |          
+               |                                 --0.64%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+               |          
+                --0.69%--main
+                          poisson::make_problem_3d<double>
+                          |          
+                           --0.66%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                                     GOMP_parallel
+                                     |          
+                                      --0.66%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+
+    11.09%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] main
+            |
+            ---main
+               run<double> (inlined)
+               |          
+               |--10.40%--run_3d<double> (inlined)
+               |          |          
+               |          |--9.48%--time_solver_runs<const (anonymous namespace)::run_3d<double>(const Options&)::<lambda()>&> (inlined)
+               |          |          main
+               |          |          poisson::solve_mg_sor<double>
+               |          |          |          
+               |          |           --9.03%--poisson::(anonymous namespace)::solve_mg_3d_impl<double>
+               |          |                     |          
+               |          |                      --8.70%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          |                                |          
+               |          |                                |--5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                |          GOMP_parallel
+               |          |                                |          |          
+               |          |                                |           --5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                |          
+               |          |                                 --2.76%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          |                                           |          
+               |          |                                           |--1.17%--GOMP_parallel
+               |          |                                           |          |          
+               |          |                                           |           --0.68%--poisson::(anonymous namespace)::residual_full_3d<double>
+               |          |                                           |          
+               |          |                                           |--1.08%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                           |          GOMP_parallel
+               |          |                                           |          poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                           |          
+               |          |                                            --0.50%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          |          
+               |           --0.66%--poisson::make_problem_3d<double>
+               |                     |          
+               |                      --0.64%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+               |                                GOMP_parallel
+               |                                |          
+               |                                 --0.64%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+               |          
+                --0.69%--main
+                          poisson::make_problem_3d<double>
+                          |          
+                           --0.66%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                                     GOMP_parallel
+                                     |          
+                                      --0.66%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+
+    11.09%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] run<double> (inlined)
+            |
+            ---run<double> (inlined)
+               |          
+               |--10.40%--run_3d<double> (inlined)
+               |          |          
+               |          |--9.48%--time_solver_runs<const (anonymous namespace)::run_3d<double>(const Options&)::<lambda()>&> (inlined)
+               |          |          main
+               |          |          poisson::solve_mg_sor<double>
+               |          |          |          
+               |          |           --9.03%--poisson::(anonymous namespace)::solve_mg_3d_impl<double>
+               |          |                     |          
+               |          |                      --8.70%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          |                                |          
+               |          |                                |--5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                |          GOMP_parallel
+               |          |                                |          |          
+               |          |                                |           --5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                |          
+               |          |                                 --2.76%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          |                                           |          
+               |          |                                           |--1.17%--GOMP_parallel
+               |          |                                           |          |          
+               |          |                                           |           --0.68%--poisson::(anonymous namespace)::residual_full_3d<double>
+               |          |                                           |          
+               |          |                                           |--1.08%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                           |          GOMP_parallel
+               |          |                                           |          poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          |                                           |          
+               |          |                                            --0.50%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          |          
+               |           --0.66%--poisson::make_problem_3d<double>
+               |                     |          
+               |                      --0.64%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+               |                                GOMP_parallel
+               |                                |          
+               |                                 --0.64%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+               |          
+                --0.69%--main
+                          poisson::make_problem_3d<double>
+                          |          
+                           --0.66%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                                     GOMP_parallel
+                                     |          
+                                      --0.66%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+
+    10.89%     0.94%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::make_problem_3d_impl<double>
+            |          
+            |--9.95%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+            |          |          
+            |          |--5.07%--poisson::(anonymous namespace)::sine_rhs_3d<double>
+            |          |          
+            |           --4.88%--poisson::(anonymous namespace)::sine_exact_3d<double>
+            |          
+             --0.63%--clone3
+                       start_thread
+                       gomp_thread_start
+                       poisson::(anonymous namespace)::make_problem_3d_impl<double>
+
+    10.68%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] GOMP_parallel
+            |          
+             --10.67%--GOMP_parallel
+                       |          
+                       |--7.07%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                       |          
+                       |--1.29%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                       |          |          
+                       |          |--0.60%--poisson::(anonymous namespace)::sine_rhs_3d<double>
+                       |          |          
+                       |           --0.58%--poisson::(anonymous namespace)::sine_exact_3d<double>
+                       |          
+                        --0.83%--poisson::(anonymous namespace)::residual_full_3d<double>
+
+    10.40%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] run_3d<double> (inlined)
+            |
+            ---run_3d<double> (inlined)
+               |          
+               |--9.48%--time_solver_runs<const (anonymous namespace)::run_3d<double>(const Options&)::<lambda()>&> (inlined)
+               |          main
+               |          poisson::solve_mg_sor<double>
+               |          |          
+               |           --9.03%--poisson::(anonymous namespace)::solve_mg_3d_impl<double>
+               |                     |          
+               |                      --8.70%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |                                |          
+               |                                |--5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |                                |          GOMP_parallel
+               |                                |          |          
+               |                                |           --5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |                                |          
+               |                                 --2.76%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |                                           |          
+               |                                           |--1.17%--GOMP_parallel
+               |                                           |          |          
+               |                                           |           --0.68%--poisson::(anonymous namespace)::residual_full_3d<double>
+               |                                           |          
+               |                                           |--1.08%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |                                           |          GOMP_parallel
+               |                                           |          poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |                                           |          
+               |                                            --0.50%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          
+                --0.66%--poisson::make_problem_3d<double>
+                          |          
+                           --0.64%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                                     GOMP_parallel
+                                     |          
+                                      --0.64%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+
+     9.48%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] time_solver_runs<const (anonymous namespace)::run_3d<double>(const Options&)::<lambda()>&> (inlined)
+            |
+            ---time_solver_runs<const (anonymous namespace)::run_3d<double>(const Options&)::<lambda()>&> (inlined)
+               main
+               poisson::solve_mg_sor<double>
+               |          
+                --9.03%--poisson::(anonymous namespace)::solve_mg_3d_impl<double>
+                          |          
+                           --8.70%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+                                     |          
+                                     |--5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                                     |          GOMP_parallel
+                                     |          |          
+                                     |           --5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                                     |          
+                                      --2.76%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+                                                |          
+                                                |--1.17%--GOMP_parallel
+                                                |          |          
+                                                |           --0.68%--poisson::(anonymous namespace)::residual_full_3d<double>
+                                                |          
+                                                |--1.08%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                                                |          GOMP_parallel
+                                                |          poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                                                |          
+                                                 --0.50%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+
+     9.48%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::solve_mg_sor<double>
+            |
+            ---poisson::solve_mg_sor<double>
+               |          
+                --9.03%--poisson::(anonymous namespace)::solve_mg_3d_impl<double>
+                          |          
+                           --8.70%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+                                     |          
+                                     |--5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                                     |          GOMP_parallel
+                                     |          |          
+                                     |           --5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                                     |          
+                                      --2.76%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+                                                |          
+                                                |--1.17%--GOMP_parallel
+                                                |          |          
+                                                |           --0.68%--poisson::(anonymous namespace)::residual_full_3d<double>
+                                                |          
+                                                |--1.08%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                                                |          GOMP_parallel
+                                                |          poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                                                |          
+                                                 --0.50%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+
+     9.19%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::solve_mg_3d_impl<double>
+            |
+            ---poisson::(anonymous namespace)::solve_mg_3d_impl<double>
+               |          
+                --8.70%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+                          |          
+                          |--5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                          |          GOMP_parallel
+                          |          |          
+                          |           --5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                          |          
+                           --2.76%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+                                     |          
+                                     |--1.17%--GOMP_parallel
+                                     |          |          
+                                     |           --0.68%--poisson::(anonymous namespace)::residual_full_3d<double>
+                                     |          
+                                     |--1.08%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                                     |          GOMP_parallel
+                                     |          poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                                     |          
+                                      --0.50%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+
+     8.70%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::mg_cycle_3d<double>
+            |
+            ---poisson::(anonymous namespace)::mg_cycle_3d<double>
+               |          
+               |--5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          GOMP_parallel
+               |          |          
+               |           --5.91%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+               |          
+                --2.76%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+                          |          
+                          |--1.17%--GOMP_parallel
+                          |          |          
+                          |           --0.68%--poisson::(anonymous namespace)::residual_full_3d<double>
+                          |          
+                          |--1.08%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                          |          GOMP_parallel
+                          |          poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                          |          
+                           --0.50%--poisson::(anonymous namespace)::mg_cycle_3d<double>
+
+     7.18%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::smooth_red_black_3d<double>
+            |          
+             --7.17%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                       |          
+                        --7.16%--GOMP_parallel
+                                  |          
+                                   --7.07%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+
+     6.55%     6.55%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::residual_full_3d<double>
+            |          
+            |--5.73%--clone3
+            |          start_thread
+            |          gomp_thread_start
+            |          poisson::(anonymous namespace)::residual_full_3d<double>
+            |          
+             --0.83%--_start
+                       __libc_start_main@@GLIBC_2.34
+                       __libc_start_call_main
+                       main
+                       run<double> (inlined)
+                       run_3d<double> (inlined)
+                       time_solver_runs<const (anonymous namespace)::run_3d<double>(const Options&)::<lambda()>&> (inlined)
+                       main
+                       poisson::solve_mg_sor<double>
+                       poisson::(anonymous namespace)::solve_mg_3d_impl<double>
+                       poisson::(anonymous namespace)::mg_cycle_3d<double>
+                       poisson::(anonymous namespace)::mg_cycle_3d<double>
+                       |          
+                        --0.68%--GOMP_parallel
+                                  poisson::(anonymous namespace)::residual_full_3d<double>
+
+     5.43%     0.68%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::sine_rhs_3d<double>
+            |          
+             --4.94%--poisson::(anonymous namespace)::sine_rhs_3d<double>
+
+     5.31%     0.72%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::sine_exact_3d<double>
+            |          
+             --4.80%--poisson::(anonymous namespace)::sine_exact_3d<double>
+
+     3.67%     0.00%  poisson_cpp_omp  [unknown]             [.] 0xffffffffa5e00b80
+            |
+            ---0xffffffffa5e00b80
+
+     3.57%     3.49%  poisson_cpp_omp  libc.so.6             [.] __memset_avx2_unaligned_erms
+            |          
+             --3.45%--0xffffffffa5e00b80
+
+     3.36%     3.36%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::relative_physical_residual_l2<double>
+            |          
+             --3.03%--clone3
+                       start_thread
+                       gomp_thread_start
+                       poisson::relative_physical_residual_l2<double>
+                       |          
+                        --0.61%--poisson::Grid3D<double>::unchecked (inlined)
+
+     3.21%     3.21%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::prolong_add_3d<double>
+            |          
+             --2.88%--clone3
+                       start_thread
+                       gomp_thread_start
+                       poisson::(anonymous namespace)::prolong_add_3d<double>
+
+     2.72%     2.72%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::restrict_full_weighting_3d<double>
+            |          
+             --2.43%--clone3
+                       start_thread
+                       gomp_thread_start
+                       poisson::(anonymous namespace)::restrict_full_weighting_3d<double>
+
+     2.58%     2.58%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::finite_grid<double>
+            |          
+             --2.34%--clone3
+                       start_thread
+                       gomp_thread_start
+                       poisson::(anonymous namespace)::finite_grid<double>
+                       |          
+                        --1.30%--std::isfinite (inlined)
+
+     1.41%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::isfinite (inlined)
+            |
+            ---std::isfinite (inlined)
+
+     1.35%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::make_problem_3d<double>
+            |
+            ---poisson::make_problem_3d<double>
+               |          
+                --1.30%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                          GOMP_parallel
+                          |          
+                           --1.29%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                                     |          
+                                     |--0.60%--poisson::(anonymous namespace)::sine_rhs_3d<double>
+                                     |          
+                                      --0.58%--poisson::(anonymous namespace)::sine_exact_3d<double>
+
+     1.30%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::make_problem_3d_impl<double>
+            |
+            ---poisson::(anonymous namespace)::make_problem_3d_impl<double>
+               GOMP_parallel
+               |          
+                --1.29%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                          |          
+                          |--0.60%--poisson::(anonymous namespace)::sine_rhs_3d<double>
+                          |          
+                           --0.58%--poisson::(anonymous namespace)::sine_exact_3d<double>
+
+     0.82%     0.82%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::error_metrics<double>
+            |          
+             --0.74%--clone3
+                       start_thread
+                       gomp_thread_start
+                       poisson::error_metrics<double>
+
+     0.80%     0.80%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::validate_problem<double>
+            |          
+             --0.72%--clone3
+                       start_thread
+                       gomp_thread_start
+                       poisson::validate_problem<double>
+
+     0.69%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+            |
+            ---poisson::Grid3D<double>::unchecked (inlined)
+
+     0.64%     0.64%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b978
+            |          
+             --0.56%--clone3
+                       start_thread
+                       gomp_thread_start
+                       poisson::(anonymous namespace)::make_problem_3d_impl<double>
+
+     0.64%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21978
+            |
+            ---0x7f2027b21978
+
+     0.58%     0.58%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b99f
+            |          
+             --0.51%--clone3
+                       start_thread
+                       gomp_thread_start
+                       poisson::(anonymous namespace)::make_problem_3d_impl<double>
+
+     0.58%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2199f
+            |
+            ---0x7f2027b2199f
+
+     0.53%     0.53%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9d6
+     0.53%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b219d6
+            |
+            ---0x7f2027b219d6
+
+     0.52%     0.52%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b96a
+     0.52%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2196a
+            |
+            ---0x7f2027b2196a
+
+     0.51%     0.50%  poisson_cpp_omp  libc.so.6             [.] __memmove_avx_unaligned_erms
+     0.49%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000017e
+     0.47%     0.47%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9d0
+     0.47%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b219d0
+     0.45%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] solve_mg_3d_impl<double> (inlined)
+     0.41%     0.41%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b957
+     0.41%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21957
+     0.40%     0.40%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b98c
+     0.40%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2198c
+     0.37%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.33%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::validate_problem<double>
+     0.33%     0.33%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b96c
+     0.33%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2196c
+     0.33%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::relative_physical_residual_l2<double>
+     0.32%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::operator[] (inlined)
+     0.31%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.31%     0.31%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb15
+     0.31%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b15
+     0.30%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::operator[] (inlined)
+     0.30%     0.30%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd81
+     0.30%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d81
+     0.29%     0.29%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd6b
+     0.29%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d6b
+     0.29%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::Grid3D (inlined)
+     0.29%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::vector (inlined)
+     0.29%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__uninitialized_copy_a<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double*, double> (inlined)
+     0.29%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::uninitialized_copy<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double*> (inlined)
+     0.29%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__uninitialized_copy<true>::__uninit_copy<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double*> (inlined)
+     0.29%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::copy<__gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double*> (inlined)
+     0.29%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__copy_move_a<false, __gnu_cxx::__normal_iterator<double const*, std::vector<double, std::allocator<double> > >, double*> (inlined)
+     0.29%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__copy_move_a1<false, double const*, double*> (inlined)
+     0.29%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__copy_move_a2<false, double const*, double*> (inlined)
+     0.29%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__copy_move<false, true, std::random_access_iterator_tag>::__copy_m<double const, double> (inlined)
+     0.27%     0.27%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcc7
+     0.27%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cc7
+     0.26%     0.26%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd3d
+     0.26%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d3d
+     0.25%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3edc71c71c71c71b
+     0.25%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.25%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.24%     0.24%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcea
+     0.24%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cea
+     0.23%     0.23%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd14
+     0.23%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d14
+     0.23%     0.23%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba15
+     0.23%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a15
+     0.22%     0.22%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcfa
+     0.22%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cfa
+     0.22%     0.22%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd79
+     0.22%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d79
+     0.19%     0.19%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb03
+     0.19%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b03
+     0.18%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.18%     0.18%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcdc
+     0.18%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cdc
+     0.18%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::operator[] (inlined)
+     0.17%     0.17%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd28
+     0.17%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d28
+     0.17%     0.17%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba67
+     0.17%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a67
+     0.17%     0.17%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd07
+     0.17%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d07
+     0.17%     0.17%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd5b
+     0.17%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d5b
+     0.16%     0.16%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bae8
+     0.16%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ae8
+     0.16%     0.16%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba86
+     0.16%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a86
+     0.16%     0.16%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006baf7
+     0.16%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21af7
+     0.16%     0.16%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba2b
+     0.16%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a2b
+     0.16%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.15%     0.15%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bac4
+     0.15%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ac4
+     0.15%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] weight_3<double> (inlined)
+     0.15%     0.15%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba3d
+     0.15%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a3d
+     0.15%     0.15%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcaf
+     0.15%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21caf
+     0.15%     0.15%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006baa5
+     0.15%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21aa5
+     0.14%     0.14%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba92
+     0.14%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a92
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bad8
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ad8
+     0.11%     0.11%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba77
+     0.11%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a77
+     0.11%     0.11%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc90
+     0.11%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c90
+     0.10%     0.07%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_team_start
+     0.10%     0.10%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba59
+     0.10%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a59
+     0.10%     0.10%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc5d
+     0.10%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c5d
+     0.09%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::metrics<double> (inlined)
+     0.09%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::error_metrics<double>
+     0.09%     0.09%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc4d
+     0.09%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c4d
+     0.09%     0.09%  poisson_cpp_omp  [unknown]             [k] 0xffffffffa5e0115e
+     0.09%     0.09%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc32
+     0.09%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c32
+     0.08%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::operator[] (inlined)
+     0.08%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb77
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b77
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbfa
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bfa
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc68
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c68
+     0.07%     0.07%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_team_barrier_wait_end
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc08
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c08
+     0.07%     0.07%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::make_problem_3d_impl<double>
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bba0
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ba0
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb66
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b66
+     0.07%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.07%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.07%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::abs (inlined)
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbd1
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bd1
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc18
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c18
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc77
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c77
+     0.06%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::Grid3D (inlined)
+     0.06%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::vector (inlined)
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb4b
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b4b
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b972
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21972
+     0.06%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::_M_fill_initialize (inlined)
+     0.06%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__uninitialized_fill_n_a<double*, unsigned long, double, double> (inlined)
+     0.06%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::uninitialized_fill_n<double*, unsigned long, double> (inlined)
+     0.06%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__uninitialized_fill_n<true>::__uninit_fill_n<double*, unsigned long, double> (inlined)
+     0.06%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::fill_n<double*, unsigned long, double> (inlined)
+     0.06%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__fill_n_a<double*, unsigned long, double> (inlined)
+     0.06%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__fill_a<double*, double> (inlined)
+     0.06%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__fill_a1<double*, double> (inlined)
+     0.06%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] do_wait (inlined)
+     0.06%     0.06%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_barrier_wait_end
+     0.06%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_simple_barrier_wait (inlined)
+     0.06%     0.06%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_team_barrier_wait_final
+     0.06%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_barrier_wait_final_start (inlined)
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbbb
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bbb
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb2e
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b2e
+     0.05%     0.05%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::validate_problem<double>
+     0.05%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.05%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] do_wait (inlined)
+     0.05%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] do_spin (inlined)
+     0.04%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x006cd8c001b36240
+     0.04%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] make_problem_3d_impl<double> (inlined)
+     0.04%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__fill_a1<double*, double> (inlined)
+     0.04%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::Grid3D (inlined)
+     0.04%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::vector (inlined)
+     0.04%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::_M_fill_initialize (inlined)
+     0.04%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__uninitialized_fill_n_a<double*, unsigned long, double, double> (inlined)
+     0.04%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::uninitialized_fill_n<double*, unsigned long, double> (inlined)
+     0.04%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__uninitialized_fill_n<true>::__uninit_fill_n<double*, unsigned long, double> (inlined)
+     0.04%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::fill_n<double*, unsigned long, double> (inlined)
+     0.04%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__fill_n_a<double*, unsigned long, double> (inlined)
+     0.04%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__fill_a<double*, double> (inlined)
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bdc9
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21dc9
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb8d
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b8d
+     0.04%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] residual_full_3d<double> (inlined)
+     0.04%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] cpu_relax (inlined)
+     0.04%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] do_spin (inlined)
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbe7
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21be7
+     0.04%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] cpu_relax (inlined)
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba33
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a33
+     0.03%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::max<double> (inlined)
+     0.03%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c167af
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bdd6
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21dd6
+     0.03%     0.00%  poisson_cpp_omp  [unknown]             [.] 0xffffffffa5e00e30
+     0.03%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.03%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_finish_task (inlined)
+     0.02%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c167af
+     0.02%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::operator[] (inlined)
+     0.02%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_simple_barrier_wait (inlined)
+     0.02%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c1805f
+     0.02%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000001b361
+     0.02%     0.02%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_barrier_wait
+     0.02%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_barrier_wait_start (inlined)
+     0.02%     0.00%  poisson_cpp_omp  [unknown]             [.] 0xffffffffa5e00080
+     0.02%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3e98bf41239b4a72
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bda5
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21da5
+     0.02%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c1859f
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006c01e
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2201e
+     0.01%     0.01%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_team_end
+     0.01%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c182ff
+     0.01%     0.00%  poisson_cpp_omp  anon                  [.] 0x00007f1f7c79e417
+     0.01%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c1813f
+     0.01%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c182ff
+     0.01%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c183df
+     0.01%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] futex_wait (inlined)
+     0.01%     0.01%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::validate_problem<double>
+     0.01%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] restrict_full_weighting_3d<double> (inlined)
+     0.01%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c1821f
+     0.01%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] __futex_wait (inlined)
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000a3
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3ebf09ba81d67ea0
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3ece0b8d369d4aa2
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006c010
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b22010
+     0.01%     0.01%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::make_problem_3d_impl<double>
+     0.01%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c1813f
+     0.01%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c1821f
+     0.01%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c184bf
+     0.01%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c184bf
+     0.01%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.01%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.01%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] futex_wait (inlined)
+     0.01%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] __futex_wait (inlined)
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3e76489f0ff8a07a
+     0.01%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c1805f
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000010e
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000004b
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bafb
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21afb
+     0.01%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c1859f
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3ec7a7e993a9431d
+     0.01%     0.01%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::validate_problem<double>
+     0.01%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c183df
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000fff
+     0.01%     0.00%  poisson_cpp_omp  anon                  [.] 0x00007f1ff0d39417
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000ff
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000009b
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000cd
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000003d
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000000b
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000014c
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000f3
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000049
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000003
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000078
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000000d
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000013a
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc73
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c73
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000003e
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000176
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bfed
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21fed
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000164
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006baa1
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21aa1
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000030
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc7b
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c7b
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000169
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000014a
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000088
+     0.01%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::max<double> (inlined)
+     0.01%     0.01%  poisson_cpp_omp  libgomp.so.1.0.0      [.] omp_get_num_threads
+     0.01%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::max<double> (inlined)
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9d4
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b219d4
+     0.01%     0.01%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_init_task
+     0.01%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.01%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9b5
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b219b5
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] malloc
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9a1
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b219a1
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] priority_queue_init (inlined)
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000075
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc98
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c98
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000f6
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000117
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000009
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000144
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000019
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000040
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000f2
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000c0
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000001d
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000130
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000092
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000b9
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000100
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b991
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21991
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000fe
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000133
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000029
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3ed03c1f081b5ac2
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000053
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000e6
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000fc
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000135
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000000c
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000f4
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000158
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000012c
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd7d
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d7d
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd75
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d75
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000107
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000026
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000005c
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000da
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000ee
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000062
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000000e
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000058
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000148
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000151
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000014d
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b97b
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2197b
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000c4
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000b2
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000079
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000121
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000bb
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000067
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000d3
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000001b
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000ed
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000168
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000157
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000a8
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000070
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006c015
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b22015
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000dd
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd60
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d60
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000000a
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000179
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000129
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000cc
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000de
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000cb
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000050
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000116
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000007c
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000122
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000096
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006baf3
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21af3
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000a9
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000039
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000001
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000101
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000060
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000035
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000052
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000009a
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000013
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3eb03c1f081b5ac2
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000016f
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000020
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000ac
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000b8
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000002c
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000fd
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000df
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000f1
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000015
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000009d
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000d1
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bac8
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ac8
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000102
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000014f
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000011d
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000125
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000171
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000d7
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000015c
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000128
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000024
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000105
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000f7
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::abs (inlined)
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000016e
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::max<double> (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::size (inlined)
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000b0
+     0.00%     0.00%  poisson_cpp_omp  libstdc++.so.6.0.34   [.] operator delete@plt
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::~Grid3D (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::~vector (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::_Vector_base<double, std::allocator<double> >::~_Vector_base (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::_Vector_base<double, std::allocator<double> >::_M_deallocate (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::allocator_traits<std::allocator<double> >::deallocate (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::allocator<double>::deallocate (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__new_allocator<double>::deallocate (inlined)
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000017f
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc6d
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c6d
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] omp_set_dynamic
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_icv (inlined)
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_new_icv
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_malloc
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000015d
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000002a
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000004
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000000f
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _start
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_start
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_start_final (inlined)
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_sysdep_start
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] dl_main
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_relocate_object_no_relro
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_relocate_object
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] elf_dynamic_do_Rela (inlined)
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9e7
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b219e7
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000007f
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [k] 0xffffffffa5e001c4
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_lookup_symbol_x
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] elf_machine_rela (inlined)
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000048
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::_Vector_base<double, std::allocator<double> >::_Vector_base (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::_Vector_base<double, std::allocator<double> >::_M_create_storage (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::_Vector_base<double, std::allocator<double> >::_M_allocate (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::allocator_traits<std::allocator<double> >::allocate (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::allocator<double>::allocate (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__new_allocator<double>::allocate (inlined)
+     0.00%     0.00%  poisson_cpp_omp  libstdc++.so.6.0.34   [.] operator new
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] dl_new_hash (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b950
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21950
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_resolve_num_threads
+     0.00%     0.00%  poisson_cpp_omp  [stack]               [.] 0x00007ffe780ed2ff
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] _int_malloc
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_fini_work_share
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] do_lookup_x
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] pthread_create@GLIBC_2.2.5
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_check_map_versions
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_receive_error
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] version_check_doit
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_check_all_versions
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] match_symbol (inlined)
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_map_object_deps
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] __GI__dl_catch_exception (inlined)
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] openaux
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_map_object
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] strcmp
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_name_match_p
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::fill (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::fill<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double> (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__fill_a<__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double> (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::__fill_a1<double*, std::vector<double, std::allocator<double> >, double> (inlined)
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006baed
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21aed
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_start_user
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_init
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] initialize_env
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] call_init
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] __ctype_init
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] memset
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] __sigjmp_save
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_map_object_from_fd
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_map_segments (inlined)
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] getenv@plt
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_postprocess_loadcmd (inlined)
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_init_affinity
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0xffffffffa5e00e70
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] mmap64
+     0.00%     0.00%  poisson_cpp_omp  libc.so.6             [.] pthread_setaffinity_np@@GLIBC_2.34
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] __mmap64 (inlined)
+
+
+# Samples: 68K of event 'cpu_atom/cycles:u/'
+# Event count (approx.): 70142656621
+#
+# Children      Self  Command          Shared Object         Symbol                                                                
+# ........  ........  ...............  ....................  ......................................................................
+#
+    98.35%     0.00%  poisson_cpp_omp  libc.so.6             [.] start_thread
+            |          
+             --98.35%--start_thread
+                       |          
+                        --98.35%--gomp_thread_start
+                                  |          
+                                  |--61.73%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                                  |          
+                                  |--15.98%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                                  |          |          
+                                  |          |--7.64%--poisson::(anonymous namespace)::sine_exact_3d<double>
+                                  |          |          
+                                  |           --7.60%--poisson::(anonymous namespace)::sine_rhs_3d<double>
+                                  |          
+                                  |--6.61%--poisson::(anonymous namespace)::residual_full_3d<double>
+                                  |          
+                                  |--3.75%--poisson::relative_physical_residual_l2<double>
+                                  |          |          
+                                  |           --0.50%--poisson::Grid3D<double>::unchecked (inlined)
+                                  |          
+                                  |--3.14%--poisson::(anonymous namespace)::prolong_add_3d<double>
+                                  |          
+                                  |--2.85%--poisson::(anonymous namespace)::finite_grid<double>
+                                  |          |          
+                                  |           --1.82%--std::isfinite (inlined)
+                                  |          
+                                  |--2.41%--poisson::(anonymous namespace)::restrict_full_weighting_3d<double>
+                                  |          
+                                  |--0.84%--poisson::validate_problem<double>
+                                  |          
+                                   --0.79%--poisson::error_metrics<double>
+
+    98.35%     0.00%  poisson_cpp_omp  libc.so.6             [.] clone3
+            |
+            ---clone3
+               |          
+                --98.35%--start_thread
+                          |          
+                           --98.35%--gomp_thread_start
+                                     |          
+                                     |--61.73%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                                     |          
+                                     |--15.98%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                                     |          |          
+                                     |          |--7.64%--poisson::(anonymous namespace)::sine_exact_3d<double>
+                                     |          |          
+                                     |           --7.60%--poisson::(anonymous namespace)::sine_rhs_3d<double>
+                                     |          
+                                     |--6.61%--poisson::(anonymous namespace)::residual_full_3d<double>
+                                     |          
+                                     |--3.75%--poisson::relative_physical_residual_l2<double>
+                                     |          |          
+                                     |           --0.50%--poisson::Grid3D<double>::unchecked (inlined)
+                                     |          
+                                     |--3.14%--poisson::(anonymous namespace)::prolong_add_3d<double>
+                                     |          
+                                     |--2.85%--poisson::(anonymous namespace)::finite_grid<double>
+                                     |          |          
+                                     |           --1.82%--std::isfinite (inlined)
+                                     |          
+                                     |--2.41%--poisson::(anonymous namespace)::restrict_full_weighting_3d<double>
+                                     |          
+                                     |--0.84%--poisson::validate_problem<double>
+                                     |          
+                                      --0.79%--poisson::error_metrics<double>
+
+    98.35%     0.05%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_thread_start
+            |          
+             --98.30%--gomp_thread_start
+                       |          
+                       |--61.73%--poisson::(anonymous namespace)::smooth_red_black_3d<double>
+                       |          
+                       |--15.98%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+                       |          |          
+                       |          |--7.64%--poisson::(anonymous namespace)::sine_exact_3d<double>
+                       |          |          
+                       |           --7.60%--poisson::(anonymous namespace)::sine_rhs_3d<double>
+                       |          
+                       |--6.61%--poisson::(anonymous namespace)::residual_full_3d<double>
+                       |          
+                       |--3.75%--poisson::relative_physical_residual_l2<double>
+                       |          |          
+                       |           --0.50%--poisson::Grid3D<double>::unchecked (inlined)
+                       |          
+                       |--3.14%--poisson::(anonymous namespace)::prolong_add_3d<double>
+                       |          
+                       |--2.85%--poisson::(anonymous namespace)::finite_grid<double>
+                       |          |          
+                       |           --1.82%--std::isfinite (inlined)
+                       |          
+                       |--2.41%--poisson::(anonymous namespace)::restrict_full_weighting_3d<double>
+                       |          
+                       |--0.84%--poisson::validate_problem<double>
+                       |          
+                        --0.79%--poisson::error_metrics<double>
+
+    61.74%    61.73%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::smooth_red_black_3d<double>
+            |          
+             --61.72%--clone3
+                       start_thread
+                       gomp_thread_start
+                       poisson::(anonymous namespace)::smooth_red_black_3d<double>
+
+    16.09%     0.85%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::make_problem_3d_impl<double>
+            |          
+            |--15.24%--poisson::(anonymous namespace)::make_problem_3d_impl<double>
+            |          |          
+            |          |--7.64%--poisson::(anonymous namespace)::sine_exact_3d<double>
+            |          |          
+            |           --7.60%--poisson::(anonymous namespace)::sine_rhs_3d<double>
+            |          
+             --0.74%--clone3
+                       start_thread
+                       gomp_thread_start
+                       poisson::(anonymous namespace)::make_problem_3d_impl<double>
+
+     7.91%     0.71%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::sine_exact_3d<double>
+            |          
+             --7.32%--poisson::(anonymous namespace)::sine_exact_3d<double>
+
+     7.86%     0.65%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::sine_rhs_3d<double>
+            |          
+             --7.33%--poisson::(anonymous namespace)::sine_rhs_3d<double>
+
+     6.61%     6.61%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::residual_full_3d<double>
+            |
+            ---clone3
+               start_thread
+               gomp_thread_start
+               poisson::(anonymous namespace)::residual_full_3d<double>
+
+     3.75%     3.75%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::relative_physical_residual_l2<double>
+            |
+            ---clone3
+               start_thread
+               gomp_thread_start
+               poisson::relative_physical_residual_l2<double>
+               |          
+                --0.50%--poisson::Grid3D<double>::unchecked (inlined)
+
+     3.14%     3.14%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::prolong_add_3d<double>
+            |
+            ---clone3
+               start_thread
+               gomp_thread_start
+               poisson::(anonymous namespace)::prolong_add_3d<double>
+
+     2.85%     2.85%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::finite_grid<double>
+            |          
+             --2.85%--clone3
+                       start_thread
+                       gomp_thread_start
+                       poisson::(anonymous namespace)::finite_grid<double>
+                       |          
+                        --1.81%--std::isfinite (inlined)
+
+     2.41%     2.41%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::restrict_full_weighting_3d<double>
+            |          
+             --2.41%--clone3
+                       start_thread
+                       gomp_thread_start
+                       poisson::(anonymous namespace)::restrict_full_weighting_3d<double>
+
+     1.82%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::isfinite (inlined)
+            |
+            ---std::isfinite (inlined)
+
+     0.84%     0.84%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::validate_problem<double>
+            |
+            ---clone3
+               start_thread
+               gomp_thread_start
+               poisson::validate_problem<double>
+
+     0.79%     0.79%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::error_metrics<double>
+            |
+            ---clone3
+               start_thread
+               gomp_thread_start
+               poisson::error_metrics<double>
+
+     0.68%     0.68%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc6d
+            |
+            ---clone3
+               start_thread
+               gomp_thread_start
+               poisson::(anonymous namespace)::make_problem_3d_impl<double>
+
+     0.68%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c6d
+            |
+            ---0x7f2027b21c6d
+
+     0.62%     0.62%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc4d
+            |
+            ---clone3
+               start_thread
+               gomp_thread_start
+               poisson::(anonymous namespace)::make_problem_3d_impl<double>
+
+     0.62%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c4d
+            |
+            ---0x7f2027b21c4d
+
+     0.50%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+            |
+            ---poisson::Grid3D<double>::unchecked (inlined)
+
+     0.45%     0.45%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc68
+     0.45%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c68
+     0.41%     0.41%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc25
+     0.41%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c25
+     0.36%     0.36%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc73
+     0.36%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c73
+     0.36%     0.36%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b96c
+     0.36%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2196c
+     0.32%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.31%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.31%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.30%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::operator[] (inlined)
+     0.28%     0.28%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd6b
+     0.28%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d6b
+     0.28%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000017e
+     0.27%     0.27%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc77
+     0.27%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c77
+     0.26%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.25%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.24%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::operator[] (inlined)
+     0.23%     0.23%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b958
+     0.23%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21958
+     0.23%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.23%     0.23%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd71
+     0.23%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d71
+     0.22%     0.22%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcdc
+     0.22%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cdc
+     0.22%     0.22%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd75
+     0.22%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d75
+     0.21%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3edc71c71c71c71b
+     0.16%     0.16%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b954
+     0.16%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21954
+     0.16%     0.16%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc18
+     0.16%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c18
+     0.15%     0.15%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9ba
+     0.15%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b219ba
+     0.15%     0.15%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b97b
+     0.15%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2197b
+     0.15%     0.15%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc48
+     0.15%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c48
+     0.14%     0.14%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b99f
+     0.14%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2199f
+     0.14%     0.14%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b97f
+     0.14%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2197f
+     0.13%     0.13%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b965
+     0.13%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21965
+     0.13%     0.13%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9bc
+     0.13%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b219bc
+     0.13%     0.13%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b957
+     0.13%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21957
+     0.13%     0.13%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b955
+     0.13%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21955
+     0.13%     0.13%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b995
+     0.13%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21995
+     0.13%     0.13%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b98c
+     0.13%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2198c
+     0.13%     0.13%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b978
+     0.13%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21978
+     0.13%     0.13%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b981
+     0.13%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21981
+     0.12%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9b7
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b219b7
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd7d
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d7d
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9d0
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b219d0
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b96a
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2196a
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc7b
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c7b
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd79
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d79
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba10
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a10
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b972
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21972
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006c015
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b22015
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb10
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b10
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b976
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21976
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b95c
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2195c
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9c1
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b219c1
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b987
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21987
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba15
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a15
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9d4
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b219d4
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9d5
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b219d5
+     0.12%     0.12%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b99a
+     0.12%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2199a
+     0.11%     0.11%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b991
+     0.11%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21991
+     0.11%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] weight_3<double> (inlined)
+     0.11%     0.11%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc3b
+     0.11%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c3b
+     0.11%     0.11%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b950
+     0.11%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21950
+     0.11%     0.11%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9ca
+     0.11%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b219ca
+     0.11%     0.11%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006b9d6
+     0.11%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b219d6
+     0.10%     0.10%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd66
+     0.10%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d66
+     0.09%     0.09%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc44
+     0.09%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c44
+     0.09%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::operator[] (inlined)
+     0.09%     0.09%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba59
+     0.09%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a59
+     0.09%     0.09%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc88
+     0.09%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c88
+     0.09%     0.09%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb15
+     0.09%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b15
+     0.08%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006c010
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b22010
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd28
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d28
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc98
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c98
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bfff
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21fff
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd00
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d00
+     0.08%     0.08%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd1f
+     0.08%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d1f
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006c01a
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2201a
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcaf
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21caf
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bccf
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ccf
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd57
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d57
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcfa
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cfa
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd31
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d31
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcd8
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cd8
+     0.07%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x392f197600001f9f
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcc3
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cc3
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd4e
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d4e
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd45
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d45
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcbf
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cbf
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd07
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d07
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bca0
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ca0
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcee
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cee
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcf2
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cf2
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd5b
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d5b
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcc7
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cc7
+     0.07%     0.07%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd39
+     0.07%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d39
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd2c
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d2c
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd0a
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d0a
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd3d
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d3d
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd60
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d60
+     0.06%     0.00%  poisson_cpp_omp  [unknown]             [.] 0xbc6a626300001f9f
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd1b
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d1b
+     0.06%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::operator[] (inlined)
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd17
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d17
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcb7
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cb7
+     0.06%     0.00%  poisson_cpp_omp  [unknown]             [.] 0xbc6a62633145c06d
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bff6
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ff6
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bca8
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ca8
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd12
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d12
+     0.06%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::max<double> (inlined)
+     0.06%     0.06%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::make_problem_3d_impl<double>
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcea
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cea
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb77
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b77
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd81
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d81
+     0.06%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.06%     0.06%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb93
+     0.06%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b93
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcfd
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cfd
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd0f
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d0f
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb7c
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b7c
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd04
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d04
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb43
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b43
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb98
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b98
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbb7
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bb7
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb54
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b54
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bce2
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ce2
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb89
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b89
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb9c
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b9c
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd14
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d14
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb32
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b32
+     0.05%     0.05%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc0f
+     0.05%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c0f
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bba0
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ba0
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb26
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b26
+     0.04%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbbb
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bbb
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc62
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c62
+     0.04%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_simple_barrier_wait (inlined)
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc90
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c90
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc32
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c32
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb6e
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b6e
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbf2
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bf2
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb2e
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b2e
+     0.04%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::operator[] (inlined)
+     0.04%     0.04%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::validate_problem<double>
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbe7
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21be7
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb1b
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b1b
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb3b
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b3b
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bba6
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ba6
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbff
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bff
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bcf7
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21cf7
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc60
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c60
+     0.04%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::abs (inlined)
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb4b
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b4b
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb8d
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b8d
+     0.04%     0.04%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc57
+     0.04%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c57
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc21
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c21
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb5d
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b5d
+     0.03%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3f65555555555554
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc52
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c52
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc7f
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c7f
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbd3
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bd3
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bba9
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ba9
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006baf3
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21af3
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc5a
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c5a
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb4f
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b4f
+     0.03%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb20
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b20
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb6a
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b6a
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc5d
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c5d
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc2a
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c2a
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc08
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c08
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbd1
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bd1
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb66
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b66
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc02
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c02
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bad0
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ad0
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbc1
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bc1
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbc5
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bc5
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc0c
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c0c
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba94
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a94
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bae2
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ae2
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bafb
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21afb
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba67
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a67
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbaf
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21baf
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc14
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c14
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba39
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a39
+     0.03%     0.03%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba2f
+     0.03%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a2f
+     0.03%     0.03%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_barrier_wait
+     0.03%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_barrier_wait_start (inlined)
+     0.03%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::operator[] (inlined)
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba89
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a89
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbfa
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bfa
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba77
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a77
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006baff
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21aff
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006baa1
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21aa1
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc82
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c82
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba81
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a81
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbc9
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bc9
+     0.02%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_finish_task (inlined)
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba23
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a23
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006badd
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21add
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba54
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a54
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbd7
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bd7
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbf6
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bf6
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bc05
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21c05
+     0.02%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba8c
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a8c
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006baed
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21aed
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb84
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b84
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bad8
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ad8
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba6f
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a6f
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bae8
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ae8
+     0.02%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::operator[] (inlined)
+     0.02%     0.02%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_team_barrier_wait_final
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba98
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a98
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bab2
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ab2
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba4d
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a4d
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbee
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bee
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba8f
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a8f
+     0.02%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_barrier_wait_final_start (inlined)
+     0.02%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::abs (inlined)
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bac4
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ac4
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba86
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a86
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba45
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a45
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba92
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a92
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bacc
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21acc
+     0.02%     0.01%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_team_barrier_wait_end
+     0.02%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.02%     0.01%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_barrier_wait_end
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba74
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a74
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba33
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a33
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006baa5
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21aa5
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006baf7
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21af7
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba1b
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a1b
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb73
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b73
+     0.02%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] do_wait (inlined)
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bac8
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21ac8
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba7d
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a7d
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006babb
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21abb
+     0.02%     0.02%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba3d
+     0.02%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a3d
+     0.01%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c18bbf
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3c46767300001f9f
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bbdf
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21bdf
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba6b
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a6b
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba5f
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a5f
+     0.01%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bfd8
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21fd8
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006baaa
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21aaa
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba7a
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a7a
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006ba2b
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21a2b
+     0.01%     0.01%  poisson_cpp_omp  libgomp.so.1.0.0      [.] omp_get_num_threads
+     0.01%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c1867f
+     0.01%     0.01%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::validate_problem<double>
+     0.01%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c18c9f
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0xffffffffa5e00080
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006c01e
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b2201e
+     0.01%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c1875f
+     0.01%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] do_wait (inlined)
+     0.01%     0.01%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::make_problem_3d_impl<double>
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0xffffffffa5e00e30
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bb03
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21b03
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3d1385d9d6bb9aaf
+     0.01%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] futex_wait (inlined)
+     0.01%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c1883f
+     0.01%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c189ff
+     0.01%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c18c9f
+     0.01%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] do_spin (inlined)
+     0.01%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c1891f
+     0.01%     0.01%  poisson_cpp_omp  [unknown]             [k] 0xffffffffa5e001c4
+     0.01%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] futex_wait (inlined)
+     0.01%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] __futex_wait (inlined)
+     0.01%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] cpu_relax (inlined)
+     0.01%     0.01%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::(anonymous namespace)::make_problem_3d_impl<double>
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000f8
+     0.01%     0.01%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bfdc
+     0.01%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21fdc
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3c29d9cc00001f9f
+     0.01%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000017
+     0.01%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c1883f
+     0.01%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c1875f
+     0.01%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c18adf
+     0.01%     0.01%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::validate_problem<double>
+     0.01%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::max<double> (inlined)
+     0.01%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c1891f
+     0.01%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bfed
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21fed
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0xbc33131900001f9f
+     0.00%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c18bbf
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bfe4
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21fe4
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3ebf09ba81d67e9f
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bdc0
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21dc0
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3c4676733ae8fe47
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000001e
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bdae
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21dae
+     0.00%     0.00%  poisson_cpp_omp  anon                  [.] 0x000055ba45c1867f
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] do_spin (inlined)
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] cpu_relax (inlined)
+     0.00%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c18adf
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::operator[] (inlined)
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] __futex_wait (inlined)
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000ec
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000092
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000a4
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000013
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000117
+     0.00%     0.00%  poisson_cpp_omp  [heap]                [.] 0x000055ba45c189ff
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000eb
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bdd2
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21dd2
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000004b
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bdc9
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21dc9
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000d1
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000017a
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000144
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000163
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000cb
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd90
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d90
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000004f
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000e3
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000011c
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000127
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000dc
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000fc
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000006e
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000107
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000c1
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000012f
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000173
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000ea
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000098
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000126
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0xbc3313198a2e036f
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000164
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000068
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000109
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] futex_wake (inlined)
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000158
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000010a
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000c7
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x392f1976b7ffffff
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000159
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000133
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000a8
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000cd
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000125
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000134
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000128
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000009b
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000151
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000013c
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000002f
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000009d
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000002c
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000170
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bdd6
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21dd6
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000132
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000bd
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000003e
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000129
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000160
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000088
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000010d
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000010c
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000050
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000130
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000001d
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000c8
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000bc
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000b5
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bdb7
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21db7
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3c29d9cceba3f91e
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000013a
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000078
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000ee
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000aa
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000cc
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000087
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000091
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000002a
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000004c
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000f7
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000006d
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3eb03c1f081b5ac2
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000015f
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000011d
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000e6
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000db
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000f9
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000005a
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000a5
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000036
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3e3814f8ac3a0fc4
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000021
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000172
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000040
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000b1
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000014e
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000a0
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000059
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000bf
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000102
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000135
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000012e
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000148
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000011f
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000014f
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000077
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000f0
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000ad
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000066
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000100
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000002e
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000047
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000005
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000013f
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000147
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000f5
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000d2
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::vector<double, std::allocator<double> >::operator[] (inlined)
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000007b
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000008c
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000049
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000cf
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000005e
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000018
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000110
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000003b
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000096
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x000000000006bd94
+     0.00%     0.00%  poisson_cpp_omp  libm.so.6             [.] 0x00007f2027b21d94
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000000e
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000016f
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000058
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000011a
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000017c
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000064
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000e1
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000111
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000b2
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000145
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3e98bf41239b4a72
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000007a
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000012c
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000c2
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000141
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000010b
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000006
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000034
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3e76489f0ff8a07a
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000084
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000013e
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000009f
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000065
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000174
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000052
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000139
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000169
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000081
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000094
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x3ece0b8d369d4aa2
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000167
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000114
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000061
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [k] 0xffffffffa5e0115e
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] std::max<double> (inlined)
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000103
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x00000000000000de
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x0000000000000022
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::unchecked (inlined)
+     0.00%     0.00%  poisson_cpp_omp  poisson_cpp_omp       [.] poisson::Grid3D<double>::offset_unchecked (inlined)
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] omp_get_thread_num
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] futex_wake (inlined)
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0x000000000000014d
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] __futex_wake (inlined)
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_start
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _start
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_start_final (inlined)
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_sysdep_start
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] memmove
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] dl_main
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_map_object_deps
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] __GI__dl_catch_exception (inlined)
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] openaux
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_map_object
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] open_path
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] intel_check_word.constprop.0
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] dl_platform_init (inlined)
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] _dl_x86_init_cpu_features
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] init_cpu_features (inlined)
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] dl_init_cacheinfo (inlined)
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] handle_intel (inlined)
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] intel_check_word (inlined)
+     0.00%     0.00%  poisson_cpp_omp  ld-linux-x86-64.so.2  [.] __GI___tunables_init
+     0.00%     0.00%  poisson_cpp_omp  libgomp.so.1.0.0      [.] gomp_sem_init (inlined)
+     0.00%     0.00%  poisson_cpp_omp  [unknown]             [.] 0xffffffffa5e00b80
+
+
+#
+# (Tip: To count events in every 1000 msec: perf stat -I 1000)
+#

@@ -1,0 +1,33 @@
+%%% Author, Affiliation, Date
+\author{Sheng-Chieh Tseng}
+\institute{Department of Physics, National Taiwan University}
+\date{5 Jun 2026}
+
+
+
+%%% defs
+\def\cmd#1{\texttt{\color{red}\footnotesize $\backslash$#1}}
+\def\env#1{\texttt{\color{blue}\footnotesize #1}}
+%\definecolor{erasmusmc}{RGB}{134,210,236}
+%\definecolor{erasmusmc_dark}{RGB}{12,33,116}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+\definecolor{halfgray}{gray}{0.55}
+
+
+% Rounded blocks with shadow for a consistent report style.
+\setbeamertemplate{blocks}[rounded][shadow=true]
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    keywordstyle=\bfseries\color{erasmusmc_dark},
+    emphstyle=\ttfamily\color{erasmusmc!50!erasmusmc_dark},    % Custom highlighting style
+    stringstyle=\color{erasmusmc!50!deepgreen},
+    numbers=left,
+    numberstyle=\small\color{halfgray},
+    rulesepcolor=\color{red!20!green!20!blue!20},
+    frame=shadowbox,
+}
+
+\renewcommand{\familydefault}{\sfdefault} % You can define your font style here

@@ -1,0 +1,52 @@
+\setbeamertemplate{title page}{
+    \vbox to \textheight{
+        \vspace*{1cm}
+        \begin{minipage}[c][0.30\textheight][c]{\textwidth}
+            \begin{center}
+                {\usebeamercolor[fg]{normal text}\bfseries\fontsize{21}{25}\selectfont
+                    \makebox[\textwidth][c]{\shortstack[c]{\inserttitle}}
+                }
+            \end{center}
+        \end{minipage}\par
+
+        \vspace*{1cm}
+
+        \begin{minipage}[c][0.15\textheight][c]{\textwidth}
+            \begin{center}
+                {\usebeamerfont{author}\insertauthor\par}
+                \vspace{0.5em}
+                {\usebeamerfont{institute}\insertinstitute\par}
+                \vspace{0.5em}
+                {\usebeamerfont{date}\insertdate\par}
+            \end{center}
+        \end{minipage}\par
+
+        \begin{minipage}[b][0.2\textheight][b]{\textwidth}
+            \begin{center}
+                \begin{minipage}{0.92\textwidth}
+                    \begin{columns}[c,onlytextwidth]
+                        \column{0.76\textwidth}
+                        \raggedright
+                        {\small\textbf{Project repository:}\par}
+                        \vspace{0.12em}
+                        {\footnotesize\url{https://github.com/TCC0731/multigrid-poisson-solvers}}
+                        \column{0.24\textwidth}
+                        \centering
+                        \raisebox{-0.08cm}{\includegraphics[width=1.9cm]{qrcode-generator.png}}
+                    \end{columns}
+                \end{minipage}
+            \end{center}
+        \end{minipage}
+
+        \vfill
+    }
+}
+
+\begin{frame}[plain]
+    \titlepage
+\end{frame}
+
+\begin{frame}
+    \tableofcontents[sectionstyle=show,subsectionstyle=show/shaded/hide,subsubsectionstyle=show/shaded/hide]
+
+\end{frame}

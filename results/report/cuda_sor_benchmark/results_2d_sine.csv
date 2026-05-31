@@ -1,0 +1,13 @@
+dimension,case,solver,backend,dtype,grid_size,iterations,error_l2,error_linf,time_ms,time_s,converged,source
+2,sine,RB SOR,cuda,double,63,300,1.004109e-04,2.008218e-04,9.803000e+00,9.803000e-03,true,wrapper
+2,sine,RB SOR,cuda,double,95,450,4.462408e-05,8.924816e-05,1.045400e+01,1.045400e-02,true,wrapper
+2,sine,RB SOR,cuda,double,127,600,2.510046e-05,5.020091e-05,1.284100e+01,1.284100e-02,true,wrapper
+2,sine,RB SOR,cuda,double,159,750,1.606412e-05,3.212823e-05,1.346000e+01,1.346000e-02,true,wrapper
+2,sine,RB SOR,cuda,double,191,900,1.115557e-05,2.231114e-05,1.597500e+01,1.597500e-02,true,wrapper
+2,sine,RB SOR,cuda,double,255,1200,6.274970e-06,1.254994e-05,2.152200e+01,2.152200e-02,true,wrapper
+2,sine,RB SOR,cuda,double,319,1500,4.015969e-06,8.031938e-06,2.616900e+01,2.616900e-02,true,wrapper
+2,sine,RB SOR,cuda,double,383,1850,2.788864e-06,5.577728e-06,3.182300e+01,3.182300e-02,true,wrapper
+2,sine,RB SOR,cuda,double,511,2450,1.568733e-06,3.137466e-06,5.103900e+01,5.103900e-02,true,wrapper
+2,sine,RB SOR,cuda,double,639,3100,1.003988e-06,2.007977e-06,7.127600e+01,7.127600e-02,true,wrapper
+2,sine,RB SOR,cuda,double,767,3750,6.972138e-07,1.394428e-06,1.023960e+02,1.023960e-01,true,wrapper
+2,sine,RB SOR,cuda,double,1023,5000,3.921823e-07,7.843646e-07,1.694390e+02,1.694390e-01,true,wrapper

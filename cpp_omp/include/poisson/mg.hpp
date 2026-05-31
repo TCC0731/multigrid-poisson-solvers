@@ -18,6 +18,7 @@ struct MGOptions {
     std::size_t coarse_steps{16};
     Real omega{Real{1}};
     bool omega_is_auto{false};
+    std::vector<Real>* residual_history{nullptr};
 };
 
 template <typename Real>

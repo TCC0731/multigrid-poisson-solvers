@@ -8,7 +8,9 @@
 #include "poisson/validation.hpp"
 
 #include <chrono>
+#include <cstdint>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <optional>
 #include <stdexcept>
@@ -31,8 +33,11 @@ struct Options {
     std::size_t max_iter{20'000};
     std::size_t repeat_runs{1};
     std::size_t nu{2};
+    std::size_t coarse_steps{16};
     std::optional<double> omega{};
     bool omega_is_auto{false};
+    bool dump_phi{false};
+    std::optional<std::string> dump_phi_path{};
 };
 
 template <typename Real>
@@ -77,11 +82,74 @@ template <typename SolveFn>
     };
 }
 
+[[nodiscard]] std::string make_phi_dump_filename(
+    const Options& options, std::string_view solver_name
+) {
+    std::string filename{"phi_cuda_"};
+    filename += std::to_string(options.dimension);
+    filename += "d_";
+    filename += solver_name;
+    filename += '_';
+    filename += options.case_name;
+    filename += "_n";
+    filename += std::to_string(options.grid_size);
+    filename += '_';
+    filename += options.dtype;
+    filename += ".bin";
+    return filename;
+}
+
+constexpr char kPhiDumpMagic[8] = {'P', 'H', 'I', 'D', 'U', 'M', 'P', '1'};
+constexpr std::uint32_t kPhiDumpVersion = 1;
+
+template <typename T>
+void write_binary_value(std::ofstream& out, const T& value, const std::string& path) {
+    static_assert(std::is_trivially_copyable_v<T>);
+    out.write(reinterpret_cast<const char*>(&value), sizeof(T));
+    if (!out) {
+        throw std::runtime_error("failed to write phi dump file: " + path);
+    }
+}
+
+template <typename Grid>
+void dump_phi_binary(const Grid& phi, const std::string& path, std::size_t dimension, std::size_t interior_n) {
+    using Value = typename Grid::value_type;
+    static_assert(std::is_trivially_copyable_v<Value>);
+
+    std::ofstream out(path, std::ios::binary);
+    if (!out) {
+        throw std::runtime_error("failed to open phi dump file: " + path);
+    }
+
+    out.write(kPhiDumpMagic, sizeof(kPhiDumpMagic));
+    if (!out) {
+        throw std::runtime_error("failed to write phi dump file: " + path);
+    }
+
+    write_binary_value(out, kPhiDumpVersion, path);
+    write_binary_value(out, static_cast<std::uint32_t>(dimension), path);
+    write_binary_value(out, static_cast<std::uint64_t>(interior_n), path);
+    write_binary_value(out, static_cast<std::uint64_t>(phi.size()), path);
+    write_binary_value(out, static_cast<std::uint64_t>(phi.elements()), path);
+    write_binary_value(out, static_cast<std::uint64_t>(sizeof(Value)), path);
+
+    if (phi.elements() > 0) {
+        out.write(
+            reinterpret_cast<const char*>(phi.data().data()),
+            static_cast<std::streamsize>(phi.elements() * sizeof(Value))
+        );
+        if (!out) {
+            throw std::runtime_error("failed to write phi dump file: " + path);
+        }
+    }
+}
+
 void print_usage(const char* argv0) {
     std::cerr << "Usage: " << argv0
               << " [--dtype float|double] [--solver jacobi|gs|sor|mg] [--case NAME] [--grid-size N]"
                  " [--dim 2|3] [--tol T] [--max-iter N] [--repeat-runs N] [--cycle v|w]"
-                 " [--nu N] [--omega auto|VALUE] [--mg-coarse exact|sor]\n";
+                 " [--nu N] [--omega auto|VALUE] [--mg-coarse exact|sor]"
+                 " [--coarse-steps N] [--dump-phi [PATH]]\n";
     std::cerr << "Dtypes: float, double\n";
     std::cerr << "Solvers: jacobi, gs, sor, mg\n";
     std::cerr << "Cases: sine, mixed_sine, bubble, exp, cosine\n";
@@ -162,6 +230,30 @@ Options parse_args(int argc, char** argv) {
                 throw std::invalid_argument("--mg-coarse requires a value");
             }
             options.mg_coarse_name = argv[++i];
+            continue;
+        }
+
+        if (arg == "--coarse-steps") {
+            if (i + 1 >= argc) {
+                throw std::invalid_argument("--coarse-steps requires a value");
+            }
+            const long long parsed = std::stoll(argv[++i]);
+            if (parsed < 1) {
+                throw std::invalid_argument("coarse-steps must be positive");
+            }
+            options.coarse_steps = static_cast<std::size_t>(parsed);
+            continue;
+        }
+
+        if (arg == "--dump-phi") {
+            options.dump_phi = true;
+            if (i + 1 < argc) {
+                const std::string_view maybe_path{argv[i + 1]};
+                if (!maybe_path.empty() && maybe_path.front() != '-') {
+                    options.dump_phi_path = std::string(maybe_path);
+                    ++i;
+                }
+            }
             continue;
         }
 
@@ -263,7 +355,7 @@ int run_2d(const Options& options) {
     const SolveOpts solve_options{tol, options.max_iter};
     const poisson::MGCycle mg_cycle =
         options.cycle_name == "w" ? poisson::MGCycle::W : poisson::MGCycle::V;
-    MgOpts mg_options{tol, options.max_iter, options.nu, mg_cycle, 16};
+    MgOpts mg_options{tol, options.max_iter, options.nu, mg_cycle, options.coarse_steps};
     if (options.omega_is_auto) {
         mg_options.omega_is_auto = true;
     } else if (options.omega.has_value()) {
@@ -302,6 +394,14 @@ int run_2d(const Options& options) {
     const auto metrics_problem = poisson::make_problem<double>(options.case_name, options.grid_size);
     const poisson::ErrorMetrics metrics = poisson::metrics(metrics_problem, result.phi);
 
+    if (options.dump_phi) {
+        const std::string dump_path = options.dump_phi_path.has_value()
+            ? *options.dump_phi_path
+            : make_phi_dump_filename(options, solver_name);
+        dump_phi_binary(result.phi, dump_path, 2, problem.interior_n);
+        std::cerr << "phi dumped to " << dump_path << '\n';
+    }
+
     std::cout << "solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms\n";
     std::cout << std::scientific;
     std::cout.precision(6);
@@ -338,7 +438,7 @@ int run_3d(const Options& options) {
     const SolveOpts solve_options{tol, options.max_iter};
     const poisson::MGCycle mg_cycle =
         options.cycle_name == "w" ? poisson::MGCycle::W : poisson::MGCycle::V;
-    MgOpts mg_options{tol, options.max_iter, options.nu, mg_cycle, 16};
+    MgOpts mg_options{tol, options.max_iter, options.nu, mg_cycle, options.coarse_steps};
     if (options.omega_is_auto) {
         mg_options.omega_is_auto = true;
     } else if (options.omega.has_value()) {
@@ -378,6 +478,14 @@ int run_3d(const Options& options) {
     const auto metrics_problem =
         poisson::make_problem_3d<double>(options.case_name, options.grid_size);
     const poisson::ErrorMetrics metrics = poisson::metrics(metrics_problem, result.phi);
+
+    if (options.dump_phi) {
+        const std::string dump_path = options.dump_phi_path.has_value()
+            ? *options.dump_phi_path
+            : make_phi_dump_filename(options, solver_name);
+        dump_phi_binary(result.phi, dump_path, 3, problem.interior_n);
+        std::cerr << "phi dumped to " << dump_path << '\n';
+    }
 
     std::cout << "solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms\n";
     std::cout << std::scientific;
