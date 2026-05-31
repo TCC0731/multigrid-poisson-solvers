@@ -26,17 +26,17 @@
     {results/report/}%
 }
 
-\title[CUDA Poisson MG 2D/3D]{CUDA-Accelerated Multigrid Poisson Solvers in 2D and 3D}
+\title[CUDA/OpenMP MG Poisson 2D/3D]{CUDA and OpenMP Multigrid Solvers for the Poisson Equation in 2D and 3D}
 
 \begin{document}
 
 \begingroup
 \AtBeginSection[]{}
-\section{Problem Setup}
+\section{Problem Formulation}
 \input{titlepage}
 
-\subsection{Model and notation}
-\begin{frame}[t]{Problem definition}
+\subsection{Governing equation and discretization}
+\begin{frame}[t]{Governing equation and discretization}
     \footnotesize
     \begin{block}{Continuous model}
         We solve the positive-definite Poisson problem with Dirichlet boundary conditions:
@@ -56,7 +56,7 @@
     \end{block}
 \end{frame}
 
-\begin{frame}[t]{Problem definition (cont.)}
+\begin{frame}[t]{Discrete operator and boundary conditions}
     \footnotesize
     \begin{block}{Dimensionless discrete operator}
         The interior unknowns satisfy
@@ -76,8 +76,8 @@
     \end{itemize}
 \end{frame}
 
-\subsection{Solver stack}
-\begin{frame}[t]{Solver overview}
+\subsection{Algorithms and backends}
+\begin{frame}[t]{Algorithms and backends}
     \footnotesize
     \begin{columns}[T,onlytextwidth]
         \column{0.48\textwidth}
@@ -103,7 +103,7 @@
     \end{columns}
 \end{frame}
 
-\begin{frame}[t]{Solver conventions}
+\begin{frame}[t]{Stopping criterion and smoother setup}
     \footnotesize
     \begin{itemize}
         \item Convergence criterion: the relative scaled residual
@@ -128,9 +128,9 @@
 \endgroup
 
 \section{Multigrid Method}
-\subsection{Cycle mechanics}
+\subsection{Transfer operators and cycles}
 
-\begin{frame}[t]{Multigrid operators}
+\begin{frame}[t]{Restriction and prolongation operators}
     \footnotesize
     \begin{itemize}
         \item Restriction: \(r_{2h} = R\,r_h\), where the 2D full-weighting stencil is
@@ -158,7 +158,7 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}[t]{Multigrid workflow}
+\begin{frame}[t]{V-cycle workflow}
     \footnotesize
     \begin{block}{One V-cycle}
         \begin{itemize}
@@ -179,7 +179,7 @@
     \]
 \end{frame}
 
-\begin{frame}[t]{W-cycle and MG grid sizes}
+\begin{frame}[t]{W-cycle and grid hierarchy}
     \footnotesize
     \begin{block}{W-cycle}
         \begin{itemize}
@@ -205,8 +205,8 @@
     \end{block}
 \end{frame}
 
-\subsection{Bottom solve and cost}
-\begin{frame}[t]{Coarsest-grid Solver Design}
+\subsection{Coarse-grid solve and cost}
+\begin{frame}[t]{Coarse-grid solver design}
     \footnotesize
     \begin{block}{Why the bottom level matters}
         \begin{itemize}
@@ -235,7 +235,7 @@
     \end{columns}
 \end{frame}
 
-\begin{frame}[t]{Time cost}
+\begin{frame}[t]{Work estimates for V- and W-cycles}
     \footnotesize
     \setlength{\abovedisplayskip}{4pt}
     \setlength{\belowdisplayskip}{4pt}
@@ -276,10 +276,10 @@
     \end{block}
 \end{frame}
 
-\section{CUDA MG Results}
-\subsection{Representative solutions}
+\section{CUDA Multigrid Results}
+\subsection{Mixed-sine test cases}
 
-\begin{frame}[t]{Mixed sine result: 2D}
+\begin{frame}[t]{2D mixed-sine solution}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{phi_2d_v_sor_mixed_sine_n4095_nu3_w1p25_cs16.png}
 
@@ -287,7 +287,7 @@
     {\footnotesize CUDA MG V-SOR on the manufactured solution \(\phi_{\rm exact}(x,y)=\sin(2\pi x)\sin(3\pi y)\) with \(\nu = 3\) and \(\omega = 1.25\).}
 \end{frame}
 
-\begin{frame}[t]{Mixed sine result: 3D}
+\begin{frame}[t]{3D mixed-sine solution}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{phi_3d_v_sor_mixed_sine_n383_nu3_w1p25_cs16.png}
 
@@ -295,24 +295,24 @@
     {\footnotesize CUDA MG V-SOR on the manufactured solution \(\phi_{\rm exact}(x,y,z)=\sin(2\pi x)\sin(3\pi y)\sin(4\pi z)\) with \(\nu = 3\) and \(\omega = 1.25\).}
 \end{frame}
 
-\subsection{Convergence}
-\begin{frame}[t]{CUDA MG Convergence: L2 Error}
+\subsection{Convergence analysis}
+\begin{frame}[t]{L2 error convergence}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_l2_error_sine.png}
 \end{frame}
 
-\begin{frame}[t]{CUDA MG Convergence: SOR and Exact Iteration Time}
+\begin{frame}[t]{Iteration time: SOR vs exact solve}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_iter_time_sine.png}
 \end{frame}
 
-\begin{frame}[t]{CUDA MG Convergence: Iteration Time}
+\begin{frame}[t]{Iteration-time fit}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_iter_time_fit_last10_sine.png}
 \end{frame}
 
-\subsection{Parameter sweep}
-\begin{frame}[t]{CUDA MG Convergence: \(\nu\) Sweep Iteration Time}
+\subsection{Parameter sweeps}
+\begin{frame}[t]{Iteration time vs \(\nu\)}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{nu_sweep/plots_2d_3d_iter_time_sine.png}
 
@@ -320,7 +320,7 @@
     {\footnotesize 2D/3D iteration-time sweep over \(\nu\) on the sine manufactured-solution case.}
 \end{frame}
 
-\begin{frame}[t]{CUDA MG Convergence: \(\omega\) Sweep Iteration Time}
+\begin{frame}[t]{Iteration time vs \(\omega\)}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{omega_sweep/plots_2d_3d_iter_time_sine.png}
 
@@ -328,7 +328,7 @@
     {\footnotesize 2D/3D iteration-time sweep over \(\omega\) on the sine manufactured-solution case.}
 \end{frame}
 
-\begin{frame}[t]{CUDA MG Convergence: Coarse Steps Sweep}
+\begin{frame}[t]{Iteration time vs coarse steps}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{cuda_mg_coarse_steps/plots_2d_3d_iter_time_sine.png}
 
@@ -336,26 +336,26 @@
     {\footnotesize 2D/3D coarse-step sweep on the sine manufactured-solution case.}
 \end{frame}
 
-\subsection{Scaling}
-\begin{frame}[t]{CUDA GPU Scaling}
+\subsection{Performance scaling}
+\begin{frame}[t]{CUDA scaling}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_sine.png}
 \end{frame}
 
-\begin{frame}[t]{CUDA MG 2D vs 3D Scaling}
+\begin{frame}[t]{2D vs 3D scaling}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_sine.png}
 \end{frame}
 
-\begin{frame}[t]{CUDA MG and SOR Time}
+\begin{frame}[t]{Multigrid vs SOR runtime}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_mg_sor_time_fit_sine.png}
 \end{frame}
 
-\section{OpenMP Scaling}
-\subsection{Empirical behavior}
+\section{OpenMP Performance}
+\subsection{Empirical results}
 
-\begin{frame}[t]{OpenMP residual history}
+\begin{frame}[t]{Residual history (OpenMP)}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{residual_history.png}
 \end{frame}
@@ -366,7 +366,7 @@
 \end{frame}
 
 \subsection{Bottleneck analysis}
-\begin{frame}[t]{Why OpenMP scaling flattens}
+\begin{frame}[t]{OpenMP bottleneck analysis}
     \footnotesize
     \begin{columns}[T,onlytextwidth]
         \column{0.475\textwidth}
@@ -392,8 +392,8 @@
     \end{columns}
 \end{frame}
 
-\section{Conclusion}
-\begin{frame}[t]{Final results}
+\section{Conclusions}
+\begin{frame}[t]{Conclusions and takeaways}
     \footnotesize
     \begin{block}{What we learned}
         \begin{itemize}
@@ -407,6 +407,23 @@
     \begin{block}{Bottom line}
         Multigrid is the right algorithmic direction here, CUDA gives the strongest performance path, and the remaining CPU scaling limit is mainly a memory-bandwidth problem.
     \end{block}
+\end{frame}
+
+\begin{frame}[t]{References}
+    \footnotesize
+    \begin{itemize}
+        \item Numerical Recipes, 3rd ed., Section 20.6, \emph{Multigrid Methods for Boundary Value Problems}.
+        \item Achi Brandt and Oren E. Livne, \emph{Multigrid Techniques: 1984 Guide with Applications to Fluid Dynamics, Revised Edition} (SIAM, 2011). \url{https://epubs.siam.org/doi/book/10.1137/1.9781611970753}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[plain]
+    \vfill
+    \centering
+    {\Huge \textbf{Q\&A}\par}
+    \vspace{1em}
+    {\large Thank you\par}
+    \vfill
 \end{frame}
 
 \end{document}
