@@ -281,7 +281,7 @@ def plot_l2_error_comparison(
 
         ax.set_title(f"{dimension}D L2 error")
         ax.set_xlabel("grid size")
-        ax.set_ylabel("error_l2")
+        ax.set_ylabel("L2 Error")
         ax.grid(True, which="both", linestyle="--", alpha=0.45)
 
         if fit_orders:
@@ -368,7 +368,7 @@ def _plot_iter_time_panel(
 
     ax.set_title(title)
     ax.set_xlabel("grid size")
-    ax.set_ylabel("iter" if metric_key == "iterations" else "time_s")
+    ax.set_ylabel("Iterations" if metric_key == "iterations" else "Time (s)")
     ax.grid(True, which="both", linestyle="--", alpha=0.45)
     _apply_grid_ticks(ax, (row.grid_size for row in rows if row.dimension == dimension))
     if metric_key == "iterations":
@@ -404,8 +404,8 @@ def plot_iter_time_comparison(
     for row_idx, dimension in enumerate(dims):
         fit_orders_by_metric: dict[str, list[tuple[str, float]]] = {}
         for col_idx, (metric_key, title, ylabel) in enumerate((
-            ("iterations", "Iterations", "iter"),
-            ("time_s", "Time (s)", "time_s"),
+            ("iterations", "Iterations", "Iterations"),
+            ("time_s", "Time (s)", "Time (s)"),
         )):
             ax = axes[row_idx][col_idx]
             fit_orders_by_metric[metric_key] = _plot_iter_time_panel(

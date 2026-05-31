@@ -396,7 +396,7 @@ def _plot_combined_time_figure(
         ax.set_ylim(time_min, time_max)
 
         ax.set_title(f"{dimension}D time")
-        ax.set_ylabel("time (s)")
+        ax.set_ylabel("Time (s)")
         ax.grid(True, which="both", linestyle="--", alpha=0.45)
 
         ax.set_xticks(x_ticks)
