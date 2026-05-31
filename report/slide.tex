@@ -281,7 +281,7 @@
 
 \begin{frame}[t]{Mixed sine result: 2D}
     \centering
-    \includegraphics[width=0.98\textwidth,height=0.74\textheight,keepaspectratio]{phi_2d_v_sor_mixed_sine_n4095_nu3_w1p25_cs16.png}
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{phi_2d_v_sor_mixed_sine_n4095_nu3_w1p25_cs16.png}
 
     \vspace{0.35em}
     {\footnotesize CUDA MG V-SOR on the manufactured solution \(\phi_{\rm exact}(x,y)=\sin(2\pi x)\sin(3\pi y)\) with \(\nu = 3\) and \(\omega = 1.25\).}
@@ -289,7 +289,7 @@
 
 \begin{frame}[t]{Mixed sine result: 3D}
     \centering
-    \includegraphics[width=0.98\textwidth,height=0.74\textheight,keepaspectratio]{phi_3d_v_sor_mixed_sine_n383_nu3_w1p25_cs16.png}
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{phi_3d_v_sor_mixed_sine_n383_nu3_w1p25_cs16.png}
 
     \vspace{0.35em}
     {\footnotesize CUDA MG V-SOR on the manufactured solution \(\phi_{\rm exact}(x,y,z)=\sin(2\pi x)\sin(3\pi y)\sin(4\pi z)\) with \(\nu = 3\) and \(\omega = 1.25\).}
@@ -298,23 +298,23 @@
 \subsection{Convergence}
 \begin{frame}[t]{CUDA MG Convergence: L2 Error}
     \centering
-    \includegraphics[width=0.96\textwidth,height=0.80\textheight,keepaspectratio]{plots_2d_3d_l2_error_sine.png}
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_l2_error_sine.png}
 \end{frame}
 
 \begin{frame}[t]{CUDA MG Convergence: SOR and Exact Iteration Time}
     \centering
-    \includegraphics[width=0.96\textwidth,height=0.80\textheight,keepaspectratio]{plots_2d_3d_iter_time_sine.png}
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_iter_time_sine.png}
 \end{frame}
 
 \begin{frame}[t]{CUDA MG Convergence: Iteration Time}
     \centering
-    \includegraphics[width=0.96\textwidth,height=0.80\textheight,keepaspectratio]{plots_2d_3d_iter_time_fit_last10_sine.png}
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_iter_time_fit_last10_sine.png}
 \end{frame}
 
 \subsection{Parameter sweep}
 \begin{frame}[t]{CUDA MG Convergence: \(\nu\) Sweep Iteration Time}
     \centering
-    \includegraphics[width=0.96\textwidth,height=0.78\textheight,keepaspectratio]{nu_sweep/plots_2d_3d_iter_time_sine.png}
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{nu_sweep/plots_2d_3d_iter_time_sine.png}
 
     \vspace{0.35em}
     {\footnotesize 2D/3D iteration-time sweep over \(\nu\) on the sine manufactured-solution case.}
@@ -322,7 +322,7 @@
 
 \begin{frame}[t]{CUDA MG Convergence: \(\omega\) Sweep Iteration Time}
     \centering
-    \includegraphics[width=0.96\textwidth,height=0.78\textheight,keepaspectratio]{omega_sweep/plots_2d_3d_iter_time_sine.png}
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{omega_sweep/plots_2d_3d_iter_time_sine.png}
 
     \vspace{0.35em}
     {\footnotesize 2D/3D iteration-time sweep over \(\omega\) on the sine manufactured-solution case.}
@@ -330,7 +330,7 @@
 
 \begin{frame}[t]{CUDA MG Convergence: Coarse Steps Sweep}
     \centering
-    \includegraphics[width=0.96\textwidth,height=0.78\textheight,keepaspectratio]{cuda_mg_coarse_steps/plots_2d_3d_iter_time_sine.png}
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{cuda_mg_coarse_steps/plots_2d_3d_iter_time_sine.png}
 
     \vspace{0.35em}
     {\footnotesize 2D/3D coarse-step sweep on the sine manufactured-solution case.}
@@ -339,17 +339,17 @@
 \subsection{Scaling}
 \begin{frame}[t]{CUDA GPU Scaling}
     \centering
-    \includegraphics[width=0.98\textwidth,height=0.80\textheight,keepaspectratio]{plots_2d_3d_sine.png}
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_sine.png}
 \end{frame}
 
 \begin{frame}[t]{CUDA MG 2D vs 3D Scaling}
     \centering
-    \includegraphics[width=0.98\textwidth,height=0.80\textheight,keepaspectratio]{plots_sine.png}
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_sine.png}
 \end{frame}
 
 \begin{frame}[t]{CUDA MG and SOR Time}
     \centering
-    \includegraphics[width=0.98\textwidth,height=0.80\textheight,keepaspectratio]{plots_2d_3d_mg_sor_time_fit_sine.png}
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_mg_sor_time_fit_sine.png}
 \end{frame}
 
 \section{OpenMP Scaling}
@@ -357,12 +357,12 @@
 
 \begin{frame}[t]{OpenMP residual history}
     \centering
-    \includegraphics[width=0.96\textwidth,height=0.8\textheight,keepaspectratio]{residual_history.png}
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{residual_history.png}
 \end{frame}
 
 \begin{frame}[t]{OpenMP thread scaling}
     \centering
-    \includegraphics[width=0.96\textwidth,height=0.8\textheight,keepaspectratio]{plots_2d_3d.png}
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d.png}
 \end{frame}
 
 \subsection{Bottleneck analysis}
@@ -370,11 +370,12 @@
     \footnotesize
     \begin{columns}[T,onlytextwidth]
         \column{0.475\textwidth}
-        \begin{block}{Topdown and cache evidence}
+        \begin{block}{Topdown, L1, and cache evidence}
             \begin{itemize}
                 \item The OpenMP solver is backend-bound, not compute-bound.
                 \item \texttt{topdown-be-bound} is 57.7\% in 2D and 58.2\% in 3D.
                 \item \texttt{topdown-mem-bound} rises from 43.7\% in 2D to 49.3\% in 3D.
+                \item L1D miss rate more than doubles, from 1.5\% in 2D to 3.2\% in 3D.
                 \item The 3D LLC load miss rate is 89.4\%, much higher than the 2D value of 26.4\%.
             \end{itemize}
         \end{block}
