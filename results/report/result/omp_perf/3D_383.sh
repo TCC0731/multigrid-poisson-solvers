@@ -8,8 +8,8 @@ RESULT_DIR="$SCRIPT_DIR"
 # Keep the run configurable, but default to the same 16-thread 3D MG case used
 # by the existing perf-record profile.
 THREADS="${OMP_PERF_THREADS:-16}"
-DIM="${OMP_PERF_DIM:-2}"
-GRID_SIZE="${OMP_PERF_GRID_SIZE:-2047}"
+DIM="${OMP_PERF_DIM:-3}"
+GRID_SIZE="${OMP_PERF_GRID_SIZE:-383}"
 SOLVER="${OMP_PERF_SOLVER:-mg}"
 CASE_NAME="${OMP_PERF_CASE:-sine}"
 CYCLE="${OMP_PERF_CYCLE:-w}"
@@ -19,11 +19,12 @@ REPEAT_RUNS="${OMP_PERF_REPEAT_RUNS:-1}"
 
 # perf stat is the counter-based pass. Keep the events configurable so the same
 # script can be reused if the host exposes a slightly different event name set.
-STAT_EVENTS="${OMP_PERF_STAT_EVENTS:-cycles,instructions,cache-misses,LLC-load-misses,stalled-cycles-backend}"
-STAT_REPEATS="${OMP_PERF_STAT_REPEATS:-1}"
+STAT_EVENTS="${OMP_PERF_STAT_EVENTS:-}"
+STAT_REPEATS="${OMP_PERF_STAT_REPEATS:-3}"
+STAT_ONLY="${OMP_PERF_STAT_ONLY:-0}"
 
 BENCHMARK_BIN="${OMP_PERF_BIN:-$REPO_ROOT/build/poisson_cpp_omp}"
-PREFIX="omp_perf_${THREADS}_2D_2047"
+PREFIX="omp_perf_${THREADS}_3D_383"
 DATA_FILE="$RESULT_DIR/${PREFIX}.data"
 REPORT_FILE="$RESULT_DIR/${PREFIX}_report.txt"
 ANNOTATE_FILE="$RESULT_DIR/${PREFIX}_annotate.txt"
@@ -66,36 +67,52 @@ printf 'perf annotate text: %s\n' "$ANNOTATE_FILE" >&2
 printf 'perf stat text: %s\n' "$STAT_FILE" >&2
 printf 'record run log: %s\n' "$RUN_LOG_FILE" >&2
 printf 'stat run log: %s\n' "$STAT_RUN_LOG_FILE" >&2
-printf 'perf stat events: %s\n' "$STAT_EVENTS" >&2
+if [[ -n "$STAT_EVENTS" ]]; then
+  printf 'perf stat events: %s\n' "$STAT_EVENTS" >&2
+else
+  printf 'perf stat events: perf stat -d -d -d default detailed counters\n' >&2
+fi
+printf 'stat only: %s\n' "$STAT_ONLY" >&2
 printf 'perf stat repeats: %s\n' "$STAT_REPEATS" >&2
 
-perf record \
-  -o "$DATA_FILE" \
-  -g \
-  --call-graph dwarf \
-  -- \
-  "$BENCHMARK_BIN" \
-  "${RUN_ARGS[@]}" \
-  >"$RUN_LOG_FILE" 2>&1
+if [[ "$STAT_ONLY" != "1" ]]; then
+  perf record \
+    -o "$DATA_FILE" \
+    -g \
+    --call-graph dwarf \
+    -- \
+    "$BENCHMARK_BIN" \
+    "${RUN_ARGS[@]}" \
+    >"$RUN_LOG_FILE" 2>&1
 
-perf report \
-  -i "$DATA_FILE" \
-  --stdio \
-  >"$REPORT_FILE"
+  perf report \
+    -i "$DATA_FILE" \
+    --stdio \
+    >"$REPORT_FILE"
 
-# perf annotate needs debug info and a symbolized build. Keep the main report
-# even if annotation is unavailable on the current host.
-if ! perf annotate -i "$DATA_FILE" --stdio >"$ANNOTATE_FILE"; then
-  printf 'warning: perf annotate failed; see %s for the main report\n' "$REPORT_FILE" >&2
+  # perf annotate needs debug info and a symbolized build. Keep the main report
+  # even if annotation is unavailable on the current host.
+  if ! perf annotate -i "$DATA_FILE" --stdio >"$ANNOTATE_FILE"; then
+    printf 'warning: perf annotate failed; see %s for the main report\n' "$REPORT_FILE" >&2
+  fi
 fi
 
-# Counter-based pass: this is the key addition for validating bandwidth and
-# backend stalls.
-perf stat \
-  -o "$STAT_FILE" \
-  -r "$STAT_REPEATS" \
-  -e "$STAT_EVENTS" \
-  -- \
-  "$BENCHMARK_BIN" \
-  "${RUN_ARGS[@]}" \
-  >"$STAT_RUN_LOG_FILE" 2>&1
+# Counter-based pass for memory-bottleneck evidence.
+STAT_CMD=(
+  perf stat
+  -d -d -d
+  -o "$STAT_FILE"
+  -r "$STAT_REPEATS"
+)
+
+if [[ -n "$STAT_EVENTS" ]]; then
+  STAT_CMD+=(-e "$STAT_EVENTS")
+fi
+
+STAT_CMD+=(
+  --
+  "$BENCHMARK_BIN"
+  "${RUN_ARGS[@]}"
+)
+
+"${STAT_CMD[@]}" >"$STAT_RUN_LOG_FILE" 2>&1
