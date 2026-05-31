@@ -1,2 +1,6 @@
 solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms
-mg_sor,cpp20_omp,double,383,3,1.122560e-11,1.972025e-06,5.577729e-06,2491.847
+mg_sor,cpp20_omp,double,383,3,1.122560e-11,1.972025e-06,5.577729e-06,2443.211
+solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms
+mg_sor,cpp20_omp,double,383,3,1.122560e-11,1.972025e-06,5.577729e-06,2449.364
+solver,backend,dtype,grid_size,iterations,residual_l2,error_l2,error_linf,time_ms
+mg_sor,cpp20_omp,double,383,3,1.122560e-11,1.972025e-06,5.577729e-06,2433.500
