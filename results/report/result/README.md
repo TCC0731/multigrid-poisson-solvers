@@ -18,7 +18,17 @@
 - [`omp_thread_scaling/run_and_plot.py`](./omp_thread_scaling/run_and_plot.py)
   - OpenMP thread-scaling 報表腳本
   - 預設用 `OMP_NUM_THREADS=1,2,4,6,8,12,16` 收集 SOR 與 MG V/W exact / SOR 的結果
-  - 輸出 combined CSV、每個 dimension 的 CSV，以及對應的 runtime / speedup 圖與 efficiency 圖
+  - 輸出 combined CSV、每個 dimension 的 CSV，以及對應的 runtime / speedup / efficiency 圖
+  - 圖例與線型約定如下，和 OpenMP thread-scaling 圖保持一致：
+    - `SOR`: 綠色 `#2ca02c`，`^` 標記，`:` 虛線
+    - `MG V exact`: 藍色 `#1f77b4`，`o` 標記，`-` 實線
+    - `MG V SOR`: 藍色 `#1f77b4`，`s` 標記，`--` 虛線
+    - `MG W exact`: 紅色 `#d62728`，`o` 標記，`-` 實線
+    - `MG W SOR`: 紅色 `#d62728`，`s` 標記，`--` 虛線
+    - speedup 的理想參考線：灰色 `:` 虛線，只畫到 `4x`
+    - efficiency 的參考線：灰色 `:` 水平線，固定在 `1.0`
+  - 如果你已經有 `results_all.csv`，可以改用 [`omp_thread_scaling/plot_from_csv.py`](./omp_thread_scaling/plot_from_csv.py)
+  - 這支 plotting-only 腳本會把 2D / 3D 合併成同一張 `2x3` 圖，預設輸出 `plots_2d_3d.png`
 - [`omp_residual_history/run_and_save.py`](./omp_residual_history/run_and_save.py)
   - OpenMP residual-history 收集腳本
   - 會跑 SOR、MG V-SOR、MG W-SOR，先把每條 residual history 存進 `residual_history.pkl`
@@ -46,10 +56,16 @@
   - CUDA MG convergence 的 `omega` 掃描腳本
   - 預設使用 `2D=4095`、`3D=383`，掃描 `omega=1.00 ~ 1.50`，步長 `0.05`
   - 會產生每個 `dimension + case` 的 CSV 與三聯圖，方便比較 `V/W` cycle 與 `exact/SOR` coarse solve
+- [`omega_sweep/plot_from_csv.py`](./omega_sweep/plot_from_csv.py)
+  - 只讀取 `results_all.csv` 的 plotting-only 腳本
+  - 會把 `2D/3D sine` 的 `iterations / time` 合成同一張 `2x2` 圖，預設輸出 `plots_2d_3d_iter_time_sine.png`
 - [`nu_sweep/run_and_plot.py`](./nu_sweep/run_and_plot.py)
   - CUDA MG convergence 的 `nu` 掃描腳本
   - 預設使用 `2D=4095`、`3D=383`，掃描 `nu=1 ~ 5`
   - 同樣會輸出每個 `dimension + case` 的 CSV 與三聯圖，並保留固定 `omega` 參考值
+- [`nu_sweep/plot_from_csv.py`](./nu_sweep/plot_from_csv.py)
+  - 只讀取 `results_all.csv` 的 plotting-only 腳本
+  - 會把 `2D/3D sine` 的 `iterations / time` 合成同一張 `2x2` 圖，預設輸出 `plots_2d_3d_iter_time_sine.png`
 - `solver_results.csv`
   - wrapper 自動產生的共用快取檔，供所有報告腳本共用
   - 如果呼叫 `run_or_load(..., cache_csv=...)`，同一份結果也會同步寫到你指定的路徑

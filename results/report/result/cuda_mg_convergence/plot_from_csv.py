@@ -145,6 +145,19 @@ def _series(rows: Iterable[PlotRow], *, dimension: int, mode_key: str) -> list[P
     return ordered
 
 
+def _unique_sorted_ints(values: Iterable[int]) -> list[int]:
+    return sorted({int(value) for value in values})
+
+
+def _apply_grid_ticks(ax, x_values: Iterable[int]) -> None:
+    x_ticks = _unique_sorted_ints(x_values)
+    if not x_ticks:
+        return
+
+    ax.set_xticks(x_ticks)
+    ax.set_xticklabels([str(value) for value in x_ticks], rotation=90, fontsize=7)
+
+
 def _ref_line(x_values: Sequence[int], y_values: Sequence[float]) -> tuple[list[float], list[float]] | None:
     if len(x_values) < 2:
         return None
@@ -278,6 +291,8 @@ def plot_l2_error_comparison(
                 bbox=dict(boxstyle="round,pad=0.25", facecolor="white", edgecolor="none", alpha=0.80),
             )
 
+        _apply_grid_ticks(ax, (row.grid_size for row in rows if row.dimension == dimension))
+
     handles, labels = axes[0].get_legend_handles_labels()
     finalize_figure_header(
         fig,
@@ -345,6 +360,7 @@ def _plot_iter_time_panel(
     ax.set_xlabel("grid size")
     ax.set_ylabel("iter" if metric_key == "iterations" else "time_s")
     ax.grid(True, which="both", linestyle="--", alpha=0.45)
+    _apply_grid_ticks(ax, (row.grid_size for row in rows if row.dimension == dimension))
     if metric_key == "iterations":
         ax.set_ylim(0, 10)
     return fit_orders
@@ -423,7 +439,7 @@ def plot_iter_time_comparison(
     fit_suffix = f", time fit last {fit_last_n} points" if include_fit else ""
     finalize_figure_header(
         fig,
-        title=f"CUDA MG convergence - {case} ({title_suffix}{fit_suffix})",
+        title=f"CUDA MG convergence - {case} ({title_suffix})",
         handles=handles,
         labels=labels,
         ncol=4,

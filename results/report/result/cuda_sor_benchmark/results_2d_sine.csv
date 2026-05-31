@@ -8,3 +8,6 @@ dimension,case,solver,backend,dtype,grid_size,iterations,error_l2,error_linf,tim
 2,sine,RB SOR,cuda,double,319,1500,4.015969e-06,8.031938e-06,2.616900e+01,2.616900e-02,true,wrapper
 2,sine,RB SOR,cuda,double,383,1850,2.788864e-06,5.577728e-06,3.182300e+01,3.182300e-02,true,wrapper
 2,sine,RB SOR,cuda,double,511,2450,1.568733e-06,3.137466e-06,5.103900e+01,5.103900e-02,true,wrapper
+2,sine,RB SOR,cuda,double,639,3100,1.003988e-06,2.007977e-06,7.127600e+01,7.127600e-02,true,wrapper
+2,sine,RB SOR,cuda,double,767,3750,6.972138e-07,1.394428e-06,1.023960e+02,1.023960e-01,true,wrapper
+2,sine,RB SOR,cuda,double,1023,5000,3.921823e-07,7.843646e-07,1.694390e+02,1.694390e-01,true,wrapper

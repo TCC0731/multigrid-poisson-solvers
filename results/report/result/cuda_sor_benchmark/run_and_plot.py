@@ -41,8 +41,8 @@ DEFAULT_MAX_ITER = 10_000
 DEFAULT_REPEAT_RUNS = 25
 DEFAULT_SOURCE_ROOT = REPO_ROOT / "results" / "example"
 TARGET_GRID_SIZES = {
-    2: (63, 95, 127, 159, 191, 255, 319, 383, 511),
-    3: (31, 47, 63, 79, 95, 111, 127, 143, 159),
+    2: (63, 95, 127, 159, 191, 255, 319, 383, 511, 639, 767, 1023),
+    3: (31, 47, 63, 79, 95, 111, 127, 143, 159, 191, 255),
 }
 CSV_COLUMNS = (
     "dimension",

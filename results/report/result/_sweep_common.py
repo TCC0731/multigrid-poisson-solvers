@@ -14,7 +14,15 @@ if str(RESULT_ROOT) not in sys.path:
     sys.path.insert(0, str(RESULT_ROOT))
 
 from _poisson_wrapper import resolve_executable, run_or_load
-from _report_common import csv_float, load_pyplot, normalize_choices, positive_float, positive_int, write_rows_csv
+from _report_common import (
+    csv_float,
+    finalize_figure_header,
+    load_pyplot,
+    normalize_choices,
+    positive_float,
+    positive_int,
+    write_rows_csv,
+)
 
 
 DEFAULT_BACKEND = "cuda"
@@ -310,15 +318,26 @@ def plot_case(
         ax.set_xticklabels(sweep_labels, rotation=45 if sweep_name == "omega" else 0, ha="right" if sweep_name == "omega" else "center")
         ax.grid(True, which="both", linestyle="--", alpha=0.45)
 
-    handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", ncol=2, frameon=False)
-
     if sweep_name == "omega":
         subtitle = f"grid={grid_size}, nu={fixed_nu}, tol={tol:.0e}, max_iter={max_iter}"
     else:
         subtitle = f"grid={grid_size}, omega={fixed_omega:.2f}, tol={tol:.0e}, max_iter={max_iter}"
-    fig.suptitle(f"CUDA MG {sweep_name} sweep - {dim}D {case}\n{subtitle}", y=1.04)
-    fig.tight_layout(rect=(0, 0, 1, 0.90))
+    handles, labels = axes[0].get_legend_handles_labels()
+    finalize_figure_header(
+        fig,
+        title=f"CUDA MG {sweep_name} sweep - {dim}D {case}\n{subtitle}",
+        handles=handles,
+        labels=labels,
+        ncol=4,
+        legend_y=0.965,
+        title_y=0.985,
+        tight_top=0.95,
+        legend_kwargs={
+            "fontsize": 9,
+            "columnspacing": 1.2,
+            "handletextpad": 0.5,
+        },
+    )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close(fig)

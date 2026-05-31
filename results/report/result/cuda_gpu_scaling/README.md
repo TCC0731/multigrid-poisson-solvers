@@ -29,9 +29,16 @@ This folder contains the report generator for the I experiment:
 - `results_2d.csv`
 - `results_3d.csv`
 - `plots_{dim}d_{case}.png`
+- `plots_2d_3d_{case}.png`
 
 ## Run
 
 ```bash
 python results/report/result/cuda_gpu_scaling/run_and_plot.py
+```
+
+To only redraw figures from the cached CSV:
+
+```bash
+python results/report/result/cuda_gpu_scaling/plot_from_csv.py
 ```

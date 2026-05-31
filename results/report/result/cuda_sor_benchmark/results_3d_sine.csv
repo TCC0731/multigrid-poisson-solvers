@@ -8,3 +8,5 @@ dimension,case,solver,backend,dtype,grid_size,iterations,error_l2,error_linf,tim
 3,sine,RB SOR 3D,cuda,double,127,600,1.774870e-05,5.020091e-05,5.847300e+01,5.847300e-02,true,wrapper
 3,sine,RB SOR 3D,cuda,double,143,700,1.402358e-05,3.966467e-05,9.407700e+01,9.407700e-02,true,wrapper
 3,sine,RB SOR 3D,cuda,double,159,750,1.135905e-05,3.212823e-05,1.271610e+02,1.271610e-01,true,wrapper
+3,sine,RB SOR 3D,cuda,double,191,900,7.888179e-06,2.231114e-05,5.678320e+02,5.678320e-01,true,wrapper
+3,sine,RB SOR 3D,cuda,double,255,1200,4.437074e-06,1.254994e-05,1.782689e+03,1.782689e+00,true,wrapper

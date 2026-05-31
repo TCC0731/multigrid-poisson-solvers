@@ -1,66 +1,75 @@
+> Quick note: this write-up uses the new 3-run `perf stat` results. The solver is backend/memory bound, and the 3D case is more severe than the 2D case.
+
 # OMP Perf Memory Bottleneck Evidence
 
 ## Conclusion
 
-The evidence from `perf stat`, `perf report`, and `perf annotate` supports that `poisson_cpp_omp` is primarily limited by memory access behavior rather than arithmetic throughput.
+The new 3-run `perf stat` data, together with `perf report` and `perf annotate`, supports that `poisson_cpp_omp` is primarily limited by backend/memory behavior rather than arithmetic throughput.
 
 The strongest signals are:
 
 - The hottest kernel is `smooth_red_black` / `smooth_red_black_3d`.
 - The inner loop is dominated by load instructions (`movupd`, `movhpd`, `movsd`) that fetch neighboring grid values and `rhs`.
-- `perf stat` shows non-trivial cache miss and LLC miss rates, with the 3D case worse than the 2D case even after normalizing by instruction count.
-- `stalled-cycles-backend` is not supported in these runs, so the conclusion is inferred from the cache/memory profile and the instruction mix.
+- `perf stat` now shows backend-bound behavior directly: `cpu_core/topdown-be-bound` is 57.7% for 2D and 58.2% for 3D.
+- `cpu_core/topdown-mem-bound` rises from 43.7% in 2D to 49.3% in 3D, which is consistent with a memory bottleneck.
+- The 3D case also has a much higher LLC load miss rate than the 2D case (89.365% vs 26.436%).
 
 ## 1. Summary Numbers
 
-| Case | Grid | Iterations | Time (ms) | Cycles | Instructions | IPC | Cache misses | LLC load misses | Cache miss rate | LLC miss rate |
+| Case | Grid | Runs | Avg time (ms) | Core cycles | Core instructions | IPC | L1D miss rate | LLC miss rate | Mem bound | Backend bound |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 2D | 2047 | 2 | 436.236 | 2.00B | 2.95B | 1.473 | 11.67M | 2.06M | 0.396% | 0.070% |
-| 3D | 383 | 3 | 2492.221 | 50.52B | 61.52B | 1.218 | 567.49M | 130.26M | 0.922% | 0.212% |
+| 2D | 2047 | 3 | 536.518 | 5.74B | 9.29B | 1.619 | 1.513% | 26.436% | 43.7% | 57.7% |
+| 3D | 383 | 3 | 2442.025 | 146.56B | 182.80B | 1.247 | 3.242% | 89.365% | 49.3% | 58.2% |
 
 Notes:
 
+- The average time is the mean of the three per-run timings in `stat_run.log`.
 - The 3D problem is larger, so raw counts are not directly comparable.
-- Even after normalization, the 3D run has a lower IPC and higher cache miss rates, which is consistent with stronger memory pressure.
-- The raw run logs and the `perf stat` runs report the same benchmark configuration; the 3D runtime is essentially identical across `run.log` (`2492.221 ms`) and `stat_run.log` (`2491.847 ms`), while the 2D runtime is close enough (`436.236 ms` vs `455.055 ms`) that the gap is plausibly profiling overhead.
+- Even after normalization, the 3D run has a lower IPC and much higher L1D/LLC miss rates, which is consistent with stronger memory pressure.
 
 ## 2. `perf stat` Evidence
 
 ### 2D: `omp_perf_16_2D_2047_stat.txt`
 
-- `cpu_core/cycles:u/`: `2,000,314,990`
-- `cpu_core/instructions:u/`: `2,946,478,493`
-- `cpu_core/cache-misses:u/`: `11,671,259`
-- `cpu_core/LLC-load-misses:u/`: `2,056,402`
-- `stalled-cycles-backend:u/`: not supported
+- `cpu_core/cycles/u`: `5,740,499,804`
+- `cpu_core/instructions/u`: `9,294,112,249`
+- `cpu_core/topdown-be-bound/u`: `57.7%`
+- `cpu_core/topdown-mem-bound/u`: `43.7%`
+- `cpu_core/L1-dcache-loads:u/`: `3,132,958,740`
+- `cpu_core/L1-dcache-load-misses:u/`: `47,408,495`
+- `cpu_core/LLC-loads:u/`: `16,350,351`
+- `cpu_core/LLC-load-misses:u/`: `4,322,429`
 
 Source:
 
-- `results/report/result/omp_perf/omp_perf_16_2D_2047_stat.txt` lines 6-17
+- `results/report/result/omp_perf/omp_perf_16_2D_2047_stat.txt` lines 4-52
 
 Interpretation:
 
-- IPC is about `1.473`, which is not high for a stencil-like kernel.
-- Cache miss rate is about `0.396%`, and LLC load miss rate is about `0.070%`.
-- These misses are consistent with repeated streaming access to grid data rather than compute-heavy work.
+- IPC is about `1.619`, which is still modest for a stencil-like kernel.
+- L1D miss rate is about `1.513%`, and LLC load miss rate is about `26.436%`.
+- The topdown breakdown says the core spends a large fraction of time backend-bound and memory-bound, which fits a load-heavy stencil.
 
 ### 3D: `omp_perf_16_3D_383_stat.txt`
 
-- `cpu_core/cycles:u/`: `50,524,224,620`
-- `cpu_core/instructions:u/`: `61,523,572,934`
-- `cpu_core/cache-misses:u/`: `567,492,016`
-- `cpu_core/LLC-load-misses:u/`: `130,257,288`
-- `stalled-cycles-backend:u/`: not supported
+- `cpu_core/cycles/u`: `146,559,577,332`
+- `cpu_core/instructions/u`: `182,795,792,927`
+- `cpu_core/topdown-be-bound/u`: `58.2%`
+- `cpu_core/topdown-mem-bound/u`: `49.3%`
+- `cpu_core/L1-dcache-loads:u/`: `56,169,658,030`
+- `cpu_core/L1-dcache-load-misses:u/`: `1,821,009,739`
+- `cpu_core/LLC-loads:u/`: `478,054,428`
+- `cpu_core/LLC-load-misses:u/`: `427,215,572`
 
 Source:
 
-- `results/report/result/omp_perf/omp_perf_16_3D_383_stat.txt` lines 6-17
+- `results/report/result/omp_perf/omp_perf_16_3D_383_stat.txt` lines 4-52
 
 Interpretation:
 
-- IPC drops to about `1.218`, lower than the 2D case.
-- Cache miss rate rises to about `0.922%`, and LLC load miss rate to about `0.212%`.
-- The 3D case shows substantially more memory pressure, which matches the larger stencil footprint.
+- IPC drops to about `1.247`, lower than the 2D case.
+- L1D miss rate is about `3.242%`, and LLC load miss rate jumps to about `89.365%`.
+- The topdown breakdown shows both backend-bound and memory-bound behavior, which is strong evidence of a memory bottleneck.
 
 ## 3. `perf report` Evidence
 
@@ -147,11 +156,12 @@ Interpretation:
 
 ## 5. Bottom Line
 
-The data point to a memory bottleneck, specifically a stencil-style kernel that is limited by repeated grid fetches and cache behavior:
+The data point to a memory/backend bottleneck, specifically a stencil-style kernel that is limited by repeated grid fetches and cache behavior:
 
 - the hottest code path is the smoothing kernel,
 - that kernel is load-dominated in `perf annotate`,
-- and the normalized cache/LLC miss rates are high enough to explain the relatively low IPC.
+- and the new topdown metrics show the core spending most of its time backend-bound and memory-bound.
+- the 3D case has a dramatically higher LLC load miss rate than the 2D case.
 
 If we want to go one step further, the next useful checks would be:
 
