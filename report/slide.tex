@@ -6,6 +6,18 @@
 \usepackage{style}
 \input{userdefined}
 
+% Resolve figures whether the deck is compiled from report/ or repo root.
+\graphicspath{%
+    {../results/report/result/cuda_mg_phi_plots/plots/}%
+    {../results/report/result/cuda_mg_convergence/}%
+    {../results/report/result/omp_residual_history/}%
+    {../results/report/result/omp_thread_scaling/}%
+    {results/report/result/cuda_mg_phi_plots/plots/}%
+    {results/report/result/cuda_mg_convergence/}%
+    {results/report/result/omp_residual_history/}%
+    {results/report/result/omp_thread_scaling/}%
+}
+
 \title[CUDA Poisson MG 2D/3D]{CUDA-Accelerated Multigrid Poisson Solvers in 2D and 3D}
 
 \begin{document}
@@ -183,13 +195,13 @@
     \]
 \end{frame}
 
-\begin{frame}[t]{W-cycle and time cost}
+\begin{frame}[t]{W-cycle and MG grid sizes}
     \footnotesize
     \begin{block}{W-cycle}
         \begin{itemize}
             \item Start like a V-cycle: pre-smooth, form the residual, and restrict to the next coarser grid.
             \item Call the coarse level twice before coming back up to the fine grid.
-            \item The second coarse-level visit further reduces the remaining coarse-grid error after the first recursive correction.
+            \item The repeated coarse visit reduces the remaining low-frequency error, but it also increases the per-cycle cost.
         \end{itemize}
     \end{block}
 
@@ -200,13 +212,95 @@
         \end{aligned}
     \]
 
-    \begin{block}{V-cycle vs W-cycle}
+    \begin{block}{MG-compatible grid sizes}
         \begin{itemize}
-            \item V-cycle: lower time per cycle because each coarse level is visited once.
-            \item W-cycle: higher time per cycle because the coarse recursion is repeated.
-            \item Total wall time is problem-dependent: W-cycle can win if it cuts the number of cycles enough.
+            \item \texttt{--grid-size} is the number of interior points per axis, so the full array size is \texttt{grid-size + 2}.
+            \item Nested coarsening uses \(n_c = (n_f - 1)/2\), and the recursion stops when \(n \le 4\).
+            \item Valid families: \(2^a - 1\), \(3 \cdot 2^a - 1\), and \(5 \cdot 2^a - 1\).
         \end{itemize}
     \end{block}
+\end{frame}
+
+\begin{frame}[t]{Time cost}
+    \footnotesize
+    \setlength{\abovedisplayskip}{4pt}
+    \setlength{\belowdisplayskip}{4pt}
+    \setlength{\abovedisplayshortskip}{2pt}
+    \setlength{\belowdisplayshortskip}{2pt}
+    \begin{block}{Coarse-grid scaling}
+        Assume the fine-grid work is \(N\). One level down:
+        \[
+            2D: N \rightarrow N/4, \qquad 3D: N \rightarrow N/8
+        \]
+    \end{block}
+
+    \begin{columns}[T,onlytextwidth]
+        \column{0.475\textwidth}
+        \begin{block}{V-cycle}
+            \[
+                \begin{aligned}
+                    T_V      & \sim N + \frac{N}{2^d} + \frac{N}{2^{2d}} + \cdots   \\
+                    T_V^{2D} & \sim \frac{4}{3}N, \qquad T_V^{3D} \sim \frac{8}{7}N
+                \end{aligned}
+            \]
+        \end{block}
+
+        \column{0.475\textwidth}
+        \begin{block}{W-cycle}
+            \[
+                \begin{aligned}
+                    T_W      & \sim N + 2\frac{N}{2^d} + 4\frac{N}{2^{2d}} + \cdots \\
+                    T_W^{2D} & \sim 2N, \qquad T_W^{3D} \sim \frac{4}{3}N
+                \end{aligned}
+            \]
+        \end{block}
+    \end{columns}
+
+    \begin{block}{W / V ratio and takeaway}
+        \(2D: T_W/T_V = 3/2 \approx 50\%, \quad 3D: T_W/T_V = 7/6 \approx 17\%\).
+        3D shrinks faster, so the extra W-cycle coarse-grid work matters less than in 2D.
+    \end{block}
+\end{frame}
+
+\begin{frame}[t]{Mixed sine result: 2D}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.74\textheight,keepaspectratio]{phi_2d_v_sor_mixed_sine_n4095_nu3_w1p25_cs16.png}
+
+    \vspace{0.35em}
+    {\footnotesize CUDA MG V-SOR on the manufactured solution \(\phi_{\rm exact}(x,y)=\sin(2\pi x)\sin(3\pi y)\) with \(\nu = 3\) and \(\omega = 1.25\).}
+\end{frame}
+
+\begin{frame}[t]{Mixed sine result: 3D}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.74\textheight,keepaspectratio]{phi_3d_v_sor_mixed_sine_n383_nu3_w1p25_cs16.png}
+
+    \vspace{0.35em}
+    {\footnotesize CUDA MG V-SOR on the manufactured solution \(\phi_{\rm exact}(x,y,z)=\sin(2\pi x)\sin(3\pi y)\sin(4\pi z)\) with \(\nu = 3\) and \(\omega = 1.25\).}
+\end{frame}
+
+\begin{frame}[t]{CUDA MG Convergence: L2 Error}
+    \centering
+    \includegraphics[width=0.96\textwidth,height=0.80\textheight,keepaspectratio]{plots_2d_3d_l2_error_sine.png}
+\end{frame}
+
+\begin{frame}[t]{CUDA MG Convergence: SOR and Exact Iteration Time}
+    \centering
+    \includegraphics[width=0.96\textwidth,height=0.80\textheight,keepaspectratio]{plots_2d_3d_iter_time_sine.png}
+\end{frame}
+
+\begin{frame}[t]{CUDA MG Convergence: Iteration Time}
+    \centering
+    \includegraphics[width=0.96\textwidth,height=0.80\textheight,keepaspectratio]{plots_2d_3d_iter_time_fit_last10_sine.png}
+\end{frame}
+
+\begin{frame}[t]{OpenMP residual history}
+    \centering
+    \includegraphics[width=0.96\textwidth,height=0.8\textheight,keepaspectratio]{residual_history.png}
+\end{frame}
+
+\begin{frame}[t]{OpenMP thread scaling}
+    \centering
+    \includegraphics[width=0.96\textwidth,height=0.8\textheight,keepaspectratio]{plots_2d_3d.png}
 \end{frame}
 
 \end{document}
