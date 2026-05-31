@@ -26,7 +26,9 @@
     {results/report/}%
 }
 
-\title[CUDA/OpenMP MG Poisson 2D/3D]{CUDA and OpenMP Multigrid Solvers for the Poisson Equation in 2D and 3D}
+\title[CUDA/OpenMP MG Poisson 2D/3D]{CUDA and OpenMP Multigrid Solvers\\for the Poisson Equation in 2D and 3D}
+
+\newcommand{\frametitlesub}[2]{#1: #2}
 
 \begin{document}
 
@@ -35,8 +37,7 @@
 \section{Problem Formulation}
 \input{titlepage}
 
-\subsection{Governing equation and discretization}
-\begin{frame}[t]{Governing equation and discretization}
+\begin{frame}[t]{\frametitlesub{Governing equation and discretization}{Continuous and discrete model}}
     \footnotesize
     \begin{block}{Continuous model}
         We solve the positive-definite Poisson problem with Dirichlet boundary conditions:
@@ -56,7 +57,7 @@
     \end{block}
 \end{frame}
 
-\begin{frame}[t]{Discrete operator and boundary conditions}
+\begin{frame}[t]{\frametitlesub{Governing equation and discretization}{Discrete operator and boundary conditions}}
     \footnotesize
     \begin{block}{Dimensionless discrete operator}
         The interior unknowns satisfy
@@ -76,8 +77,7 @@
     \end{itemize}
 \end{frame}
 
-\subsection{Algorithms and backends}
-\begin{frame}[t]{Algorithms and backends}
+\begin{frame}[t]{\frametitlesub{Algorithms and backends}{Solver and backend support}}
     \footnotesize
     \begin{columns}[T,onlytextwidth]
         \column{0.48\textwidth}
@@ -103,7 +103,7 @@
     \end{columns}
 \end{frame}
 
-\begin{frame}[t]{Stopping criterion and smoother setup}
+\begin{frame}[t]{\frametitlesub{Algorithms and backends}{Stopping criterion and smoother setup}}
     \footnotesize
     \begin{itemize}
         \item Convergence criterion: the relative scaled residual
@@ -128,9 +128,7 @@
 \endgroup
 
 \section{Multigrid Method}
-\subsection{Transfer operators and cycles}
-
-\begin{frame}[t]{Restriction and prolongation operators}
+\begin{frame}[t]{\frametitlesub{Transfer operators and cycles}{Restriction and prolongation}}
     \footnotesize
     \begin{itemize}
         \item Restriction: \(r_{2h} = R\,r_h\), where the 2D full-weighting stencil is
@@ -158,7 +156,7 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}[t]{V-cycle workflow}
+\begin{frame}[t]{\frametitlesub{Transfer operators and cycles}{V-cycle workflow}}
     \footnotesize
     \begin{block}{One V-cycle}
         \begin{itemize}
@@ -179,7 +177,7 @@
     \]
 \end{frame}
 
-\begin{frame}[t]{W-cycle and grid hierarchy}
+\begin{frame}[t]{\frametitlesub{Transfer operators and cycles}{W-cycle and grid hierarchy}}
     \footnotesize
     \begin{block}{W-cycle}
         \begin{itemize}
@@ -205,8 +203,7 @@
     \end{block}
 \end{frame}
 
-\subsection{Coarse-grid solve and cost}
-\begin{frame}[t]{Coarse-grid solver design}
+\begin{frame}[t]{\frametitlesub{Coarse-grid solve and cost}{Coarse-grid solver design}}
     \footnotesize
     \begin{block}{Why the bottom level matters}
         \begin{itemize}
@@ -235,7 +232,7 @@
     \end{columns}
 \end{frame}
 
-\begin{frame}[t]{Work estimates for V- and W-cycles}
+\begin{frame}[t]{\frametitlesub{Coarse-grid solve and cost}{V- and W-cycle work estimates}}
     \footnotesize
     \setlength{\abovedisplayskip}{4pt}
     \setlength{\belowdisplayskip}{4pt}
@@ -277,9 +274,7 @@
 \end{frame}
 
 \section{CUDA Multigrid Results}
-\subsection{Mixed-sine test cases}
-
-\begin{frame}[t]{2D mixed-sine solution}
+\begin{frame}[t]{\frametitlesub{Mixed-sine test cases}{2D mixed-sine solution}}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{phi_2d_v_sor_mixed_sine_n4095_nu3_w1p25_cs16.png}
 
@@ -287,7 +282,7 @@
     {\footnotesize CUDA MG V-SOR on the manufactured solution \(\phi_{\rm exact}(x,y)=\sin(2\pi x)\sin(3\pi y)\) with \(\nu = 3\) and \(\omega = 1.25\).}
 \end{frame}
 
-\begin{frame}[t]{3D mixed-sine solution}
+\begin{frame}[t]{\frametitlesub{Mixed-sine test cases}{3D mixed-sine solution}}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{phi_3d_v_sor_mixed_sine_n383_nu3_w1p25_cs16.png}
 
@@ -295,40 +290,38 @@
     {\footnotesize CUDA MG V-SOR on the manufactured solution \(\phi_{\rm exact}(x,y,z)=\sin(2\pi x)\sin(3\pi y)\sin(4\pi z)\) with \(\nu = 3\) and \(\omega = 1.25\).}
 \end{frame}
 
-\subsection{Convergence analysis}
-\begin{frame}[t]{L2 error convergence}
+\begin{frame}[t]{\frametitlesub{Convergence analysis}{L2 error convergence}}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_l2_error_sine.png}
 \end{frame}
 
-\begin{frame}[t]{Iteration time: SOR vs exact solve}
+\begin{frame}[t]{\frametitlesub{Convergence analysis}{Iteration and time vs exact solve}}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_iter_time_sine.png}
 \end{frame}
 
-\begin{frame}[t]{Iteration-time fit}
+\begin{frame}[t]{\frametitlesub{Convergence analysis}{Iteration-and-time fit}}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_iter_time_fit_last10_sine.png}
 \end{frame}
 
-\subsection{Parameter sweeps}
-\begin{frame}[t]{Iteration time vs \(\nu\)}
+\begin{frame}[t]{\frametitlesub{Parameter sweeps}{Iteration and time vs \(\nu\)}}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{nu_sweep/plots_2d_3d_iter_time_sine.png}
 
     \vspace{0.35em}
-    {\footnotesize 2D/3D iteration-time sweep over \(\nu\) on the sine manufactured-solution case.}
+    {\footnotesize 2D/3D iteration-and-time sweep over \(\nu\) on the sine manufactured-solution case.}
 \end{frame}
 
-\begin{frame}[t]{Iteration time vs \(\omega\)}
+\begin{frame}[t]{\frametitlesub{Parameter sweeps}{Iteration and time vs \(\omega\)}}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{omega_sweep/plots_2d_3d_iter_time_sine.png}
 
     \vspace{0.35em}
-    {\footnotesize 2D/3D iteration-time sweep over \(\omega\) on the sine manufactured-solution case.}
+    {\footnotesize 2D/3D iteration-and-time sweep over \(\omega\) on the sine manufactured-solution case.}
 \end{frame}
 
-\begin{frame}[t]{Iteration time vs coarse steps}
+\begin{frame}[t]{\frametitlesub{Parameter sweeps}{Iteration and time vs coarse steps}}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{cuda_mg_coarse_steps/plots_2d_3d_iter_time_sine.png}
 
@@ -336,37 +329,33 @@
     {\footnotesize 2D/3D coarse-step sweep on the sine manufactured-solution case.}
 \end{frame}
 
-\subsection{Performance scaling}
-\begin{frame}[t]{CUDA scaling}
+\begin{frame}[t]{\frametitlesub{Performance scaling}{CUDA scaling}}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_sine.png}
 \end{frame}
 
-\begin{frame}[t]{2D vs 3D scaling}
+\begin{frame}[t]{\frametitlesub{Performance scaling}{2D vs 3D scaling}}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_sine.png}
 \end{frame}
 
-\begin{frame}[t]{Multigrid vs SOR runtime}
+\begin{frame}[t]{\frametitlesub{Performance scaling}{Multigrid vs SOR runtime}}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_mg_sor_time_fit_sine.png}
 \end{frame}
 
 \section{OpenMP Performance}
-\subsection{Empirical results}
-
-\begin{frame}[t]{Residual history (OpenMP)}
+\begin{frame}[t]{\frametitlesub{Empirical results}{Residual history (OpenMP)}}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{residual_history.png}
 \end{frame}
 
-\begin{frame}[t]{OpenMP thread scaling}
+\begin{frame}[t]{\frametitlesub{Empirical results}{OpenMP thread scaling}}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d.png}
 \end{frame}
 
-\subsection{Bottleneck analysis}
-\begin{frame}[t]{OpenMP bottleneck analysis}
+\begin{frame}[t]{\frametitlesub{Bottleneck analysis}{OpenMP bottleneck analysis}}
     \footnotesize
     \begin{columns}[T,onlytextwidth]
         \column{0.475\textwidth}
@@ -393,7 +382,7 @@
 \end{frame}
 
 \section{Conclusions}
-\begin{frame}[t]{Conclusions and takeaways}
+\begin{frame}[t]{\frametitlesub{Conclusions}{Conclusions and takeaways}}
     \footnotesize
     \begin{block}{What we learned}
         \begin{itemize}
@@ -409,7 +398,7 @@
     \end{block}
 \end{frame}
 
-\begin{frame}[t]{References}
+\begin{frame}[t]{\frametitlesub{Conclusions}{References}}
     \footnotesize
     \begin{itemize}
         \item Numerical Recipes, 3rd ed., Section 20.6, \emph{Multigrid Methods for Boundary Value Problems}.

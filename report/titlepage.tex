@@ -1,11 +1,15 @@
 \setbeamertemplate{title page}{
     \vbox to \textheight{
-        \vspace*{2cm}
-        \begin{minipage}[t][0.275\textheight][t]{\textwidth}
+        \vspace*{1cm}
+        \begin{minipage}[c][0.30\textheight][c]{\textwidth}
             \begin{center}
-                {\usebeamercolor[fg]{normal text}\bfseries\resizebox{0.95\textwidth}{!}{\inserttitle}\par}
+                {\usebeamercolor[fg]{normal text}\bfseries\fontsize{21}{25}\selectfont
+                    \makebox[\textwidth][c]{\shortstack[c]{\inserttitle}}
+                }
             \end{center}
         \end{minipage}\par
+
+        \vspace*{1cm}
 
         \begin{minipage}[c][0.15\textheight][c]{\textwidth}
             \begin{center}
