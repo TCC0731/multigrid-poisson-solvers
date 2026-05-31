@@ -34,8 +34,8 @@
 \AtBeginSection[]{}
 \section{Problem Setup}
 \input{titlepage}
-\endgroup
 
+\subsection{Model and notation}
 \begin{frame}[t]{Problem definition}
     \footnotesize
     \begin{block}{Continuous model}
@@ -76,29 +76,7 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}[t]{Solver conventions}
-    \footnotesize
-    \begin{itemize}
-        \item Convergence criterion: the relative scaled residual
-              \[
-                  \eta = \frac{\|h^2 f - A_h\phi\|_2}{\|h^2 f\|_2}
-              \]
-              where \(A_h\) is the dimensionless finite-difference stencil approximating \(h^2(-\nabla^2)\),
-              must satisfy \(\eta \le \texttt{tol}\).
-        \item Baseline smoothers: red-black SOR.
-        \item Multigrid smoothing: red-black SOR with \(\nu\) pre- and post-smoothing steps.
-        \item If \(\omega = 1\), the red-black SOR update reduces to red-black Gauss--Seidel.
-    \end{itemize}
-
-    \begin{block}{Automatic SOR weight}
-        When \(\omega\) is left on auto, the code uses
-        \[
-            \omega_{\mathrm{auto}} = \frac{2}{1 + \sin\!\bigl(\pi/(n+1)\bigr)}.
-        \]
-        Here \(n\) is the number of interior points per axis on the current grid level.
-    \end{block}
-\end{frame}
-
+\subsection{Solver stack}
 \begin{frame}[t]{Solver overview}
     \footnotesize
     \begin{columns}[T,onlytextwidth]
@@ -125,7 +103,32 @@
     \end{columns}
 \end{frame}
 
+\begin{frame}[t]{Solver conventions}
+    \footnotesize
+    \begin{itemize}
+        \item Convergence criterion: the relative scaled residual
+              \[
+                  \eta = \frac{\|h^2 f - A_h\phi\|_2}{\|h^2 f\|_2}
+              \]
+              where \(A_h\) is the dimensionless finite-difference stencil approximating \(h^2(-\nabla^2)\),
+              must satisfy \(\eta \le \texttt{tol}\).
+        \item Baseline smoothers: red-black SOR.
+        \item Multigrid smoothing: red-black SOR with \(\nu\) pre- and post-smoothing steps.
+        \item If \(\omega = 1\), the red-black SOR update reduces to red-black Gauss--Seidel.
+    \end{itemize}
+
+    \begin{block}{Automatic SOR weight}
+        When \(\omega\) is left on auto, the code uses
+        \[
+            \omega_{\mathrm{auto}} = \frac{2}{1 + \sin\!\bigl(\pi/(n+1)\bigr)}.
+        \]
+        Here \(n\) is the number of interior points per axis on the current grid level.
+    \end{block}
+\end{frame}
+\endgroup
+
 \section{Multigrid Method}
+\subsection{Cycle mechanics}
 
 \begin{frame}[t]{Multigrid operators}
     \footnotesize
@@ -153,35 +156,6 @@
               and the 3D case uses the analogous tensor-product trilinear interpolation, involving 2, 4, or 8 coarse-grid neighbors depending on the fine-grid point location.
         \item Coarsest-grid solve: exact solve by default, with an RB-SOR coarse-solve variant also available.
     \end{itemize}
-\end{frame}
-
-\begin{frame}[t]{Coarsest-grid Solver Design}
-    \footnotesize
-    \begin{block}{Why the bottom level matters}
-        \begin{itemize}
-            \item The coarsest solve closes the multigrid hierarchy.
-            \item A weak bottom-level solve can leak error back to the fine grid after prolongation.
-            \item The choice affects both robustness and time-to-solution.
-        \end{itemize}
-    \end{block}
-
-    \begin{columns}[T,onlytextwidth]
-        \column{0.48\textwidth}
-        \begin{block}{Our implementation}
-            \begin{itemize}
-                \item Default: exact/direct solve on the coarsest grid.
-                \item Optional: RB-SOR coarse solve for comparison or fallback.
-            \end{itemize}
-        \end{block}
-
-        \column{0.48\textwidth}
-        \begin{block}{Trade-off}
-            \begin{itemize}
-                \item RB-SOR keeps the code path simple and is easy to benchmark.
-                \item Exact/direct gives the strongest bottom-level correction when the coarse system is tiny.
-            \end{itemize}
-        \end{block}
-    \end{columns}
 \end{frame}
 
 \begin{frame}[t]{Multigrid workflow}
@@ -231,6 +205,36 @@
     \end{block}
 \end{frame}
 
+\subsection{Bottom solve and cost}
+\begin{frame}[t]{Coarsest-grid Solver Design}
+    \footnotesize
+    \begin{block}{Why the bottom level matters}
+        \begin{itemize}
+            \item The coarsest solve closes the multigrid hierarchy.
+            \item A weak bottom-level solve can leak error back to the fine grid after prolongation.
+            \item The choice affects both robustness and time-to-solution.
+        \end{itemize}
+    \end{block}
+
+    \begin{columns}[T,onlytextwidth]
+        \column{0.48\textwidth}
+        \begin{block}{Our implementation}
+            \begin{itemize}
+                \item Default: exact/direct solve on the coarsest grid.
+                \item Optional: RB-SOR coarse solve for comparison or fallback.
+            \end{itemize}
+        \end{block}
+
+        \column{0.48\textwidth}
+        \begin{block}{Trade-off}
+            \begin{itemize}
+                \item RB-SOR keeps the code path simple and is easy to benchmark.
+                \item Exact/direct gives the strongest bottom-level correction when the coarse system is tiny.
+            \end{itemize}
+        \end{block}
+    \end{columns}
+\end{frame}
+
 \begin{frame}[t]{Time cost}
     \footnotesize
     \setlength{\abovedisplayskip}{4pt}
@@ -273,6 +277,7 @@
 \end{frame}
 
 \section{CUDA MG Results}
+\subsection{Representative solutions}
 
 \begin{frame}[t]{Mixed sine result: 2D}
     \centering
@@ -290,6 +295,7 @@
     {\footnotesize CUDA MG V-SOR on the manufactured solution \(\phi_{\rm exact}(x,y,z)=\sin(2\pi x)\sin(3\pi y)\sin(4\pi z)\) with \(\nu = 3\) and \(\omega = 1.25\).}
 \end{frame}
 
+\subsection{Convergence}
 \begin{frame}[t]{CUDA MG Convergence: L2 Error}
     \centering
     \includegraphics[width=0.96\textwidth,height=0.80\textheight,keepaspectratio]{plots_2d_3d_l2_error_sine.png}
@@ -305,6 +311,7 @@
     \includegraphics[width=0.96\textwidth,height=0.80\textheight,keepaspectratio]{plots_2d_3d_iter_time_fit_last10_sine.png}
 \end{frame}
 
+\subsection{Parameter sweep}
 \begin{frame}[t]{CUDA MG Convergence: \(\nu\) Sweep Iteration Time}
     \centering
     \includegraphics[width=0.96\textwidth,height=0.78\textheight,keepaspectratio]{nu_sweep/plots_2d_3d_iter_time_sine.png}
@@ -321,6 +328,15 @@
     {\footnotesize 2D/3D iteration-time sweep over \(\omega\) on the sine manufactured-solution case.}
 \end{frame}
 
+\begin{frame}[t]{CUDA MG Convergence: Coarse Steps Sweep}
+    \centering
+    \includegraphics[width=0.96\textwidth,height=0.78\textheight,keepaspectratio]{cuda_mg_coarse_steps/plots_2d_3d_iter_time_sine.png}
+
+    \vspace{0.35em}
+    {\footnotesize 2D/3D coarse-step sweep on the sine manufactured-solution case.}
+\end{frame}
+
+\subsection{Scaling}
 \begin{frame}[t]{CUDA GPU Scaling}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.80\textheight,keepaspectratio]{plots_2d_3d_sine.png}
@@ -337,6 +353,7 @@
 \end{frame}
 
 \section{OpenMP Scaling}
+\subsection{Empirical behavior}
 
 \begin{frame}[t]{OpenMP residual history}
     \centering
@@ -348,6 +365,7 @@
     \includegraphics[width=0.96\textwidth,height=0.8\textheight,keepaspectratio]{plots_2d_3d.png}
 \end{frame}
 
+\subsection{Bottleneck analysis}
 \begin{frame}[t]{Why OpenMP scaling flattens}
     \footnotesize
     \begin{columns}[T,onlytextwidth]
@@ -371,6 +389,23 @@
             \end{itemize}
         \end{block}
     \end{columns}
+\end{frame}
+
+\section{Conclusion}
+\begin{frame}[t]{Final results}
+    \footnotesize
+    \begin{block}{What we learned}
+        \begin{itemize}
+            \item The CUDA multigrid solver converges reliably in both 2D and 3D on manufactured-solution tests.
+            \item The \(\nu\) and \(\omega\) sweeps show that solver time is sensitive to smoother tuning, especially in 2D.
+            \item Compared with SOR, multigrid gives the better overall time-to-solution story as the grid grows.
+            \item The OpenMP backend flattens because the hot smoothing kernel is memory-bound rather than compute-bound.
+        \end{itemize}
+    \end{block}
+
+    \begin{block}{Bottom line}
+        Multigrid is the right algorithmic direction here, CUDA gives the strongest performance path, and the remaining CPU scaling limit is mainly a memory-bandwidth problem.
+    \end{block}
 \end{frame}
 
 \end{document}
