@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Shared plotting helpers for CUDA MG sweep ``results_all.csv`` files."""
+"""Shared plotting helpers for CUDA MG coarse_steps ``results_all.csv`` files."""
 
 import csv
 import sys
@@ -13,12 +13,13 @@ RESULT_ROOT = SCRIPT_DIR
 if str(RESULT_ROOT) not in sys.path:
     sys.path.insert(0, str(RESULT_ROOT))
 
-from _report_common import finalize_figure_header, load_pyplot, normalize_choices, positive_float, positive_int
-from _sweep_common import DEFAULT_DIMS, _format_sweep_value
+from _report_common import finalize_figure_header, load_pyplot, normalize_choices, positive_int
+from _sweep_common import DEFAULT_DIMS as _DEFAULT_DIMS
 
 
 DEFAULT_BACKEND = "cuda"
 DEFAULT_DTYPE = "double"
+DEFAULT_DIMS = _DEFAULT_DIMS
 
 
 @dataclass(frozen=True)
@@ -32,30 +33,16 @@ class ModeSpec:
 
 MODE_SPECS = (
     ModeSpec(
-        label="V-exact",
-        mode_key="v_exact",
-        color="#1f77b4",
-        marker="o",
-        linestyle="-",
-    ),
-    ModeSpec(
         label="V-SOR",
         mode_key="v_sor",
         color="#1f77b4",
-        marker="s",
-        linestyle="--",
-    ),
-    ModeSpec(
-        label="W-exact",
-        mode_key="w_exact",
-        color="#d62728",
         marker="o",
         linestyle="-",
     ),
     ModeSpec(
         label="W-SOR",
         mode_key="w_sor",
-        color="#d62728",
+        color="#ff7f0e",
         marker="s",
         linestyle="--",
     ),
@@ -70,17 +57,9 @@ class PlotRow:
     case: str
     grid_size: int
     mode_key: str
-    sweep_value: float | int
+    coarse_steps: int
     iterations: int
     time_s: float
-
-
-def _sweep_name_to_label(sweep_name: str) -> str:
-    if sweep_name == "omega":
-        return "omega"
-    if sweep_name == "nu":
-        return "nu"
-    raise ValueError(f"unsupported sweep name: {sweep_name!r}")
 
 
 def _unique_positive_ints(values: Iterable[object], *, name: str) -> tuple[int, ...]:
@@ -110,10 +89,9 @@ def _load_rows(
     *,
     case: str,
     dims: Sequence[int],
-    sweep_name: str,
 ) -> list[PlotRow]:
     rows: list[PlotRow] = []
-    seen: set[tuple[int, str, float | int]] = set()
+    seen: set[tuple[int, str, int]] = set()
 
     with csv_path.open(newline="") as stream:
         reader = csv.DictReader(stream)
@@ -138,25 +116,13 @@ def _load_rows(
 
             try:
                 grid_size = positive_int(raw["grid_size"], "grid_size")
+                coarse_steps = positive_int(raw["coarse_steps"], "coarse_steps")
                 iterations = positive_int(raw["iterations"], "iterations")
                 time_s = _parse_time_s(raw)
             except Exception:
                 continue
 
-            if sweep_name == "omega":
-                try:
-                    sweep_value: float | int = positive_float(raw["omega"], "omega")
-                except Exception:
-                    continue
-            elif sweep_name == "nu":
-                try:
-                    sweep_value = positive_int(raw["nu"], "nu")
-                except Exception:
-                    continue
-            else:
-                raise ValueError(f"unsupported sweep name: {sweep_name!r}")
-
-            key = (dimension, mode_key, sweep_value)
+            key = (dimension, mode_key, coarse_steps)
             if key in seen:
                 continue
             seen.add(key)
@@ -166,7 +132,7 @@ def _load_rows(
                     case=case,
                     grid_size=grid_size,
                     mode_key=mode_key,
-                    sweep_value=sweep_value,
+                    coarse_steps=coarse_steps,
                     iterations=iterations,
                     time_s=time_s,
                 )
@@ -176,7 +142,7 @@ def _load_rows(
         key=lambda row: (
             row.dimension,
             MODE_ORDER[row.mode_key],
-            row.sweep_value,
+            row.coarse_steps,
         )
     )
     return rows
@@ -184,7 +150,7 @@ def _load_rows(
 
 def _series(rows: Iterable[PlotRow], *, dimension: int, mode_key: str) -> list[PlotRow]:
     ordered = [row for row in rows if row.dimension == dimension and row.mode_key == mode_key]
-    ordered.sort(key=lambda row: row.sweep_value)
+    ordered.sort(key=lambda row: row.coarse_steps)
     return ordered
 
 
@@ -198,7 +164,7 @@ def _grid_description(rows: Sequence[PlotRow], dims: Sequence[int]) -> str:
     return ", ".join(parts)
 
 
-def _expanded_limits(values: Sequence[float | int]) -> tuple[float, float]:
+def _expanded_limits(values: Sequence[int]) -> tuple[float, float]:
     ordered = sorted({float(value) for value in values})
     if not ordered:
         raise ValueError("at least one value is required")
@@ -227,7 +193,7 @@ def _plot_mode_series(
         series = _series(rows, dimension=dimension, mode_key=spec.mode_key)
         if not series:
             continue
-        x = [row.sweep_value for row in series]
+        x = [row.coarse_steps for row in series]
         y = [float(getattr(row, metric_key)) for row in series]
         ax.plot(
             x,
@@ -246,25 +212,21 @@ def plot_iter_time_2x2_from_csv(
     output_path: Path,
     case: str = "sine",
     dims: Sequence[int] = DEFAULT_DIMS,
-    sweep_name: str,
 ) -> None:
     case = str(case).strip()
     dims = _unique_positive_ints(dims, name="dimension")
     dims = tuple(normalize_choices(dims, valid=DEFAULT_DIMS, name="dimension"))
-    sweep_name = _sweep_name_to_label(sweep_name)
 
     if not input_csv.exists():
         raise FileNotFoundError(f"Input CSV not found: {input_csv}")
 
-    rows = _load_rows(input_csv, case=case, dims=dims, sweep_name=sweep_name)
+    rows = _load_rows(input_csv, case=case, dims=dims)
     if not rows:
         raise RuntimeError("No rows matched the requested filters.")
 
     plt = load_pyplot()
-    sweep_values = sorted({row.sweep_value for row in rows})
-    sweep_labels = [_format_sweep_value(value, sweep_name) for value in sweep_values]
-    x_rotation = 45 if sweep_name == "omega" else 0
-    x_min, x_max = _expanded_limits(sweep_values)
+    coarse_steps = sorted({row.coarse_steps for row in rows})
+    x_min, x_max = _expanded_limits(coarse_steps)
 
     fig, axes = plt.subplots(
         nrows=len(dims),
@@ -287,27 +249,21 @@ def plot_iter_time_2x2_from_csv(
 
             ax.set_title(f"{dimension}D {title}")
             ax.set_ylabel(title)
+            ax.set_xticks(coarse_steps)
             if row_idx == len(dims) - 1:
-                ax.set_xlabel(_sweep_name_to_label(sweep_name))
-                ax.set_xticks(sweep_values)
-                ax.set_xticklabels(
-                    sweep_labels,
-                    rotation=x_rotation,
-                    ha="right" if x_rotation else "center",
-                )
+                ax.set_xlabel("coarse steps")
             else:
                 ax.set_xlabel("")
-                ax.set_xticks(sweep_values)
             ax.grid(True, linestyle="--", alpha=0.45)
             ax.set_xlim(x_min, x_max)
 
     handles, labels = axes[0][0].get_legend_handles_labels()
     finalize_figure_header(
         fig,
-        title=f"CUDA MG {sweep_name} sweep - {case} {_grid_description(rows, dims)}",
+        title=f"CUDA MG coarse_steps sweep - {case} {_grid_description(rows, dims)}",
         handles=handles,
         labels=labels,
-        ncol=4,
+        ncol=2,
         legend_y=0.965,
         title_y=0.995,
         tight_top=0.99,
@@ -322,88 +278,6 @@ def plot_iter_time_2x2_from_csv(
     plt.close(fig)
 
 
-def plot_iter_time_2x2(
-    *,
-    rows: Sequence[PlotRow],
-    case: str,
-    dims: Sequence[int] = DEFAULT_DIMS,
-    sweep_name: str,
-    output_path: Path,
-) -> None:
-    """Plot helper for callers that already loaded rows from CSV."""
-
-    case = str(case).strip()
-    dims = _unique_positive_ints(dims, name="dimension")
-    dims = tuple(normalize_choices(dims, valid=DEFAULT_DIMS, name="dimension"))
-    sweep_name = _sweep_name_to_label(sweep_name)
-    rows = [row for row in rows if row.case == case and row.dimension in dims]
-    if not rows:
-        raise RuntimeError("No rows matched the requested filters.")
-
-    plt = load_pyplot()
-    sweep_values = sorted({row.sweep_value for row in rows})
-    sweep_labels = [_format_sweep_value(value, sweep_name) for value in sweep_values]
-    x_rotation = 45 if sweep_name == "omega" else 0
-    x_min, x_max = _expanded_limits(sweep_values)
-
-    fig, axes = plt.subplots(
-        nrows=len(dims),
-        ncols=2,
-        figsize=(14.8, 4.4 * len(dims)),
-        sharex=True,
-    )
-    if len(dims) == 1:
-        axes = [axes]  # type: ignore[list-item]
-
-    panels = (
-        ("iterations", "Iterations"),
-        ("time_s", "Time (s)"),
-    )
-
-    for row_idx, dimension in enumerate(dims):
-        for col_idx, (metric_key, title) in enumerate(panels):
-            ax = axes[row_idx][col_idx]
-            _plot_mode_series(ax, rows=rows, dimension=dimension, metric_key=metric_key)
-
-            ax.set_title(f"{dimension}D {title}")
-            ax.set_ylabel(title)
-            if row_idx == len(dims) - 1:
-                ax.set_xlabel(_sweep_name_to_label(sweep_name))
-                ax.set_xticks(sweep_values)
-                ax.set_xticklabels(
-                    sweep_labels,
-                    rotation=x_rotation,
-                    ha="right" if x_rotation else "center",
-                )
-            else:
-                ax.set_xlabel("")
-                ax.set_xticks(sweep_values)
-            ax.grid(True, linestyle="--", alpha=0.45)
-            ax.set_xlim(x_min, x_max)
-
-    handles, labels = axes[0][0].get_legend_handles_labels()
-    finalize_figure_header(
-        fig,
-        title=f"CUDA MG {sweep_name} sweep - {case} (2D/3D iter/time)\n{_grid_description(rows, dims)}",
-        handles=handles,
-        labels=labels,
-        ncol=4,
-        legend_y=0.965,
-        title_y=0.995,
-        tight_top=0.90,
-        legend_kwargs={
-            "fontsize": 9.0,
-            "columnspacing": 1.2,
-            "handletextpad": 0.6,
-        },
-    )
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, dpi=300, bbox_inches="tight")
-    plt.close(fig)
-
-
 __all__ = [
-    "PlotRow",
-    "plot_iter_time_2x2",
     "plot_iter_time_2x2_from_csv",
 ]

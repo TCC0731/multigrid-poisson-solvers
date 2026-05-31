@@ -4,12 +4,12 @@ from __future__ import annotations
 
 This report keeps the execution path through
 ``results/report/result/_poisson_wrapper.py`` so that all solver runs are cached
-and reproducible. The default configuration benchmarks a single representative
-MG setup:
+and reproducible. The default configuration benchmarks representative MG
+setups:
 
 * CUDA backend
-* MG V-cycle
-* exact coarse solve
+* MG V/W cycles
+* SOR coarse solve
 * ``nu = 3``
 * ``omega = 1.25``
 
@@ -21,7 +21,9 @@ The output focuses on the question asked in the report notes:
 """
 
 import argparse
+import csv
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
@@ -31,21 +33,22 @@ if str(RESULT_ROOT) not in sys.path:
     sys.path.insert(0, str(RESULT_ROOT))
 
 from _poisson_wrapper import run_or_load
-from _report_common import csv_float, finalize_figure_header, load_pyplot, normalize_choices, positive_float, positive_int, power_law_fit_curve, write_rows_csv
-from _scaling_common import DEFAULT_GRID_SIZES_BY_DIM, cells_for_grid_size, group_rows_by_dimension, unique_positive_ints
+from _report_common import csv_float, finalize_figure_header, load_pyplot, normalize_choices, positive_float, positive_int, write_rows_csv
+from _scaling_common import cells_for_grid_size, group_rows_by_dimension, unique_positive_ints
 
 
 DEFAULT_CASES = ("sine", "cosine")
 DEFAULT_DIMS = (2, 3)
+DEFAULT_CYCLES = ("v", "w")
 DEFAULT_BACKEND = "cuda"
 DEFAULT_DTYPE = "double"
 DEFAULT_OMEGA = 1.25
 DEFAULT_NU = 3
 DEFAULT_TOL = 1e-9
-DEFAULT_MAX_ITER = 150
-DEFAULT_REPEAT_RUNS = 5
-DEFAULT_CYCLE = "v"
-DEFAULT_MG_COARSE = "exact"
+DEFAULT_MAX_ITER = 15
+DEFAULT_REPEAT_RUNS = 50
+DEFAULT_MG_COARSE = "sor"
+DEFAULT_GRID_SOURCE_CSV = RESULT_ROOT / "cuda_mg_convergence" / "results_all.csv"
 CSV_COLUMNS = (
     "dimension",
     "case",
@@ -76,6 +79,33 @@ CSV_COLUMNS = (
 )
 
 
+@dataclass(frozen=True)
+class ModeSpec:
+    label: str
+    mode_key: str
+    cycle: str
+    color: str
+
+
+MODE_SPECS = (
+    ModeSpec(
+        label="MG V SOR",
+        mode_key="mg_v_sor",
+        cycle="v",
+        color="#1f77b4",
+    ),
+    ModeSpec(
+        label="MG W SOR",
+        mode_key="mg_w_sor",
+        cycle="w",
+        color="#d62728",
+    ),
+)
+MODE_SPECS_BY_CYCLE = {spec.cycle: spec for spec in MODE_SPECS}
+DIM_LINESTYLES = {2: "-", 3: "--"}
+MARKER = "s"
+
+
 def _grid_sizes_for_dim(dim: int, grid_sizes_2d: Sequence[int], grid_sizes_3d: Sequence[int]) -> tuple[int, ...]:
     if dim == 2:
         return tuple(grid_sizes_2d)
@@ -84,10 +114,85 @@ def _grid_sizes_for_dim(dim: int, grid_sizes_2d: Sequence[int], grid_sizes_3d: S
     raise ValueError("dim must be 2 or 3")
 
 
+def _grid_sizes_from_convergence_csv(
+    *,
+    source_csv: Path,
+    dims: Sequence[int],
+    cases: Sequence[str],
+    cycles: Sequence[str],
+    backend: str,
+    dtype: str,
+    omega: float,
+    nu: int,
+    tol: float,
+    max_iter: int,
+    coarse: str,
+) -> dict[int, tuple[int, ...]]:
+    if not source_csv.exists():
+        raise FileNotFoundError(
+            f"Grid source CSV not found: {source_csv}. "
+            "Run results/report/cuda_mg_convergence/run_and_plot.py first, or pass explicit --grid-2d/--grid-3d values."
+        )
+
+    matched: dict[tuple[int, str, str], set[int]] = {
+        (dim, case, cycle): set()
+        for dim in dims
+        for case in cases
+        for cycle in cycles
+    }
+
+    with source_csv.open(newline="", encoding="utf-8") as stream:
+        reader = csv.DictReader(stream)
+        for row in reader:
+            try:
+                dim = positive_int(row["dimension"], "dimension")
+            except Exception:
+                continue
+            if dim not in dims:
+                continue
+            case = str(row["case"])
+            cycle = str(row["cycle"])
+            if case not in cases or cycle not in cycles:
+                continue
+            if row.get("backend") != backend or row.get("dtype") != dtype:
+                continue
+            if row.get("solver") != "mg" or row.get("coarse") != coarse:
+                continue
+            if abs(float(row["omega"]) - omega) > 1e-12:
+                continue
+            if positive_int(row["nu"], "nu") != nu:
+                continue
+            if abs(float(row["tol"]) - tol) > 1e-15:
+                continue
+            if positive_int(row["max_iter"], "max_iter") != max_iter:
+                continue
+            matched[(dim, case, cycle)].add(positive_int(row["grid_size"], "grid_size"))
+
+    grid_sizes_by_dim: dict[int, tuple[int, ...]] = {}
+    for dim in dims:
+        series: list[set[int]] = []
+        for case in cases:
+            for cycle in cycles:
+                series.append(matched[(dim, case, cycle)])
+        if not series:
+            raise RuntimeError(f"No matching grids were found for dimension {dim}.")
+        common = set(series[0])
+        for values in series[1:]:
+            common &= values
+        if not common:
+            raise RuntimeError(
+                f"No common grid sizes were found for dimension {dim} in {source_csv} "
+                f"with cases={cases!r}, cycles={cycles!r}, coarse={coarse!r}."
+            )
+        grid_sizes_by_dim[dim] = tuple(sorted(common))
+    return grid_sizes_by_dim
+
+
 def _row_key(row: Mapping[str, object]) -> tuple[object, ...]:
     return (
         int(row["dimension"]),
         str(row["case"]),
+        str(row["cycle"]),
         int(row["grid_size"]),
     )
 
@@ -97,6 +202,7 @@ def _row_from_wrapper(
     dim: int,
     case: str,
     grid_size: int,
+    mode: ModeSpec,
     tol: float,
     max_iter: int,
     repeat_runs: int,
@@ -112,7 +218,7 @@ def _row_from_wrapper(
         tol=tol,
         max_iter=max_iter,
         repeat_runs=repeat_runs,
-        cycle=DEFAULT_CYCLE,
+        cycle=mode.cycle,
         nu=DEFAULT_NU,
         omega=DEFAULT_OMEGA,
         mg_coarse=DEFAULT_MG_COARSE,
@@ -126,9 +232,9 @@ def _row_from_wrapper(
     return {
         "dimension": dim,
         "case": case,
-        "mode": "MG V exact",
-        "mode_key": "mg_v_exact",
-        "cycle": DEFAULT_CYCLE,
+        "mode": mode.label,
+        "mode_key": mode.mode_key,
+        "cycle": mode.cycle,
         "mg_coarse": DEFAULT_MG_COARSE,
         "omega": DEFAULT_OMEGA,
         "nu": DEFAULT_NU,
@@ -157,6 +263,7 @@ def collect_rows_from_wrapper(
     *,
     dims: Iterable[int],
     cases: Iterable[str],
+    cycles: Sequence[str],
     grid_sizes_2d: Sequence[int],
     grid_sizes_3d: Sequence[int],
     tol: float,
@@ -165,21 +272,24 @@ def collect_rows_from_wrapper(
     output_dir: Path,
 ) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
+    modes = tuple(MODE_SPECS_BY_CYCLE[cycle] for cycle in cycles)
     for dim in dims:
         grid_sizes = _grid_sizes_for_dim(dim, grid_sizes_2d, grid_sizes_3d)
         for case in cases:
-            for grid_size in grid_sizes:
-                rows.append(
-                    _row_from_wrapper(
-                        dim=dim,
-                        case=case,
-                        grid_size=grid_size,
-                        tol=tol,
-                        max_iter=max_iter,
-                        repeat_runs=repeat_runs,
-                        output_dir=output_dir,
+            for mode in modes:
+                for grid_size in grid_sizes:
+                    rows.append(
+                        _row_from_wrapper(
+                            dim=dim,
+                            case=case,
+                            grid_size=grid_size,
+                            mode=mode,
+                            tol=tol,
+                            max_iter=max_iter,
+                            repeat_runs=repeat_runs,
+                            output_dir=output_dir,
+                        )
                     )
-                )
     return rows
 
 
@@ -224,30 +334,27 @@ def plot_case(
     *,
     case: str,
     rows: list[dict[str, object]],
+    modes: Sequence[ModeSpec],
     output_path: Path,
 ) -> None:
     plt = load_pyplot()
 
-    series_by_dim: dict[int, list[dict[str, object]]] = {2: [], 3: []}
+    dims = tuple(sorted({int(row["dimension"]) for row in rows}))
+    series_by_key: dict[tuple[int, str], list[dict[str, object]]] = {
+        (dim, mode.mode_key): []
+        for dim in dims
+        for mode in modes
+    }
     for row in rows:
-        series_by_dim[int(row["dimension"])].append(row)
+        series_by_key[(int(row["dimension"]), str(row["mode_key"]))].append(row)
 
-    legend_labels: dict[int, str] = {}
-    for dim, series in series_by_dim.items():
-        ordered = sorted(series, key=lambda row: int(row["cells"]))
-        if not ordered:
-            continue
-        fit = power_law_fit_curve(
-            [float(row["cells"]) for row in ordered],
-            [float(row["time_s"]) for row in ordered],
-        )
-        if fit is None:
-            legend_labels[dim] = f"{dim}D"
-        else:
-            _, _, slope = fit
-            legend_labels[dim] = f"{dim}D (time ~ cells^{slope:.2f})"
+    legend_labels: dict[tuple[int, str], str] = {
+        (dim, mode.mode_key): f"{dim}D {mode.label}"
+        for dim in dims
+        for mode in modes
+    }
 
-    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    fig, axes = plt.subplots(1, 3, figsize=(11, 4))
     panels = (
         ("time_s", "Runtime (s)"),
         ("time_per_cell_us", "Runtime per cell (us)"),
@@ -255,35 +362,40 @@ def plot_case(
     )
 
     for ax, (metric_key, ylabel) in zip(axes, panels):
-        for dim in DEFAULT_DIMS:
-            series = sorted(series_by_dim[dim], key=lambda row: int(row["cells"]))
-            if not series:
-                continue
-            x = [int(row["cells"]) for row in series]
-            y = [float(row[metric_key]) for row in series]
-            ax.loglog(
-                x,
-                y,
-                marker="o" if dim == 2 else "s",
-                linestyle="-" if dim == 2 else "--",
-                linewidth=1.9,
-                label=legend_labels.get(dim, f"{dim}D"),
-            )
+        for dim in dims:
+            for mode in modes:
+                series = sorted(series_by_key[(dim, mode.mode_key)], key=lambda row: int(row["cells"]))
+                if not series:
+                    continue
+                x = [int(row["cells"]) for row in series]
+                y = [float(row[metric_key]) for row in series]
+                ax.loglog(
+                    x,
+                    y,
+                    marker=MARKER,
+                    linestyle=DIM_LINESTYLES[dim],
+                    color=mode.color,
+                    linewidth=1.9,
+                    label=legend_labels.get((dim, mode.mode_key), f"{dim}D {mode.label}"),
+                )
         ax.set_title(ylabel)
         ax.set_xlabel("cells")
         ax.set_ylabel(ylabel)
         ax.grid(True, which="both", linestyle="--", alpha=0.45)
 
     handles, labels = axes[0].get_legend_handles_labels()
+    cycle_text = "/".join(mode.cycle.upper() for mode in modes)
     finalize_figure_header(
         fig,
         title=(
-            f"CUDA MG 2D vs 3D scaling - {case}\n"
-            f"V-cycle, exact coarse solve, nu={DEFAULT_NU}, omega={DEFAULT_OMEGA:.2f}"
+            f"CUDA MG 2D vs 3D scaling - {case} {cycle_text}-cycle, SOR coarse solve"
         ),
         handles=handles,
         labels=labels,
-        ncol=2,
+        ncol=max(1, len(handles)),
+        legend_y=0.955,
+        title_y=0.995,
+        tight_top=0.965,
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
@@ -295,20 +407,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, default=SCRIPT_DIR, help="Directory for CSV and plot outputs.")
     parser.add_argument("--cases", nargs="+", default=list(DEFAULT_CASES), help="Cases to include.")
     parser.add_argument("--dims", nargs="+", type=int, default=list(DEFAULT_DIMS), help="Dimensions to include.")
+    parser.add_argument("--cycles", nargs="+", default=list(DEFAULT_CYCLES), help="MG cycles to include.")
     parser.add_argument(
-        "--grid-2d",
-        nargs="+",
-        type=int,
-        default=list(DEFAULT_GRID_SIZES_BY_DIM[2]),
-        help="2D grid sizes to sweep.",
+        "--grid-source-csv",
+        type=Path,
+        default=DEFAULT_GRID_SOURCE_CSV,
+        help="Convergence results_all.csv used to derive the default grid sizes.",
     )
-    parser.add_argument(
-        "--grid-3d",
-        nargs="+",
-        type=int,
-        default=list(DEFAULT_GRID_SIZES_BY_DIM[3]),
-        help="3D grid sizes to sweep.",
-    )
+    parser.add_argument("--grid-2d", nargs="+", type=int, default=None, help="Optional explicit 2D grid sizes.")
+    parser.add_argument("--grid-3d", nargs="+", type=int, default=None, help="Optional explicit 3D grid sizes.")
     parser.add_argument("--tol", type=float, default=DEFAULT_TOL, help="Convergence tolerance.")
     parser.add_argument("--max-iter", type=int, default=DEFAULT_MAX_ITER, help="Maximum iterations.")
     parser.add_argument(
@@ -328,17 +435,49 @@ def main() -> None:
     cases = tuple(normalize_choices(args.cases, valid=DEFAULT_CASES, name="case"))
     dims = unique_positive_ints(args.dims, name="dimension")
     dims = tuple(normalize_choices(dims, valid=DEFAULT_DIMS, name="dimension"))
-    grid_sizes_2d = unique_positive_ints(args.grid_2d, name="grid_2d")
-    grid_sizes_3d = unique_positive_ints(args.grid_3d, name="grid_3d")
+    cycles = tuple(normalize_choices(args.cycles, valid=DEFAULT_CYCLES, name="cycle"))
     tol = positive_float(args.tol, "tol")
     max_iter = positive_int(args.max_iter, "max_iter")
     repeat_runs = positive_int(args.repeat_runs, "repeat_runs")
+    modes = tuple(MODE_SPECS_BY_CYCLE[cycle] for cycle in cycles)
+    grid_sizes_2d: tuple[int, ...] | None = None
+    grid_sizes_3d: tuple[int, ...] | None = None
+
+    if args.grid_2d is not None:
+        grid_sizes_2d = unique_positive_ints(args.grid_2d, name="grid_2d")
+    if args.grid_3d is not None:
+        grid_sizes_3d = unique_positive_ints(args.grid_3d, name="grid_3d")
+
+    if (2 in dims and grid_sizes_2d is None) or (3 in dims and grid_sizes_3d is None):
+        derived_grid_sizes = _grid_sizes_from_convergence_csv(
+            source_csv=args.grid_source_csv,
+            dims=dims,
+            cases=cases,
+            cycles=cycles,
+            backend=DEFAULT_BACKEND,
+            dtype=DEFAULT_DTYPE,
+            omega=DEFAULT_OMEGA,
+            nu=DEFAULT_NU,
+            tol=tol,
+            max_iter=max_iter,
+            coarse=DEFAULT_MG_COARSE,
+        )
+        if 2 in dims and grid_sizes_2d is None:
+            grid_sizes_2d = derived_grid_sizes[2]
+        if 3 in dims and grid_sizes_3d is None:
+            grid_sizes_3d = derived_grid_sizes[3]
+
+    if 2 in dims and grid_sizes_2d is None:
+        raise RuntimeError("No 2D grid sizes are available. Pass --grid-2d or run the convergence report first.")
+    if 3 in dims and grid_sizes_3d is None:
+        raise RuntimeError("No 3D grid sizes are available. Pass --grid-3d or run the convergence report first.")
 
     rows = collect_rows_from_wrapper(
         dims=dims,
         cases=cases,
-        grid_sizes_2d=grid_sizes_2d,
-        grid_sizes_3d=grid_sizes_3d,
+        cycles=cycles,
+        grid_sizes_2d=grid_sizes_2d or tuple(),
+        grid_sizes_3d=grid_sizes_3d or tuple(),
         tol=tol,
         max_iter=max_iter,
         repeat_runs=repeat_runs,
@@ -363,12 +502,14 @@ def main() -> None:
         plot_case(
             case=case,
             rows=case_rows,
+            modes=modes,
             output_path=output_dir / f"plots_{case}.png",
         )
 
     print(f"Wrote {output_dir / 'results_all.csv'}")
     print(f"Cases: {', '.join(cases)}")
     print(f"Dimensions: {', '.join(str(dim) for dim in dims)}")
+    print(f"Cycles: {', '.join(cycles)}")
     print(f"Rows: {len(rows)}")
     print(f"Non-converged rows: {sum(1 for row in rows if not row['converged'])}")
 

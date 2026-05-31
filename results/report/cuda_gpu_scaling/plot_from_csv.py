@@ -240,9 +240,9 @@ def _plot_case(
             f"CUDA GPU scaling - {case}\n"
             f"2D and 3D rows, MG V exact, CPU=OMP 1 thread, OpenMP=best thread, CUDA"
         ),
-        y=0.985,
+        y=0.99,
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    fig.tight_layout(rect=(0, 0, 1, 1))
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close(fig)

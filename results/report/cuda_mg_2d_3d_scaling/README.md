@@ -3,7 +3,7 @@
 This folder contains the report generator for the G experiment:
 
 - compare the same CUDA MG solver in 2D and 3D
-- track runtime growth against total cells
+- track runtime growth against total cells for MG V/W SOR
 - inspect runtime per cell
 - inspect throughput in cells / second
 
@@ -11,14 +11,12 @@ This folder contains the report generator for the G experiment:
 
 - backend: `cuda`
 - solver: `mg`
-- cycle: `v`
-- coarse solve: `exact`
+- cycles: `v`, `w`
+- coarse solve: `sor`
 - `nu = 3`
 - `omega = 1.25`
 - cases: `sine`, `cosine`
-- grid sizes:
-  - 2D: `127, 255, 511, 1023, 2047, 4095`
-  - 3D: `31, 63, 127, 255`
+- grid sizes: taken from `results/report/cuda_mg_convergence/results_all.csv` for the same backend / case / cycle / tolerance / iteration settings
 
 ## Outputs
 
@@ -30,5 +28,5 @@ This folder contains the report generator for the G experiment:
 ## Run
 
 ```bash
-python results/report/result/cuda_mg_2d_3d_scaling/run_and_plot.py
+python results/report/cuda_mg_2d_3d_scaling/run_and_plot.py
 ```

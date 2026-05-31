@@ -46,7 +46,7 @@
   - 重新繪製 `exact / MG / difference` 圖，並使用較緊湊的排版
 - [`cuda_mg_2d_3d_scaling/run_and_plot.py`](./cuda_mg_2d_3d_scaling/run_and_plot.py)
   - CUDA MG 的 2D vs 3D scaling 報表腳本
-  - 預設比較 `2D=127,255,511,1023,2047,4095` 與 `3D=31,63,127,255`
+  - 預設比較 `V/W` cycle 的 `SOR` coarse solve，grid sizes 直接沿用 `cuda_mg_convergence/results_all.csv` 的同參數結果
   - 輸出 combined CSV、每個 dimension 的 CSV，以及 `runtime / time-per-cell / throughput` 三聯圖
 - [`cuda_gpu_scaling/run_and_plot.py`](./cuda_gpu_scaling/run_and_plot.py)
   - CUDA GPU scaling 與 speedup 報表腳本
