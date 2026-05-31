@@ -11,6 +11,7 @@ RESULT_ROOT = SCRIPT_DIR.parent
 if str(RESULT_ROOT) not in sys.path:
     sys.path.insert(0, str(RESULT_ROOT))
 
+from _figure_sizes import FIGSIZE_2X2_2_ROWS, figsize_for_rows
 from _history_common import MODE_SPECS, MODE_SPECS_BY_KEY, load_payload
 from _report_common import finalize_figure_header, load_pyplot
 
@@ -148,7 +149,7 @@ def main() -> None:
     fig, axes = plt.subplots(
         len(dims),
         2,
-        figsize=(10.5, 3 * len(dims)),
+        figsize=figsize_for_rows(FIGSIZE_2X2_2_ROWS, len(dims)),
         sharey=True,
         squeeze=False,
     )

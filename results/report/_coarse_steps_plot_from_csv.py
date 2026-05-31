@@ -13,6 +13,7 @@ RESULT_ROOT = SCRIPT_DIR
 if str(RESULT_ROOT) not in sys.path:
     sys.path.insert(0, str(RESULT_ROOT))
 
+from _figure_sizes import FIGSIZE_2X2_2_ROWS, figsize_for_rows
 from _report_common import finalize_figure_header, load_pyplot, normalize_choices, positive_int
 from _sweep_common import DEFAULT_DIMS as _DEFAULT_DIMS
 
@@ -231,7 +232,7 @@ def plot_iter_time_2x2_from_csv(
     fig, axes = plt.subplots(
         nrows=len(dims),
         ncols=2,
-        figsize=(14.8, 4.4 * len(dims)),
+        figsize=figsize_for_rows(FIGSIZE_2X2_2_ROWS, len(dims)),
         sharex=True,
     )
     if len(dims) == 1:

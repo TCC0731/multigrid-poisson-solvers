@@ -29,6 +29,12 @@ RESULT_ROOT = SCRIPT_DIR.parent
 if str(RESULT_ROOT) not in sys.path:
     sys.path.insert(0, str(RESULT_ROOT))
 
+from _figure_sizes import (
+    FIGSIZE_1X2_CUDA_MG_CONVERGENCE,
+    FIGSIZE_2X2_2_ROWS,
+    figsize_for_columns,
+    figsize_for_rows,
+)
 from _report_common import finalize_figure_header, load_pyplot, normalize_choices, positive_int, power_law_fit_curve
 
 
@@ -220,7 +226,11 @@ def plot_l2_error_comparison(
 ) -> None:
     plt = load_pyplot()
 
-    fig, axes = plt.subplots(1, len(dims), figsize=(5.9 * len(dims), 4.5))
+    fig, axes = plt.subplots(
+        1,
+        len(dims),
+        figsize=figsize_for_columns(FIGSIZE_1X2_CUDA_MG_CONVERGENCE, len(dims)),
+    )
     if len(dims) == 1:
         axes = [axes]  # type: ignore[list-item]
     for ax, dimension in zip(axes, dims):
@@ -387,7 +397,7 @@ def plot_iter_time_comparison(
 
     mode_order = SOR_MODE_ORDER if sor_only else MODE_ORDER
     nrows = len(dims)
-    fig, axes = plt.subplots(nrows, 2, figsize=(15.8, 4.2 * nrows))
+    fig, axes = plt.subplots(nrows, 2, figsize=figsize_for_rows(FIGSIZE_2X2_2_ROWS, nrows))
     if nrows == 1:
         axes = [axes]  # type: ignore[list-item]
 

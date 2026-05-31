@@ -37,6 +37,7 @@ XDG_CACHE_HOME.mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("MPLCONFIGDIR", str(MPLCONFIGDIR))
 os.environ.setdefault("XDG_CACHE_HOME", str(XDG_CACHE_HOME))
 
+from _figure_sizes import FIGSIZE_1X2_CUDA_MG_SOR_TIME_FIT, figsize_for_columns
 from _report_common import finalize_figure_header, load_pyplot, normalize_choices, positive_int
 
 
@@ -358,7 +359,7 @@ def _plot_combined_time_figure(
     fig, axes = plt.subplots(
         nrows=1,
         ncols=len(dims),
-        figsize=(13, 4.6),
+        figsize=figsize_for_columns(FIGSIZE_1X2_CUDA_MG_SOR_TIME_FIT, len(dims)),
         sharey=False,
     )
     if len(dims) == 1:

@@ -20,6 +20,7 @@ RESULT_ROOT = SCRIPT_DIR.parent
 if str(RESULT_ROOT) not in sys.path:
     sys.path.insert(0, str(RESULT_ROOT))
 
+from _figure_sizes import FIGSIZE_2X3_2_ROWS, figsize_for_rows
 from _report_common import load_pyplot, normalize_choices, positive_int
 from _scaling_common import unique_positive_ints
 
@@ -151,7 +152,7 @@ def _plot_case(
     fig, axes = plt.subplots(
         nrows=len(dims),
         ncols=3,
-        figsize=(18, 4.8 * len(dims)),
+        figsize=figsize_for_rows(FIGSIZE_2X3_2_ROWS, len(dims)),
         sharex=True,
     )
     if len(dims) == 1:

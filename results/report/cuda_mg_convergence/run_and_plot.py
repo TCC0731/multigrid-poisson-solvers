@@ -21,6 +21,7 @@ RESULT_ROOT = SCRIPT_DIR.parent
 if str(RESULT_ROOT) not in sys.path:
     sys.path.insert(0, str(RESULT_ROOT))
 
+from _figure_sizes import FIGSIZE_1X3_MG_CONVERGENCE
 from _poisson_wrapper import REPO_ROOT, run_or_load
 from _report_common import (
     csv_float,
@@ -345,7 +346,7 @@ def plot_case(
     for row in rows:
         series_by_label[MODE_SPECS_BY_KEY[str(row["mode_key"])].label].append(row)
 
-    fig, axes = plt.subplots(1, 3, figsize=(12.8, 4))
+    fig, axes = plt.subplots(1, 3, figsize=FIGSIZE_1X3_MG_CONVERGENCE)
     panels = (
         ("error_l2", "error_l2", "L2 error"),
         ("iterations", "iter", "Iterations"),

@@ -32,6 +32,7 @@ RESULT_ROOT = SCRIPT_DIR.parent
 if str(RESULT_ROOT) not in sys.path:
     sys.path.insert(0, str(RESULT_ROOT))
 
+from _figure_sizes import FIGSIZE_1X3_MG_2D_3D_SCALING
 from _poisson_wrapper import run_or_load
 from _report_common import csv_float, finalize_figure_header, load_pyplot, normalize_choices, positive_float, positive_int, write_rows_csv
 from _scaling_common import cells_for_grid_size, group_rows_by_dimension, unique_positive_ints
@@ -354,7 +355,7 @@ def plot_case(
         for mode in modes
     }
 
-    fig, axes = plt.subplots(1, 3, figsize=(11, 4))
+    fig, axes = plt.subplots(1, 3, figsize=FIGSIZE_1X3_MG_2D_3D_SCALING)
     panels = (
         ("time_s", "Runtime (s)"),
         ("time_per_cell_us", "Runtime per cell (us)"),
