@@ -8,14 +8,22 @@
 
 % Resolve figures whether the deck is compiled from report/ or repo root.
 \graphicspath{%
-    {../results/report/result/cuda_mg_phi_plots/plots/}%
-    {../results/report/result/cuda_mg_convergence/}%
-    {../results/report/result/omp_residual_history/}%
-    {../results/report/result/omp_thread_scaling/}%
-    {results/report/result/cuda_mg_phi_plots/plots/}%
-    {results/report/result/cuda_mg_convergence/}%
-    {results/report/result/omp_residual_history/}%
-    {results/report/result/omp_thread_scaling/}%
+    {../results/report/cuda_mg_phi_plots/plots/}%
+    {../results/report/cuda_mg_convergence/}%
+    {../results/report/cuda_gpu_scaling/}%
+    {../results/report/cuda_mg_2d_3d_scaling/}%
+    {../results/report/cuda_mg_sor_time_fit/}%
+    {../results/report/omp_residual_history/}%
+    {../results/report/omp_thread_scaling/}%
+    {../results/report/}%
+    {results/report/cuda_mg_phi_plots/plots/}%
+    {results/report/cuda_mg_convergence/}%
+    {results/report/cuda_gpu_scaling/}%
+    {results/report/cuda_mg_2d_3d_scaling/}%
+    {results/report/cuda_mg_sor_time_fit/}%
+    {results/report/omp_residual_history/}%
+    {results/report/omp_thread_scaling/}%
+    {results/report/}%
 }
 
 \title[CUDA Poisson MG 2D/3D]{CUDA-Accelerated Multigrid Poisson Solvers in 2D and 3D}
@@ -116,6 +124,8 @@
         \end{block}
     \end{columns}
 \end{frame}
+
+\section{Multigrid Method}
 
 \begin{frame}[t]{Multigrid operators}
     \footnotesize
@@ -262,6 +272,8 @@
     \end{block}
 \end{frame}
 
+\section{CUDA MG Results}
+
 \begin{frame}[t]{Mixed sine result: 2D}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.74\textheight,keepaspectratio]{phi_2d_v_sor_mixed_sine_n4095_nu3_w1p25_cs16.png}
@@ -293,6 +305,39 @@
     \includegraphics[width=0.96\textwidth,height=0.80\textheight,keepaspectratio]{plots_2d_3d_iter_time_fit_last10_sine.png}
 \end{frame}
 
+\begin{frame}[t]{CUDA MG Convergence: \(\nu\) Sweep Iteration Time}
+    \centering
+    \includegraphics[width=0.96\textwidth,height=0.78\textheight,keepaspectratio]{nu_sweep/plots_2d_3d_iter_time_sine.png}
+
+    \vspace{0.35em}
+    {\footnotesize 2D/3D iteration-time sweep over \(\nu\) on the sine manufactured-solution case.}
+\end{frame}
+
+\begin{frame}[t]{CUDA MG Convergence: \(\omega\) Sweep Iteration Time}
+    \centering
+    \includegraphics[width=0.96\textwidth,height=0.78\textheight,keepaspectratio]{omega_sweep/plots_2d_3d_iter_time_sine.png}
+
+    \vspace{0.35em}
+    {\footnotesize 2D/3D iteration-time sweep over \(\omega\) on the sine manufactured-solution case.}
+\end{frame}
+
+\begin{frame}[t]{CUDA GPU Scaling}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.80\textheight,keepaspectratio]{plots_2d_3d_sine.png}
+\end{frame}
+
+\begin{frame}[t]{CUDA MG 2D vs 3D Scaling}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.80\textheight,keepaspectratio]{plots_sine.png}
+\end{frame}
+
+\begin{frame}[t]{CUDA MG and SOR Time}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.80\textheight,keepaspectratio]{plots_2d_3d_mg_sor_time_fit_sine.png}
+\end{frame}
+
+\section{OpenMP Scaling}
+
 \begin{frame}[t]{OpenMP residual history}
     \centering
     \includegraphics[width=0.96\textwidth,height=0.8\textheight,keepaspectratio]{residual_history.png}
@@ -301,6 +346,31 @@
 \begin{frame}[t]{OpenMP thread scaling}
     \centering
     \includegraphics[width=0.96\textwidth,height=0.8\textheight,keepaspectratio]{plots_2d_3d.png}
+\end{frame}
+
+\begin{frame}[t]{Why OpenMP scaling flattens}
+    \footnotesize
+    \begin{columns}[T,onlytextwidth]
+        \column{0.475\textwidth}
+        \begin{block}{Topdown and cache evidence}
+            \begin{itemize}
+                \item The OpenMP solver is backend-bound, not compute-bound.
+                \item \texttt{topdown-be-bound} is 57.7\% in 2D and 58.2\% in 3D.
+                \item \texttt{topdown-mem-bound} rises from 43.7\% in 2D to 49.3\% in 3D.
+                \item The 3D LLC load miss rate is 89.4\%, much higher than the 2D value of 26.4\%.
+            \end{itemize}
+        \end{block}
+
+        \column{0.475\textwidth}
+        \begin{block}{Profile takeaway}
+            \begin{itemize}
+                \item The hot kernel is \texttt{smooth\_red\_black} / \texttt{smooth\_red\_black\_3d}.
+                \item \texttt{perf annotate} shows the inner loop dominated by grid-value loads and \texttt{rhs} fetches.
+                \item The kernel has low arithmetic intensity and spends most of its time waiting on memory.
+                \item Conclusion: poor OpenMP thread scaling is mainly caused by memory bandwidth and cache pressure.
+            \end{itemize}
+        \end{block}
+    \end{columns}
 \end{frame}
 
 \end{document}
