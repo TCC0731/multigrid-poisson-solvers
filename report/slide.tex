@@ -28,7 +28,7 @@
 
 \title[CUDA/OpenMP MG Poisson 2D/3D]{CUDA and OpenMP Multigrid Solvers\\for the Poisson Equation in 2D and 3D}
 
-\newcommand{\frametitlesub}[2]{#1: #2}
+\newcommand{\frametitlesub}[2]{#1}
 
 \begin{document}
 
@@ -75,32 +75,6 @@
         \item Dirichlet boundary data are taken from the manufactured solution; sine gives homogeneous Dirichlet data, while cosine gives inhomogeneous Dirichlet data.
         \item The arrays store \(n\) interior points per axis plus one boundary layer on each side, so the total size is \(n+2\).
     \end{itemize}
-\end{frame}
-
-\begin{frame}[t]{\frametitlesub{Algorithms and backends}{Solver and backend support}}
-    \footnotesize
-    \begin{columns}[T,onlytextwidth]
-        \column{0.48\textwidth}
-        \begin{block}{Implemented solvers}
-            \begin{itemize}
-                \item Red-black SOR baseline.
-                \item Multigrid Poisson solver in 2D and 3D.
-                \item Both V-cycle and W-cycle variants.
-                \item Coarsest-grid solve with SOR or exact/direct solve.
-            \end{itemize}
-        \end{block}
-
-        \column{0.48\textwidth}
-        \begin{block}{Implemented support}
-            \begin{itemize}
-                \item Python backend.
-                \item OpenMP CPU backend.
-                \item CUDA GPU backend.
-                \item Full-weighting restriction and bilinear/trilinear prolongation.
-                \item Manufactured-solution Dirichlet boundary setup.
-            \end{itemize}
-        \end{block}
-    \end{columns}
 \end{frame}
 
 \begin{frame}[t]{\frametitlesub{Algorithms and backends}{Stopping criterion and smoother setup}}
@@ -273,6 +247,44 @@
     \end{block}
 \end{frame}
 
+\begin{frame}[t]{\frametitlesub{Algorithms and backends}{Solver and backend support}}
+    \footnotesize
+    \begin{columns}[T,onlytextwidth]
+        \column{0.48\textwidth}
+        \begin{block}{Implemented solvers}
+            \begin{itemize}
+                \item Red-black SOR baseline.
+                \item Multigrid Poisson solver in 2D and 3D.
+                \item Both V-cycle and W-cycle variants.
+                \item Coarsest-grid solve with SOR or exact/direct solve.
+            \end{itemize}
+        \end{block}
+
+        \column{0.48\textwidth}
+        \begin{block}{Implemented support}
+            \begin{itemize}
+                \item Python backend.
+                \item OpenMP CPU backend.
+                \item CUDA GPU backend.
+                \item Full-weighting restriction and bilinear/trilinear prolongation.
+                \item Manufactured-solution Dirichlet boundary setup.
+            \end{itemize}
+        \end{block}
+    \end{columns}
+
+    \begin{block}{Verified cases}
+        \scriptsize
+        \setlength{\tabcolsep}{4pt}
+        \renewcommand{\arraystretch}{1.2}
+        \begin{tabular}{@{}p{0.18\linewidth}p{0.38\linewidth}p{0.38\linewidth}@{}}
+            \textbf{Case}        & \textbf{2D exact solution}   & \textbf{3D exact solution}               \\
+            \hline
+            \texttt{sine}        & \(\sin(\pi x)\sin(\pi y)\)   & \(\sin(\pi x)\sin(\pi y)\sin(\pi z)\)    \\
+            \texttt{mixed\_sine} & \(\sin(2\pi x)\sin(3\pi y)\) & \(\sin(2\pi x)\sin(3\pi y)\sin(4\pi z)\) \\
+        \end{tabular}
+    \end{block}
+\end{frame}
+
 \begin{frame}[t]{\frametitlesub{Implementation optimizations}{OMP vs CUDA MG}}
     \footnotesize
     \begin{columns}[T,onlytextwidth]
@@ -298,6 +310,43 @@
     \begin{block}{Note}
         Red-black ordering is an enabler for parallel updates, not the main optimization itself.
     \end{block}
+\end{frame}
+
+\section{OpenMP Performance}
+\begin{frame}[t]{\frametitlesub{Empirical results}{Residual history (OpenMP)}}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{residual_history.png}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Empirical results}{OpenMP thread scaling}}
+    \centering
+    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d.png}
+\end{frame}
+
+\begin{frame}[t]{\frametitlesub{Bottleneck analysis}{OpenMP bottleneck analysis}}
+    \footnotesize
+    \begin{columns}[T,onlytextwidth]
+        \column{0.475\textwidth}
+        \begin{block}{Topdown, L1, and cache evidence}
+            \begin{itemize}
+                \item The OpenMP solver is backend-bound, not compute-bound.
+                \item \texttt{topdown-be-bound} is 57.7\% in 2D and 58.2\% in 3D.
+                \item \texttt{topdown-mem-bound} rises from 43.7\% in 2D to 49.3\% in 3D.
+                \item L1D miss rate more than doubles, from 1.5\% in 2D to 3.2\% in 3D.
+                \item The 3D LLC load miss rate is 89.4\%, much higher than the 2D value of 26.4\%.
+            \end{itemize}
+        \end{block}
+
+        \column{0.475\textwidth}
+        \begin{block}{Profile takeaway}
+            \begin{itemize}
+                \item The hot kernel is \texttt{smooth\_red\_black} / \texttt{smooth\_red\_black\_3d}.
+                \item \texttt{perf annotate} shows the inner loop dominated by grid-value loads and \texttt{rhs} fetches.
+                \item The kernel has low arithmetic intensity and spends most of its time waiting on memory.
+                \item Conclusion: poor OpenMP thread scaling is mainly caused by memory bandwidth and cache pressure.
+            \end{itemize}
+        \end{block}
+    \end{columns}
 \end{frame}
 
 \section{CUDA Multigrid Results}
@@ -369,43 +418,6 @@
 \begin{frame}[t]{\frametitlesub{Performance scaling}{Multigrid vs SOR runtime}}
     \centering
     \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d_mg_sor_time_fit_sine.png}
-\end{frame}
-
-\section{OpenMP Performance}
-\begin{frame}[t]{\frametitlesub{Empirical results}{Residual history (OpenMP)}}
-    \centering
-    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{residual_history.png}
-\end{frame}
-
-\begin{frame}[t]{\frametitlesub{Empirical results}{OpenMP thread scaling}}
-    \centering
-    \includegraphics[width=0.98\textwidth,height=0.88\textheight,keepaspectratio]{plots_2d_3d.png}
-\end{frame}
-
-\begin{frame}[t]{\frametitlesub{Bottleneck analysis}{OpenMP bottleneck analysis}}
-    \footnotesize
-    \begin{columns}[T,onlytextwidth]
-        \column{0.475\textwidth}
-        \begin{block}{Topdown, L1, and cache evidence}
-            \begin{itemize}
-                \item The OpenMP solver is backend-bound, not compute-bound.
-                \item \texttt{topdown-be-bound} is 57.7\% in 2D and 58.2\% in 3D.
-                \item \texttt{topdown-mem-bound} rises from 43.7\% in 2D to 49.3\% in 3D.
-                \item L1D miss rate more than doubles, from 1.5\% in 2D to 3.2\% in 3D.
-                \item The 3D LLC load miss rate is 89.4\%, much higher than the 2D value of 26.4\%.
-            \end{itemize}
-        \end{block}
-
-        \column{0.475\textwidth}
-        \begin{block}{Profile takeaway}
-            \begin{itemize}
-                \item The hot kernel is \texttt{smooth\_red\_black} / \texttt{smooth\_red\_black\_3d}.
-                \item \texttt{perf annotate} shows the inner loop dominated by grid-value loads and \texttt{rhs} fetches.
-                \item The kernel has low arithmetic intensity and spends most of its time waiting on memory.
-                \item Conclusion: poor OpenMP thread scaling is mainly caused by memory bandwidth and cache pressure.
-            \end{itemize}
-        \end{block}
-    \end{columns}
 \end{frame}
 
 \section{Conclusions}
