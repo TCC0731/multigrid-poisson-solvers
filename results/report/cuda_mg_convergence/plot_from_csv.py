@@ -6,9 +6,10 @@ This script is a plotting-only companion to ``run_and_plot.py``. It does not
 regenerate solver data; it simply reads the archived CSV and writes a few
 comparison plots that are easier to use in the report:
 
-1. L2 error comparison for 2D and 3D, with the same visual style as the left
-   panel of the original convergence figure, but without the bottom-right
-   ``O(N^-2)`` text label and with fit-order text in the upper right.
+1. L2 error comparison for 2D and 3D, showing V/W exact and SOR with the same
+   visual style as the left panel of the original convergence figure, but
+   without the bottom-right ``O(N^-2)`` text label and with fit-order text in
+   the upper right.
 2. A 2x2 iteration/time figure with 2D and 3D on separate rows and
    iterations/time on separate columns, showing V/W exact and SOR.
 3. The same 2x2 layout, but with only V/W SOR and a power-law fit on the time
@@ -235,7 +236,7 @@ def plot_l2_error_comparison(
         axes = [axes]  # type: ignore[list-item]
     for ax, dimension in zip(axes, dims):
         fit_orders: list[tuple[str, float]] = []
-        for mode_key in SOR_MODE_ORDER:
+        for mode_key in MODE_ORDER:
             ordered = _series(rows, dimension=dimension, mode_key=mode_key)
             if not ordered:
                 continue
@@ -309,7 +310,7 @@ def plot_l2_error_comparison(
         title=f"CUDA MG convergence - {case} (2D/3D L2 error)",
         handles=handles,
         labels=labels,
-        ncol=2,
+        ncol=4,
         legend_y=0.955,
         title_y=0.995,
         tight_top=0.96,
