@@ -273,6 +273,33 @@
     \end{block}
 \end{frame}
 
+\begin{frame}[t]{\frametitlesub{Implementation optimizations}{OMP vs CUDA MG}}
+    \footnotesize
+    \begin{columns}[T,onlytextwidth]
+        \column{0.485\textwidth}
+        \begin{block}{OMP}
+            \begin{itemize}
+                \item `parallel for` + `simd` on the hot stencil loops.
+                \item Focus on CPU core utilization and vectorization.
+                \item Goal: make the smoother and transfer operators scale better on the host.
+            \end{itemize}
+        \end{block}
+
+        \column{0.485\textwidth}
+        \begin{block}{CUDA}
+            \begin{itemize}
+                \item Fuse residual and restriction to cut global memory traffic.
+                \item Pool MG workspace and capture the iteration loop with CUDA Graph.
+                \item Use fused small-grid kernels on coarse levels to avoid repeated launches.
+            \end{itemize}
+        \end{block}
+    \end{columns}
+
+    \begin{block}{Note}
+        Red-black ordering is an enabler for parallel updates, not the main optimization itself.
+    \end{block}
+\end{frame}
+
 \section{CUDA Multigrid Results}
 \begin{frame}[t]{\frametitlesub{Mixed-sine test cases}{2D mixed-sine solution}}
     \centering
